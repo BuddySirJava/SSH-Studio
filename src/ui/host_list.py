@@ -1,6 +1,7 @@
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gtk, GObject, Pango
+gi.require_version('Adw', '1')
+from gi.repository import Gtk, GObject, Pango, Adw
 from gettext import gettext as _
 
 try:
@@ -14,7 +15,6 @@ class HostList(Gtk.Box):
     __gtype_name__ = "HostList"
 
     list_box = Gtk.Template.Child()
-    count_label = Gtk.Template.Child()
 
     __gsignals__ = {
         'host-selected': (GObject.SignalFlags.RUN_LAST, None, (object,)),
@@ -29,6 +29,7 @@ class HostList(Gtk.Box):
         self.filtered_hosts = []
         self.current_filter = ""
         self._selected_host = None
+        self._suppress_selection_emit = False
         
         self._connect_signals()
         
@@ -127,11 +128,18 @@ class HostList(Gtk.Box):
     def _update_count(self):
         total = len(self.hosts)
         filtered = len(self.filtered_hosts)
-
-        if filtered == total:
-            self.count_label.set_text(_(f"{total} hosts"))
-        else:
-            self.count_label.set_text(_(f"{filtered} of {total} hosts"))
+        
+        if hasattr(self, 'count_label') and self.count_label is not None:
+            if filtered == total:
+                try:
+                    self.count_label.set_text(_(f"{total} hosts"))
+                except Exception:
+                    pass
+            else:
+                try:
+                    self.count_label.set_text(_(f"{filtered} of {total} hosts"))
+                except Exception:
+                    pass
 
     def _on_selection_changed(self, selection):
         model, tree_iter = selection.get_selected()
@@ -214,6 +222,7 @@ class HostList(Gtk.Box):
                     if tree_iter is None:
                         return
                     selection = self.tree_view.get_selection()
+                    self._suppress_selection_emit = True
                     selection.select_iter(tree_iter)
                     path = self.list_store.get_path(tree_iter)
                     if path is not None:
@@ -221,6 +230,7 @@ class HostList(Gtk.Box):
                 elif hasattr(self, 'list_box') and self.list_box is not None:
                     row_widget = self.list_box.get_row_at_index(index)
                     if row_widget is not None:
+                        self._suppress_selection_emit = True
                         self.list_box.select_row(row_widget)
                         try:
                             row_widget.grab_focus()
@@ -231,7 +241,6 @@ class HostList(Gtk.Box):
     def _rebuild_listbox_rows(self):
         if not hasattr(self, 'list_box') or self.list_box is None:
             return
-        # Clear existing rows
         while (child := self.list_box.get_first_child()) is not None:
             self.list_box.remove(child)
 
@@ -240,32 +249,86 @@ class HostList(Gtk.Box):
             patterns = row[0]
             hostname = row[1]
             user = row[2]
-            # Build a two-line row with subtle secondary text
-            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-            title = Gtk.Label(label=patterns, xalign=0)
-            title.add_css_class("title-4")
-            subtitle = Gtk.Label(label=f"{user}@{hostname}" if hostname or user else hostname or patterns, xalign=0)
-            subtitle.add_css_class("dim-label")
-            box.append(title)
-            box.append(subtitle)
 
-            list_row = Gtk.ListBoxRow()
-            list_row.set_child(box)
-            list_row.set_selectable(True)
-            list_row.set_activatable(True)
-            list_row._host_ref = host
-            self.list_box.append(list_row)
+            action_row = Adw.ActionRow()
+            action_row.set_title(patterns)
+            try:
+                subtitle_text = f"{user}@{hostname}" if (hostname or user) else (hostname or patterns)
+                action_row.set_subtitle(subtitle_text)
+            except Exception:
+                pass
+            action_row.set_activatable(True)
+            try:
+                action_row.set_selectable(True)
+            except Exception:
+                pass
+            action_row._host_ref = host
+            try:
+                dup_btn = Gtk.Button()
+                dup_btn.set_icon_name("edit-copy-symbolic")
+                dup_btn.add_css_class("flat")
+                def on_dup_clicked(btn, h=host):
+                    if h in self.hosts:
+                        duplicated_host = self._duplicate_host(h)
+                        self.emit("host-added", duplicated_host)
+                        self.filter_hosts(self.current_filter)
+                        self.select_host(duplicated_host)
+                dup_btn.connect("clicked", on_dup_clicked)
+                action_row.add_suffix(dup_btn)
+            except Exception:
+                pass
+
+            try:
+                del_btn = Gtk.Button()
+                del_btn.set_icon_name("edit-delete-symbolic")
+                del_btn.add_css_class("destructive-action")
+                del_btn.add_css_class("flat")
+                def on_del_clicked(btn, h=host):
+                    self._confirm_and_delete(h)
+                del_btn.connect("clicked", on_del_clicked)
+                action_row.add_suffix(del_btn)
+            except Exception:
+                pass
+
+            self.list_box.append(action_row)
 
     def _on_row_selected(self, listbox, row):
         if row is None:
             return
         host = getattr(row, "_host_ref", None)
         if host is not None:
-            self._selected_host = host
             self.emit("host-selected", host)
 
+    def _confirm_and_delete(self, host):
+        if host is None:
+            return
+        dialog = Gtk.MessageDialog(
+            transient_for=self.get_root(),
+            message_type=Gtk.MessageType.QUESTION,
+            buttons=Gtk.ButtonsType.NONE,
+            text=_(f"Delete host '{', '.join(host.patterns)}'?")
+        )
+        dialog.add_buttons(
+            _("No"), Gtk.ResponseType.NO,
+            _("Yes"), Gtk.ResponseType.YES,
+        )
+
+        def on_response(dlg, response_id):
+            if response_id == Gtk.ResponseType.YES:
+                self.emit("host-deleted", host)
+                if host in self.hosts:
+                    self.hosts.remove(host)
+                if host in self.filtered_hosts:
+                    self.filtered_hosts.remove(host)
+                self._refresh_view()
+                self._update_count()
+            dlg.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.present()
+
+
     def _get_selected_host(self):
-        # Prefer ListBox selection when available
         if hasattr(self, 'list_box') and self.list_box is not None:
             try:
                 row = self.list_box.get_selected_row()
@@ -275,11 +338,9 @@ class HostList(Gtk.Box):
                 host = getattr(row, "_host_ref", None)
                 if host is not None:
                     return host
-        # Fallback to TreeView selection
         if hasattr(self, 'tree_view') and self.tree_view is not None:
             selection = self.tree_view.get_selection()
             model, tree_iter = selection.get_selected()
             if tree_iter:
                 return model.get_value(tree_iter, 5)
-        # Fallback to last selected cache
         return self._selected_host

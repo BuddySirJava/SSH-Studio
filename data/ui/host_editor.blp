@@ -3,7 +3,7 @@ using Adw 1;
 
 template $HostEditor: Box {
   orientation: vertical;
-  spacing: 16;
+  spacing: 0;
 
   styles [
     "editor-pane",
@@ -11,20 +11,22 @@ template $HostEditor: Box {
   ]
 
   Adw.Clamp {
-    maximum-size: 900;
-    tightening-threshold: 700;
+    maximum-size: 800;
+    tightening-threshold: 600;
+    margin-start: 16;
+    margin-end: 16;
+    margin-top: 16;
+    margin-bottom: 16;
 
     child: Box {
       orientation: vertical;
-      spacing: 6;
-      margin-top: 12;
-      margin-start: 12;
-      margin-end: 12;
+      spacing: 12;
 
       Box {
         orientation: horizontal;
         hexpand: true;
-        spacing: 12;
+        spacing: 16;
+        margin-bottom: 8;
 
         Adw.ViewSwitcher {
           stack: viewstack;
@@ -38,7 +40,7 @@ template $HostEditor: Box {
 
         Box {
           orientation: horizontal;
-          spacing: 6;
+          spacing: 8;
           halign: end;
           hexpand: false;
 
@@ -64,7 +66,7 @@ template $HostEditor: Box {
 
       Separator {
         orientation: horizontal;
-        margin-top: 6;
+        margin-bottom: 8;
       }
     };
   }
@@ -82,6 +84,7 @@ template $HostEditor: Box {
         child: Adw.PreferencesPage {
           Adw.PreferencesGroup {
             title: _("Connection");
+            description: _("Basic connection settings for this SSH host");
 
             Adw.EntryRow patterns_entry {
               title: _("Host pattern");
@@ -122,6 +125,7 @@ template $HostEditor: Box {
 
           Adw.PreferencesGroup {
             title: _("Authentication");
+            description: _("SSH key and authentication settings");
 
             Adw.EntryRow identity_entry {
               title: _("Identity file");
@@ -135,6 +139,7 @@ template $HostEditor: Box {
 
             Adw.ActionRow {
               title: _("Forward agent");
+              subtitle: _("Forward SSH agent to the remote host");
               activatable-widget: forward_agent_switch;
 
               [suffix]
@@ -146,6 +151,7 @@ template $HostEditor: Box {
 
           Adw.PreferencesGroup {
             title: _("Actions");
+            description: _("Quick actions for this SSH host");
 
             Adw.ActionRow copy_row {
               title: _("Copy SSH command");
@@ -172,6 +178,7 @@ template $HostEditor: Box {
         child: Adw.PreferencesPage {
           Adw.PreferencesGroup {
             title: _("Networking");
+            description: _("Proxy and port forwarding settings");
 
             Adw.EntryRow proxy_jump_entry {
               title: _("ProxyJump");
@@ -239,6 +246,7 @@ template $HostEditor: Box {
             ScrolledWindow {
               hexpand: true;
               vexpand: true;
+              min-content-height: 300;
 
               TextView raw_text_view {
                 monospace: true;
@@ -246,10 +254,10 @@ template $HostEditor: Box {
                 editable: true;
                 hexpand: true;
                 vexpand: true;
-                left-margin: 8;
-                right-margin: 8;
-                top-margin: 6;
-                bottom-margin: 6;
+                left-margin: 12;
+                right-margin: 12;
+                top-margin: 12;
+                bottom-margin: 12;
 
                 styles [
                   "raw-editor",

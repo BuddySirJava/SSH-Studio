@@ -18,14 +18,9 @@ class MainWindow(Adw.ApplicationWindow):
 
     main_box = Gtk.Template.Child()
     toast_overlay = Gtk.Template.Child()
-    search_button = Gtk.Template.Child()
     add_button = Gtk.Template.Child()
-    duplicate_button = Gtk.Template.Child()
-    delete_button = Gtk.Template.Child()
     search_bar = Gtk.Template.Child()
-    split_view = Gtk.Template.Child()
     host_list = Gtk.Template.Child()
-    host_editor = Gtk.Template.Child()
 
     def __init__(self, app):
         super().__init__(
@@ -35,7 +30,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.app = app
         self.parser = app.parser
         self.is_dirty = False
-        self._raw_wrap_lines = False  # Initialize wrap mode preference
+        self._raw_wrap_lines = False
+        self._editor_windows = []
         
         self._connect_signals()
         self._load_config()
@@ -60,21 +56,94 @@ class MainWindow(Adw.ApplicationWindow):
         except Exception:
             pass
     
-    def _setup_split_view(self):
-        """Set up the split view between host list and editor."""
-        self.host_list = HostList()
-        self.host_editor = HostEditor()
+    def _open_host_editor_window(self, host):
+        """Open the HostEditor in its own window for the given host."""
         try:
-            self.host_editor.set_app(self.app)
+            editor_window = Adw.Window(application=self.app, transient_for=self)
         except Exception:
-            return
-        
-        paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
-        paned.set_start_child(self.host_list)
-        paned.set_end_child(self.host_editor)
-        paned.set_position(400)
-        
-        self.main_box.append(paned)
+            editor_window = Gtk.Window(transient_for=self)
+        editor_window.set_title(_("Host Editor"))
+        try:
+            editor_window.set_default_size(900, 700)
+        except Exception:
+            pass
+        try:
+            editor_window.set_resizable(True)
+        except Exception:
+            pass
+
+        editor = HostEditor()
+        try:
+            editor.set_app(self.app)
+        except Exception:
+            pass
+        editor.load_host(host)
+
+        editor.connect("host-changed", self._on_host_changed)
+        editor.connect("host-save", self._on_host_save)
+        editor.connect("editor-validity-changed", self._on_editor_validity_changed)
+
+        try:
+            toolbar_view = Adw.ToolbarView()
+            headerbar = Gtk.HeaderBar()
+            try:
+                headerbar.set_show_title_buttons(True)
+            except Exception:
+                try:
+                    headerbar.props.show_title_buttons = True
+                except Exception:
+                    pass
+            try:
+                title_label = Gtk.Label(label=_("Host Editor"))
+                headerbar.set_title_widget(title_label)
+            except Exception:
+                pass
+            try:
+                toolbar_view.add_top_bar(headerbar)
+            except Exception:
+                try:
+                    toolbar_view.set_top_bar(headerbar)
+                except Exception:
+                    pass
+            try:
+                toolbar_view.set_content(editor)
+            except Exception:
+                pass
+
+            if hasattr(editor_window, "set_content"):
+                editor_window.set_content(toolbar_view)
+            else:
+                editor_window.set_child(toolbar_view)  
+        except Exception as e:
+            try:
+                if hasattr(editor_window, "set_content"):
+                    editor_window.set_content(editor)
+                else:
+                    editor_window.set_child(editor)
+            except Exception as ee:
+                self._show_error(f"Failed to open editor window: {ee}")
+                return
+
+        try:
+            editor.set_visible(True)
+        except Exception:
+            pass
+
+        self._editor_windows.append(editor_window)
+
+        def on_close_request(win):
+            try:
+                self._editor_windows.remove(win)
+            except ValueError:
+                pass
+            return False
+
+        try:
+            editor_window.connect("close-request", on_close_request)
+        except Exception:
+            pass
+
+        editor_window.present()
     
     def _connect_signals(self):
         """Connect all the signal handlers."""
@@ -83,19 +152,7 @@ class MainWindow(Adw.ApplicationWindow):
         except Exception:
             self.save_button = None
         try:
-            self.search_button.connect("clicked", self._on_search_button_clicked)
-        except Exception:
-            pass
-        try:
             self.add_button.connect("clicked", self._on_add_clicked)
-        except Exception:
-            pass
-        try:
-            self.duplicate_button.connect("clicked", self._on_duplicate_clicked)
-        except Exception:
-            pass
-        try:
-            self.delete_button.connect("clicked", self._on_delete_clicked)
         except Exception:
             pass
         
@@ -103,13 +160,14 @@ class MainWindow(Adw.ApplicationWindow):
         self.host_list.connect("host-added", self._on_host_added)
         self.host_list.connect("host-deleted", self._on_host_deleted)
         
-        self.host_editor.connect("host-changed", self._on_host_changed)
-        self.host_editor.connect("host-save", self._on_host_save)
-        self.host_editor.connect("editor-validity-changed", self._on_editor_validity_changed)
-        
         self.search_bar.connect("search-changed", self._on_search_changed)
         
         self._setup_actions()
+        try:
+            if hasattr(self.search_bar, "set_search_mode"):
+                self.search_bar.set_search_mode(True)
+        except Exception:
+            pass
     
     def _setup_actions(self):
         actions = Gio.SimpleActionGroup()
@@ -178,16 +236,7 @@ class MainWindow(Adw.ApplicationWindow):
     
     def _toggle_search(self, force=None):
         try:
-            make_visible = (not self.search_bar.get_visible()) if force is None else bool(force)
-            if hasattr(self.search_bar, "set_search_mode"):
-                self.search_bar.set_search_mode(make_visible)
-            else:
-                self.search_bar.set_visible(make_visible)
-            if make_visible:
-                self.search_bar.grab_focus()
-            else:
-                self.search_bar.clear_search()
-                self.host_list.filter_hosts("")
+            self.search_bar.grab_focus()
         except Exception:
             pass
 
@@ -221,7 +270,6 @@ class MainWindow(Adw.ApplicationWindow):
             self.search_bar.set_visible(False)
             self.host_list.filter_hosts("")
     
-    # Deprecated: status bar close is no longer used with toasts
     def on_status_bar_close_clicked(self, button):
         pass
     
@@ -245,21 +293,15 @@ class MainWindow(Adw.ApplicationWindow):
             
             self.host_list.load_hosts(self.parser.config.hosts)
             self.is_dirty = False
-            self.save_button.set_sensitive(False)
             self._update_status(_("Configuration saved successfully"))
         except Exception as e:
             self._show_error(f"Failed to save configuration: {e}")
     
     def _on_host_selected(self, host_list, host):
-        """Handle host selection from the list."""
-        self.host_editor.load_host(host)
-        self.host_editor.set_visible(True)
-        # Uncollapse split view to show editor alongside the list
-        try:
-            if self.split_view.get_collapsed():
-                self.split_view.set_collapsed(False)
-        except Exception:
-            pass
+        """Open the editor window when a host is clicked in the list."""
+        if host is None:
+            return
+        self._open_host_editor_window(host)
 
     def _on_host_added(self, host_list, host):
         if self.parser:
@@ -275,44 +317,20 @@ class MainWindow(Adw.ApplicationWindow):
 
             self.parser.config.add_host(host)
             self.is_dirty = True
-            self.save_button.set_sensitive(True)
             self._update_status(_("Host added"))
-            self.host_editor.set_visible(True)
-            self.host_editor.load_host(host)
     
     def _on_host_deleted(self, host_list, host):
         """Handle host deletion."""
         if self.parser:
             self.parser.config.remove_host(host)
             self.is_dirty = True
-            self.save_button.set_sensitive(True)
             self._update_status(_("Host deleted"))
-            
-            if not self.parser.config.hosts:
-                self.host_editor.current_host = None
-                self.host_editor._clear_all_fields()
-                self.host_editor.set_visible(False)
-                self.save_button.set_sensitive(False)
-                self.is_dirty = False
-                # Collapse back to list-only view when no hosts remain
-                try:
-                    self.split_view.set_collapsed(True)
-                except Exception:
-                    pass
-            else:
-                self.host_list.select_host(self.parser.config.hosts[0])
     
     def _on_host_changed(self, editor, host):
         self.is_dirty = self.parser.config.is_dirty()
-        if self.save_button is not None:
-            self.save_button.set_sensitive(self.is_dirty)
 
     def _on_editor_validity_changed(self, editor, is_valid: bool):
-        if self.save_button is not None:
-            if not is_valid:
-                self.save_button.set_sensitive(False)
-            else:
-                self.save_button.set_sensitive(self.is_dirty)
+        pass
 
     def _on_search_changed(self, search_bar, query):
         """Handle search query changes."""
@@ -360,7 +378,6 @@ class MainWindow(Adw.ApplicationWindow):
         dialog.set_preferences(current_prefs)
 
         def on_close_request(dlg):
-            # Save preferences when dialog is closed
             prefs = dlg.get_preferences()
             if self.parser:
                 if prefs.get("config_path"):
@@ -387,7 +404,6 @@ class MainWindow(Adw.ApplicationWindow):
                     )
             except Exception:
                 pass
-            # Handle raw wrap lines preference
             raw_wrap = bool(prefs.get("raw_wrap_lines", False))
             self._raw_wrap_lines = raw_wrap
             try:
@@ -397,7 +413,7 @@ class MainWindow(Adw.ApplicationWindow):
             if self.parser:
                 self._load_config()
             self._update_status(_("Preferences saved"))
-            return False  # Allow dialog to close
+            return False
 
         dialog.connect("close-request", on_close_request)
         dialog.present()

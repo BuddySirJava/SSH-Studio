@@ -67,13 +67,11 @@ class HostEditor(Gtk.Box):
             pass
         self._connect_signals()
 
-        # Initialize diff highlighting tags
         self.buffer = self.raw_text_view.get_buffer()
         self.tag_add = self.buffer.create_tag("added", background="#aaffaa", foreground="black")
         self.tag_removed = self.buffer.create_tag("removed", background="#ffaaaa", foreground="black")
         self.tag_changed = self.buffer.create_tag("changed", background="#ffffaa", foreground="black")
 
-        # Set initial button state
         self.save_button.set_sensitive(False)
         self.revert_button.set_sensitive(False)
 
@@ -102,13 +100,11 @@ class HostEditor(Gtk.Box):
         
         self._raw_changed_handler_id = self.raw_text_view.get_buffer().connect("changed", self._on_raw_text_changed)
         
-        # Connect buttons
         self._connect_buttons()
 
     def _connect_buttons(self):
         self.identity_button.connect("clicked", self._on_identity_file_clicked)
         self.add_custom_button.connect("clicked", self._on_add_custom_option)
-        # Connect action rows
         self.copy_row.connect("activated", lambda r: self._on_copy_ssh_command(None))
         self.test_row.connect("activated", lambda r: self._on_test_connection(None))
         self.save_button.connect("clicked", self._on_save_clicked)
@@ -186,19 +182,16 @@ class HostEditor(Gtk.Box):
     
     def _add_custom_option_row(self, key: str = "", value: str = ""):
         """Adds a new row for a custom option to the list."""
-        # Create a container box for the custom option
         container_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         container_box.set_margin_start(12)
         container_box.set_margin_end(12)
         container_box.set_margin_top(6)
         container_box.set_margin_bottom(6)
         
-        # Create the main action row
         action_row = Adw.ActionRow()
         action_row.set_title("Custom Option")
         action_row.set_activatable(False)
         
-        # Create entry box for key and value
         entry_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         entry_box.set_spacing(8)
         entry_box.set_hexpand(True)
@@ -217,10 +210,8 @@ class HostEditor(Gtk.Box):
         value_entry.add_css_class("custom-option-value")
         entry_box.append(value_entry)
         
-        # Add entry box to action row
         action_row.add_suffix(entry_box)
         
-        # Create remove button
         remove_button = Gtk.Button()
         remove_button.set_icon_name("edit-delete-symbolic")
         remove_button.add_css_class("flat")
@@ -228,13 +219,10 @@ class HostEditor(Gtk.Box):
         remove_button.set_tooltip_text("Remove this custom option")
         remove_button.connect("clicked", self._on_remove_custom_option, container_box)
         
-        # Add remove button to action row
         action_row.add_suffix(remove_button)
         
-        # Add action row to container
         container_box.append(action_row)
         
-        # Store references for later access
         container_box.key_entry = key_entry
         container_box.value_entry = value_entry
         
@@ -278,7 +266,6 @@ class HostEditor(Gtk.Box):
 
         self.is_loading = False
 
-        # Next change is programmatic; don't resync form fields
         self._programmatic_raw_update = True
         self._on_raw_text_changed(self.raw_text_view.get_buffer())
         self._programmatic_raw_update = False
@@ -287,15 +274,12 @@ class HostEditor(Gtk.Box):
         """Generates raw lines for the current host based on its structured data."""
         lines = []
         if self.current_host:
-            # Start with the Host line
             if self.current_host.patterns:
                 lines.append(f"Host {' '.join(self.current_host.patterns)}")
             
-            # Add all options from the current_host.options list
             for opt in self.current_host.options:
                 lines.append(str(opt))
             
-            # Ensure there's a blank line at the end if there were options, for readability
             if self.current_host.options and lines[-1].strip() != "":
                 lines.append("")
 
@@ -405,11 +389,9 @@ class HostEditor(Gtk.Box):
             'ProxyJump', 'ProxyCommand', 'LocalForward', 'RemoteForward'
         }
         
-        # Remove all existing custom options from the host object first
         self.current_host.options = [opt for opt in self.current_host.options if opt.key in common_options]
         
         for container_box in self.custom_options_list:
-            # Access the stored entry references
             if hasattr(container_box, 'key_entry') and hasattr(container_box, 'value_entry'):
                 key_entry = container_box.key_entry
                 value_entry = container_box.value_entry
@@ -469,27 +451,22 @@ class HostEditor(Gtk.Box):
         try:
             command_parts = ["ssh"]
             
-            # Add user if specified
             user = self.user_entry.get_text().strip()
             if user:
                 command_parts.append(f"-l {user}")
             
-            # Add port if specified
             port = self.port_entry.get_text().strip()
             if port:
                 command_parts.append(f"-p {port}")
             
-            # Add identity file if specified
             identity = self.identity_entry.get_text().strip()
             if identity:
                 command_parts.append(f"-i {identity}")
             
-            # Add proxy jump if specified
             proxy_jump = self.proxy_jump_entry.get_text().strip()
             if proxy_jump:
                 command_parts.append(f"-J {proxy_jump}")
             
-            # Add hostname or first pattern
             hostname = self.hostname_entry.get_text().strip()
             if hostname:
                 command_parts.append(hostname)
@@ -501,32 +478,26 @@ class HostEditor(Gtk.Box):
             
             command = " ".join(command_parts)
             
-            # Copy to clipboard using a more reliable method
             try:
                 display = Gdk.Display.get_default()
                 if not display:
                     self._show_message(_("Failed to access display"))
                     return
                 
-                # Get the primary clipboard (works better across DEs)
                 clipboard = display.get_clipboard()
                 
-                # Create content provider with proper MIME type
                 content_provider = Gdk.ContentProvider.new_for_bytes(
                     "text/plain",
                     GLib.Bytes.new(command.encode("utf-8"))
                 )
                 
-                # Set the content
                 clipboard.set_content(content_provider)
                 
-                # Also try to set it to the primary selection for better compatibility
                 primary = display.get_primary_clipboard()
                 if primary:
                     primary.set_content(content_provider)
                     
             except Exception as e:
-                # Fallback: try using subprocess to copy to clipboard
                 try:
                     import subprocess
                     result = subprocess.run(['xclip', '-selection', 'clipboard'], 
@@ -576,15 +547,12 @@ class HostEditor(Gtk.Box):
         if len(self.current_host.options) != len(self.original_host_state.options):
             return True
         
-        # Create dictionaries for easier comparison, ignoring indentation for logical equivalence
         current_options_dict = {opt.key.lower(): opt.value for opt in self.current_host.options}
         original_options_dict = {opt.key.lower(): opt.value for opt in self.original_host_state.options}
 
         if current_options_dict != original_options_dict:
             return True
 
-        # Finally, compare the raw lines, which will catch comments and formatting changes
-        # We need to make sure to strip trailing newlines for robust comparison
         current_raw_clean = [line.rstrip('\n') for line in self.current_host.raw_lines]
         original_raw_clean = [line.rstrip('\n') for line in self.original_host_state.raw_lines]
 
@@ -669,7 +637,6 @@ class HostEditor(Gtk.Box):
     def _on_save_clicked(self, button):
         """Handle save button click."""
         if self.current_host:
-            # Emit signal to main window to handle saving
             self.emit("host-save", self.current_host)
 
     def _on_revert_clicked(self, button):
@@ -708,7 +675,7 @@ class HostEditor(Gtk.Box):
     def _update_button_sensitivity(self):
         """Updates the sensitivity of save and revert buttons based on dirty state and validity."""
         is_dirty = self.is_host_dirty()
-        field_errors = self._collect_field_errors() # This also applies error styling
+        field_errors = self._collect_field_errors()
         is_valid = not bool(field_errors)
         self.save_button.set_sensitive(is_dirty and is_valid)
         self.revert_button.set_sensitive(is_dirty)
@@ -783,7 +750,6 @@ class HostEditor(Gtk.Box):
                    "-o", "ControlPath=none",
                    "-o", "ControlPersist=no"]
 
-        # Include common fields from the editor
         user_val = self.user_entry.get_text().strip()
         port_val = self.port_entry.get_text().strip()
         ident_val = self.identity_entry.get_text().strip()
@@ -800,7 +766,6 @@ class HostEditor(Gtk.Box):
 
         command += [hostname, "exit"]
 
-        # Execute the command on a background thread to avoid blocking the UI
         def run_test():
             try:
                 result = subprocess.run(

@@ -10,7 +10,8 @@ template $SearchBar: Box {
   ]
 
   SearchBar gtk_search_bar {
-    show-close-button: true;
+    show-close-button: false;
+    search-mode-enabled: true;
 
     SearchEntry search_entry {
       placeholder-text: _("Search hosts, hostnames, users, keys...");

@@ -9,55 +9,24 @@ template $HostList: Box {
     "background",
   ]
 
-  Box {
-    orientation: vertical;
-    spacing: 0;
+  ScrolledWindow {
+    hexpand: true;
+    vexpand: true;
+    min-content-width: 350;
 
-    Box {
-      orientation: horizontal;
-      spacing: 12;
-      margin-start: 12;
-      margin-end: 12;
-      margin-top: 8;
-      margin-bottom: 8;
+    styles [
+      "host-list-scroll",
+    ]
 
-      Label {
-        label: _("SSH Hosts");
-        halign: start;
-
-        styles [
-          "title",
-        ]
-      }
-
-      Label count_label {
-        label: _("0 hosts");
-        halign: end;
-
-        styles [
-          "dim-label",
-        ]
-      }
-    }
-
-    ScrolledWindow {
+    ListBox list_box {
+      selection-mode: single;
       hexpand: true;
       vexpand: true;
-      min-content-width: 350;
-
+      
       styles [
-        "host-list-scroll",
+        "boxed-list",
       ]
 
-      ListBox list_box {
-        selection-mode: single;
-        hexpand: true;
-        vexpand: true;
-
-        styles [
-          "navigation-sidebar",
-        ]
-      }
     }
   }
 }

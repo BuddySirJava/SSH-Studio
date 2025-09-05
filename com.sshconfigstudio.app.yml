@@ -1,18 +1,14 @@
 app-id: com.sshconfigstudio.app
 runtime: org.gnome.Platform
-runtime-version: '47'
+runtime-version: '48'
 sdk: org.gnome.Sdk
 command: ssh-config-studio
 finish-args:
-  # GUI + portals
   - --share=ipc
   - --socket=fallback-x11
   - --socket=wayland
-  # Networking for ssh
   - --share=network
-  # Access to user's SSH config and keys (read/write)
   - --filesystem=~/.ssh:rw
-  # Access to SSH agent inside the sandbox
   - --socket=ssh-auth
 modules:
   - name: blueprint-compiler

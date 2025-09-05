@@ -3,9 +3,8 @@ using Adw 1;
 
 template $MainWindow: Adw.ApplicationWindow {
   title: _("SSH Config Studio");
-  default-width: 1200;
-  default-height: 800;
-
+  default-width: 920;
+  default-height: 520;
   Adw.ToastOverlay toast_overlay {
     Adw.ToolbarView main_box {
       [top]
@@ -21,43 +20,15 @@ template $MainWindow: Adw.ApplicationWindow {
           ]
         }
 
-        [start]
-        Button search_button {
-          icon-name: "system-search-symbolic";
-          tooltip-text: _("Search (Ctrl+F)");
+        // Removed redundant search button; search is always visible at top
 
-          styles [
-            "flat",
-          ]
-        }
-
-        [start]
+        [end]
         Button add_button {
           icon-name: "list-add-symbolic";
-          tooltip-text: _("Add Host");
+          tooltip-text: _("Create Host");
 
           styles [
             "suggested-action",
-          ]
-        }
-
-        [start]
-        Button duplicate_button {
-          icon-name: "edit-copy-symbolic";
-          tooltip-text: _("Duplicate Host");
-
-          styles [
-            "flat",
-          ]
-        }
-
-        [start]
-        Button delete_button {
-          icon-name: "edit-delete-symbolic";
-          tooltip-text: _("Delete Host");
-
-          styles [
-            "destructive-action",
           ]
         }
 
@@ -74,34 +45,23 @@ template $MainWindow: Adw.ApplicationWindow {
 
       [top]
       $SearchBar search_bar {
-        visible: "False";
+        visible: "True";
       }
 
-      Adw.NavigationSplitView split_view {
-        collapsed: true;
+      Adw.Clamp {
+        maximum-size: 900;
+        tightening-threshold: 700;
+        margin-start: 16;
+        margin-end: 16;
+        margin-top: 8;
+        margin-bottom: 16;
 
-        sidebar: Adw.NavigationPage {
-          title: _("SSH Hosts");
+        child: Adw.NavigationView {
+          Adw.NavigationPage {
+            title: _("SSH Hosts");
 
-          child: Adw.NavigationView sidebar_nav {
-            Adw.NavigationPage {
-              title: _("SSH Hosts");
-
-              child: $HostList host_list {};
-            }
-          };
-        };
-
-        content: Adw.NavigationPage {
-          title: _("Host Editor");
-
-          child: Adw.NavigationView content_nav {
-            Adw.NavigationPage {
-              title: _("Host Editor");
-
-              child: $HostEditor host_editor {};
-            }
-          };
+            child: $HostList host_list {};
+          }
         };
       }
     }
@@ -110,7 +70,6 @@ template $MainWindow: Adw.ApplicationWindow {
 
 menu main_menu {
   section {
-
     item {
       label: _("Open Config");
       action: "app.open-config";
