@@ -55,6 +55,10 @@ class MainWindow(Adw.ApplicationWindow):
         """Show a transient toast using Adw.ToastOverlay."""
         try:
             toast = Adw.Toast.new(message)
+            try:
+                toast.set_timeout(3)
+            except Exception:
+                pass
             if hasattr(self, 'toast_overlay') and self.toast_overlay is not None:
                 self.toast_overlay.add_toast(toast)
         except Exception:
@@ -127,6 +131,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.host_editor.connect("host-changed", self._on_host_changed)
         self.host_editor.connect("host-save", self._on_host_save)
         self.host_editor.connect("editor-validity-changed", self._on_editor_validity_changed)
+        self.host_editor.connect("show-toast", self._on_show_toast)
         
         self.search_bar.connect("search-changed", self._on_search_changed)
         
@@ -302,6 +307,24 @@ class MainWindow(Adw.ApplicationWindow):
             self._update_status(_("Configuration saved successfully"))
         except Exception as e:
             self._show_error(f"Failed to save configuration: {e}")
+
+    def _write_and_reload(self, show_status: bool = False):
+        """Write the config to disk and reload UI without showing validation dialogs.
+        Disables the save button afterward.
+        """
+        if not self.parser:
+            return
+        try:
+            self.parser.write(backup=True)
+            self.parser.parse()
+            self.host_list.load_hosts(self.parser.config.hosts)
+            self.is_dirty = False
+            if self.save_button is not None:
+                self.save_button.set_sensitive(False)
+            if show_status:
+                self._update_status(_("Configuration saved"))
+        except Exception as e:
+            self._show_error(f"Failed to save configuration: {e}")
     
     def _on_host_selected(self, host_list, host):
         """Handle host selection from the list."""
@@ -356,19 +379,14 @@ class MainWindow(Adw.ApplicationWindow):
             except ValueError:
                 original_index = None
             self.parser.config.remove_host(host)
-            self.is_dirty = True
-            if self.save_button is not None:
-                self.save_button.set_sensitive(True)
+            self._write_and_reload(show_status=False)
             def undo_delete():
                 try:
                     if original_index is None:
                         self.parser.config.add_host(host)
                     else:
                         self.parser.config.hosts.insert(original_index, host)
-                    self.is_dirty = self.parser.config.is_dirty()
-                    if self.save_button is not None:
-                        self.save_button.set_sensitive(self.is_dirty)
-                    self.host_list.load_hosts(self.parser.config.hosts)
+                    self._write_and_reload(show_status=False)
                     try:
                         self.host_list.select_host(host)
                         self.host_editor.set_visible(True)
@@ -407,6 +425,10 @@ class MainWindow(Adw.ApplicationWindow):
             else:
                 if self.save_button is not None:
                     self.save_button.set_sensitive(self.is_dirty)
+
+    def _on_show_toast(self, editor, message: str):
+        """Handle show-toast signal from host editor."""
+        self.show_toast(message)
 
     def _on_search_changed(self, search_bar, query):
         """Handle search query changes."""

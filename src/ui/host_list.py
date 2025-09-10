@@ -177,20 +177,20 @@ class HostList(Gtk.Box):
         if host_to_delete is None:
             host_to_delete = self._get_selected_host()
         if host_to_delete is not None:
+            title = _("Delete host?")
+            body = _(f"Delete host '{', '.join(host_to_delete.patterns)}'?")
+            dialog = Adw.AlertDialog.new(title, body)
+            dialog.add_response("cancel", _("Cancel"))
+            dialog.add_response("delete", _("Delete"))
+            try:
+                dialog.set_response_appearance("delete", Adw.ResponseAppearance.DESTRUCTIVE)
+                dialog.set_default_response("cancel")
+                dialog.set_close_response("cancel")
+            except Exception:
+                pass
 
-            dialog = Gtk.MessageDialog(
-                transient_for=self.get_root(),
-                message_type=Gtk.MessageType.QUESTION,
-                buttons=Gtk.ButtonsType.NONE,
-                text=_(f"Delete host '{', '.join(host_to_delete.patterns)}'?"),
-            )
-            dialog.add_buttons(
-                _("No"), Gtk.ResponseType.NO,
-                _("Yes"), Gtk.ResponseType.YES,
-            )
-
-            def on_response(dlg, response_id):
-                if response_id == Gtk.ResponseType.YES:
+            def on_response(dlg, response):
+                if response == "delete":
                     self.emit("host-deleted", host_to_delete)
                     if host_to_delete in self.hosts:
                         self.hosts.remove(host_to_delete)
@@ -198,10 +198,12 @@ class HostList(Gtk.Box):
                         self.filtered_hosts.remove(host_to_delete)
                     self._refresh_view()
                     self._update_count()
-                dlg.destroy()
 
             dialog.connect("response", on_response)
-            dialog.present()
+            try:
+                dialog.present(self.get_root())
+            except Exception:
+                dialog.present(None)
 
     def _duplicate_host(self, original_host: SSHHost) -> SSHHost:
         duplicated_host = SSHHost()
@@ -253,13 +255,11 @@ class HostList(Gtk.Box):
             patterns = row[0]
             hostname = row[1]
             user = row[2]
-            # Use Adw.ActionRow for nicer list presentation
             action_row = Adw.ActionRow()
             action_row.set_title(patterns)
             secondary = f"{user}@{hostname}" if (hostname or user) else (hostname or patterns)
             action_row.set_subtitle(secondary)
 
-            # Right-click context menu removed per request; actions available via header bar
 
             action_row.set_selectable(True)
             action_row.set_activatable(True)

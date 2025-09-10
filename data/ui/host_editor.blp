@@ -205,24 +205,212 @@ template $HostEditor: Box {
         tightening-threshold: 640;
         child: Adw.PreferencesPage {
           Adw.PreferencesGroup {
-            title: _("Advanced");
+            title: _("Custom SSH Options");
             description: _("Add custom SSH configuration options not available in the standard fields");
+            visible: false;
+            sensitive: false;
 
             Adw.ActionRow {
-              title: _("Custom Options");
+              title: _("Add Custom Option");
+              subtitle: _("Add SSH options like Compression, ServerAliveInterval, etc.");
+              activatable: true;
+              activatable-widget: add_custom_button;
 
               [suffix]
               Button add_custom_button {
-                label: _("Add Custom Option");
+                icon-name: "list-add-symbolic";
+                tooltip-text: _("Add a new custom SSH option");
+                css-classes: ["circular", "suggested-action"];
               }
             }
 
-            ListBox custom_options_list {
-              selection-mode: none;
+            Adw.ExpanderRow custom_options_expander {
+              title: _("Custom Options");
+              subtitle: _("Manage your custom SSH configuration options");
+              show-enable-switch: false;
+              vexpand: true;
 
-              styles [
-                "custom-options-list",
-              ]
+              child: ScrolledWindow {
+                hexpand: true;
+                vexpand: true;
+                vscrollbar-policy: never;
+                hscrollbar-policy: never;
+
+                ListBox custom_options_list {
+                  selection-mode: none;
+                  css-classes: ["boxed-list"];
+
+                  styles [
+                    "custom-options-list",
+                  ]
+                }
+              };
+            }
+          }
+
+          Adw.PreferencesGroup {
+            title: _("Advanced Options");
+            description: _("Common SSH options not covered in other tabs");
+
+            Adw.ActionRow {
+              title: _("Compression");
+              subtitle: _("Enable compression for slow connections");
+              activatable-widget: compression_switch;
+
+              [suffix]
+              Switch compression_switch {
+                valign: center;
+              }
+            }
+
+            Adw.EntryRow serveralive_interval_entry {
+              title: _("ServerAliveInterval (s)");
+              show-apply-button: false;
+              input-purpose: number;
+            }
+
+            Adw.EntryRow serveralive_count_entry {
+              title: _("ServerAliveCountMax");
+              show-apply-button: false;
+              input-purpose: number;
+            }
+
+            Adw.ActionRow {
+              title: _("TCPKeepAlive");
+              subtitle: _("Enable TCP keepalive messages");
+              activatable-widget: tcp_keepalive_switch;
+
+              [suffix]
+              Switch tcp_keepalive_switch {
+                valign: center;
+              }
+            }
+
+            Adw.ComboRow strict_host_key_row {
+              title: _("StrictHostKeyChecking");
+              subtitle: _("How to handle unknown host keys");
+              model: Gtk.StringList {
+                strings: ["ask", "yes", "no"];
+              };
+              selected: 0;
+            }
+          }
+
+          Adw.PreferencesGroup {
+            title: _("Authentication and Keys");
+            description: _("Tune authentication behavior");
+
+            Adw.ActionRow {
+              title: _("PubkeyAuthentication");
+              subtitle: _("Use public key authentication");
+              activatable-widget: pubkey_auth_switch;
+
+              [suffix]
+              Switch pubkey_auth_switch { valign: center; }
+            }
+
+            Adw.ActionRow {
+              title: _("PasswordAuthentication");
+              subtitle: _("Allow password authentication");
+              activatable-widget: password_auth_switch;
+
+              [suffix]
+              Switch password_auth_switch { valign: center; }
+            }
+
+            Adw.ActionRow {
+              title: _("KbdInteractiveAuthentication");
+              subtitle: _("Allow keyboard-interactive auth");
+              activatable-widget: kbd_interactive_auth_switch;
+
+              [suffix]
+              Switch kbd_interactive_auth_switch { valign: center; }
+            }
+
+            Adw.ActionRow {
+              title: _("GSSAPIAuthentication");
+              subtitle: _("Enable Kerberos/GSSAPI auth");
+              activatable-widget: gssapi_auth_switch;
+
+              [suffix]
+              Switch gssapi_auth_switch { valign: center; }
+            }
+
+            Adw.ComboRow add_keys_to_agent_row {
+              title: _("AddKeysToAgent");
+              subtitle: _("Add identities to ssh-agent");
+              model: Gtk.StringList { strings: ["no", "yes", "ask", "confirm"]; };
+              selected: 0;
+            }
+
+            Adw.EntryRow preferred_authentications_entry {
+              title: _("PreferredAuthentications");
+            }
+
+            Adw.EntryRow identity_agent_entry {
+              title: _("IdentityAgent");
+            }
+          }
+
+          Adw.PreferencesGroup {
+            title: _("Connection Behavior");
+            description: _("Connection timeouts, logging, host key verification");
+
+            Adw.EntryRow connect_timeout_entry {
+              title: _("ConnectTimeout (s)");
+              show-apply-button: false;
+              input-purpose: number;
+            }
+
+            Adw.ComboRow request_tty_row {
+              title: _("RequestTTY");
+              subtitle: _("Request a TTY when connecting");
+              model: Gtk.StringList { strings: ["auto", "no", "yes", "force"]; };
+              selected: 0;
+            }
+
+            Adw.ComboRow log_level_row {
+              title: _("LogLevel");
+              model: Gtk.StringList { strings: ["QUIET", "FATAL", "ERROR", "INFO", "VERBOSE", "DEBUG", "DEBUG1", "DEBUG2", "DEBUG3"]; };
+              selected: 3;
+            }
+
+            Adw.ActionRow {
+              title: _("VerifyHostKeyDNS");
+              subtitle: _("Use SSHFP DNS records");
+              activatable-widget: verify_host_key_dns_switch;
+
+              [suffix]
+              Switch verify_host_key_dns_switch { valign: center; }
+            }
+
+            Adw.ComboRow canonicalize_hostname_row {
+              title: _("CanonicalizeHostname");
+              model: Gtk.StringList { strings: ["no", "yes", "always"]; };
+              selected: 0;
+            }
+
+            Adw.EntryRow canonical_domains_entry {
+              title: _("CanonicalDomains");
+            }
+          }
+
+          Adw.PreferencesGroup {
+            title: _("Connection Multiplexing");
+            description: _("ControlMaster/ControlPersist options");
+
+            Adw.ComboRow control_master_row {
+              title: _("ControlMaster");
+              model: Gtk.StringList { strings: ["no", "yes", "ask", "auto", "autoask"]; };
+              selected: 0;
+            }
+
+            Adw.EntryRow control_persist_entry {
+              title: _("ControlPersist");
+            }
+
+            Adw.EntryRow control_path_entry {
+              title: _("ControlPath");
             }
           }
         };

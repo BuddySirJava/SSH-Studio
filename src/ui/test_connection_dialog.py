@@ -15,12 +15,10 @@ class TestConnectionDialog(Adw.Window):
     status_title = Gtk.Template.Child()
     status_description = Gtk.Template.Child()
     output_text = Gtk.Template.Child()
-    close_button = Gtk.Template.Child()
 
     def __init__(self, parent=None, **kwargs):
         super().__init__(**kwargs)
         self.set_transient_for(parent)
-        self.close_button.connect("clicked", lambda b: self.close())
 
     def start_test(self, command, hostname):
         """Start the SSH connection test with the given command and hostname."""
