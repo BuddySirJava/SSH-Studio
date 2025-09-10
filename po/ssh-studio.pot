@@ -1,12 +1,12 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the ssh-config-studio package.
+# This file is distributed under the same license as the ssh-studio package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: ssh-config-studio\n"
+"Project-Id-Version: ssh-studio\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-09-05 00:28+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
@@ -157,7 +157,7 @@ msgstr ""
 
 #: src/ui/main_window.py:409 data/ui/main_window.blp:5
 #: data/ui/main_window.blp:17
-msgid "SSH Config Studio"
+msgid "SSH-Studio"
 msgstr ""
 
 #: src/ui/main_window.py:412

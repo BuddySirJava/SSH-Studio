@@ -3,7 +3,7 @@
   <img src="data/media/icon_256.png" alt="App Icon" width="128" />
 
   <h1>
-    SSH Config Studio
+    SSH-Studio
   </h1>
 
   <img src="https://img.shields.io/badge/GTK-4.0-4A90E2?style=for-the-badge&logo=gtk&logoColor=white" alt="GTK" />
@@ -18,8 +18,8 @@
 ### Preview
 
 <div align="center">
-  <img src="data/media/ss1.png" alt="Main Interface" width="45%" style="margin-right: 2%;" />
-  <img src="data/media/ss2.png" alt="Preferences Dialog" width="45%" />
+  <img src="assets/screenshots/ss1.png" alt="Main Interface" width="45%" style="margin-right: 2%;" />
+  <img src="assets/screenshots/ss2.png" alt="Preferences Dialog" width="45%" />
 </div>
 
 ### Features
@@ -45,10 +45,10 @@ You can clone and run from GNOME Builder.
 If you prefer Flatpak, use the manifest to build the project.
 
 ```bash
-flatpak-builder --user --force-clean --install-deps-from=flathub build-dir com.sshconfigstudio.app.json --install
+flatpak-builder --user --force-clean --install-deps-from=flathub build-dir com.sshstudio.app.json --install
 
 # Run
-flatpak run com.sshconfigstudio.app
+flatpak run com.sshstudio.app
 ```
 
 ### Usage
@@ -63,11 +63,11 @@ flatpak run com.sshconfigstudio.app
 - `src/ssh_config_parser.py`: Parse/validate/generate SSH config safely.
 - `src/ui/`: Adw widgets (`MainWindow`, `HostList`, `HostEditor`, `SearchBar`, `PreferencesDialog`, `TestConnectionDialog`, `SSH Key Manager`).
 - `data/ui/*.ui`: GTK Builder UI blueprints.
-- `data/ssh-config-studio.gresource.xml`: GResource manifest.
+- `data/ssh-studio.gresource.xml`: GResource manifest.
 - `data/media/`: App icon and screenshots.
 - `src/main.py`: Application entry point.
 - `meson.build`, `data/meson.build`, `src/meson.build`: Build and install rules.
-- `com.sshconfigstudio.app.json`: Flatpak manifest.
+- `com.sshstudio.app.json`: Flatpak manifest.
 - `po/`: Translations.
 
 ### Known issues
@@ -76,13 +76,4 @@ flatpak run com.sshconfigstudio.app
 
 ### Support
 
-- Open an issue on GitHub: `https://github.com/BuddySirJava/ssh-config-studio/issues`
-- Or reach me on Telegram: `@Buddy_R`
-
-### Contributing
-
-Issues and pull requests are welcome. Please keep code readable and small, focused edits. If you’re touching UI, prefer inline validation over popups and match the existing GTK 4 patterns.
-
-### License
-
-This project is licensed under the [GNU General Public License v3.0](LICENSE).
+- Open an issue on GitHub: `

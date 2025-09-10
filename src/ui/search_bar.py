@@ -4,7 +4,7 @@ gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk, GObject, GLib
 from gettext import gettext as _
 
-@Gtk.Template(resource_path="/com/sshconfigstudio/app/ui/search_bar.ui")
+@Gtk.Template(resource_path="/com/sshstudio/app/ui/search_bar.ui")
 class SearchBar(Gtk.Box):
 
     __gtype_name__ = "SearchBar"

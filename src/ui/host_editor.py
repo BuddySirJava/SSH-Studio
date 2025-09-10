@@ -6,8 +6,8 @@ import subprocess
 import threading
 
 try:
-	from ssh_config_studio.ssh_config_parser import SSHHost, SSHOption
-	from ssh_config_studio.ui.test_connection_dialog import TestConnectionDialog
+	from ssh_studio.ssh_config_parser import SSHHost, SSHOption
+	from ssh_studio.ui.test_connection_dialog import TestConnectionDialog
 except ImportError:
 	from ssh_config_parser import SSHHost, SSHOption
 	from ui.test_connection_dialog import TestConnectionDialog
@@ -16,7 +16,7 @@ import copy
 from gettext import gettext as _
 import os
 
-@Gtk.Template(resource_path="/com/sshconfigstudio/app/ui/host_editor.ui")
+@Gtk.Template(resource_path="/com/sshstudio/app/ui/host_editor.ui")
 class HostEditor(Gtk.Box):
 
     __gtype_name__ = "HostEditor"
@@ -123,22 +123,34 @@ class HostEditor(Gtk.Box):
                 self._on_field_changed(widget)
             widget.connect(signal_name, handler)
 
-        # Basics
-        connect_touch(self.patterns_entry, "changed", "__patterns__")
-        connect_touch(self.hostname_entry, "changed", "HostName")
-        connect_touch(self.user_entry, "changed", "User")
-        connect_touch(self.port_entry, "changed", "Port")
-        connect_touch(self.identity_entry, "changed", "IdentityFile")
+        # Helper for Adw.EntryRow text changes (uses notify::text)
+        def connect_entry_row_text(widget, option_key: str):
+            if not widget:
+                return
+            def on_notify_text(*_args):
+                if self.is_loading:
+                    return
+                self._touched_options.add(option_key)
+                self._on_field_changed(widget)
+            widget.connect("notify::text", on_notify_text)
+
+        # Basics (Adw.EntryRow listen to notify::text)
+        connect_entry_row_text(self.patterns_entry, "__patterns__")
+        connect_entry_row_text(self.hostname_entry, "HostName")
+        connect_entry_row_text(self.user_entry, "User")
+        connect_entry_row_text(self.port_entry, "Port")
+        connect_entry_row_text(self.identity_entry, "IdentityFile")
         connect_touch(self.forward_agent_switch, "state-set", "ForwardAgent")
 
-        connect_touch(self.proxy_jump_entry, "changed", "ProxyJump")
-        connect_touch(self.proxy_cmd_entry, "changed", "ProxyCommand")
-        connect_touch(self.local_forward_entry, "changed", "LocalForward")
-        connect_touch(self.remote_forward_entry, "changed", "RemoteForward")
+        # Networking (Adw.EntryRow)
+        connect_entry_row_text(self.proxy_jump_entry, "ProxyJump")
+        connect_entry_row_text(self.proxy_cmd_entry, "ProxyCommand")
+        connect_entry_row_text(self.local_forward_entry, "LocalForward")
+        connect_entry_row_text(self.remote_forward_entry, "RemoteForward")
 
         connect_touch(self.compression_switch, "state-set", "Compression")
-        connect_touch(self.serveralive_interval_entry, "changed", "ServerAliveInterval")
-        connect_touch(self.serveralive_count_entry, "changed", "ServerAliveCountMax")
+        connect_entry_row_text(self.serveralive_interval_entry, "ServerAliveInterval")
+        connect_entry_row_text(self.serveralive_count_entry, "ServerAliveCountMax")
         connect_touch(self.tcp_keepalive_switch, "state-set", "TCPKeepAlive")
         if hasattr(self, 'strict_host_key_row') and self.strict_host_key_row:
             self.strict_host_key_row.connect(
@@ -155,9 +167,9 @@ class HostEditor(Gtk.Box):
         connect_touch(getattr(self, 'password_auth_switch', None), "state-set", "PasswordAuthentication")
         connect_touch(getattr(self, 'kbd_interactive_auth_switch', None), "state-set", "KbdInteractiveAuthentication")
         connect_touch(getattr(self, 'gssapi_auth_switch', None), "state-set", "GSSAPIAuthentication")
-        connect_touch(getattr(self, 'preferred_authentications_entry', None), "changed", "PreferredAuthentications")
-        connect_touch(getattr(self, 'identity_agent_entry', None), "changed", "IdentityAgent")
-        connect_touch(getattr(self, 'connect_timeout_entry', None), "changed", "ConnectTimeout")
+        connect_entry_row_text(getattr(self, 'preferred_authentications_entry', None), "PreferredAuthentications")
+        connect_entry_row_text(getattr(self, 'identity_agent_entry', None), "IdentityAgent")
+        connect_entry_row_text(getattr(self, 'connect_timeout_entry', None), "ConnectTimeout")
         if hasattr(self, 'request_tty_row') and self.request_tty_row:
             self.request_tty_row.connect(
                 "notify::selected",
@@ -174,14 +186,14 @@ class HostEditor(Gtk.Box):
                 "notify::selected",
                 lambda *args: (None if self.is_loading else (self._touched_options.add('CanonicalizeHostname'), self._on_field_changed(self.canonicalize_hostname_row)))
             )
-        connect_touch(getattr(self, 'canonical_domains_entry', None), "changed", "CanonicalDomains")
+        connect_entry_row_text(getattr(self, 'canonical_domains_entry', None), "CanonicalDomains")
         if hasattr(self, 'control_master_row') and self.control_master_row:
             self.control_master_row.connect(
                 "notify::selected",
                 lambda *args: (None if self.is_loading else (self._touched_options.add('ControlMaster'), self._on_field_changed(self.control_master_row)))
             )
-        connect_touch(getattr(self, 'control_persist_entry', None), "changed", "ControlPersist")
-        connect_touch(getattr(self, 'control_path_entry', None), "changed", "ControlPath")
+        connect_entry_row_text(getattr(self, 'control_persist_entry', None), "ControlPersist")
+        connect_entry_row_text(getattr(self, 'control_path_entry', None), "ControlPath")
         
         self._raw_changed_handler_id = self.raw_text_view.get_buffer().connect("changed", self._on_raw_text_changed)
 
@@ -725,7 +737,7 @@ class HostEditor(Gtk.Box):
                     while (ssh_dir/name).exists(): i+=1; name = f"{base}_{i}"
                     key_path = ssh_dir/name
                     key_type = (opts.get('type') or 'ed25519').lower()
-                    comment = opts.get('comment') or 'ssh-config-studio'
+                    comment = opts.get('comment') or 'ssh-studio'
                     passphrase = opts.get('passphrase') or ''
                     if key_type == 'rsa':
                         size = int(opts.get('size') or 2048)
@@ -1005,8 +1017,141 @@ class HostEditor(Gtk.Box):
 
     def _on_save_clicked(self, button):
         """Handle save button click."""
-        if self.current_host:
-            self.emit("host-save", self.current_host)
+        if not self.current_host:
+            return
+        try:
+            field_errors = self._collect_field_errors()
+            if field_errors:
+                try:
+                    self._show_message(_("Fix validation errors before saving"))
+                except Exception:
+                    pass
+                return
+        except Exception:
+            pass
+
+        try:
+            self._update_host_from_fields()
+            self._update_raw_text_from_host()
+        except Exception:
+            pass
+        try:
+            buffer = self.raw_text_view.get_buffer()
+            current_text = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), False)
+            current_lines = current_text.splitlines()
+            temp_host = SSHHost.from_raw_lines(current_lines)
+            self.current_host.patterns = temp_host.patterns
+            self.current_host.options = temp_host.options
+            self.current_host.raw_lines = current_lines
+        except Exception as e:
+            try:
+                self._show_message(_(f"Failed to parse current host before saving: {e}"))
+            except Exception:
+                pass
+            return
+
+        try:
+            main_window = self.app or self.get_root()
+            parser = getattr(main_window, 'parser', None)
+            if parser is not None:
+                try:
+                    cfg = parser.config
+                    target_index = None
+                    for idx, h in enumerate(getattr(cfg, 'hosts', []) or []):
+                        if h is self.current_host:
+                            target_index = idx
+                            break
+                        try:
+                            if set(h.patterns) == set(self.original_host_state.patterns):
+                                target_index = idx
+                                break
+                        except Exception:
+                            pass
+                    if target_index is None:
+                        for idx, h in enumerate(getattr(cfg, 'hosts', []) or []):
+                            try:
+                                if set(h.patterns) == set(self.current_host.patterns):
+                                    target_index = idx
+                                    break
+                            except Exception:
+                                pass
+                    if target_index is not None:
+                        cfg.hosts[target_index].patterns = list(self.current_host.patterns)
+                        cfg.hosts[target_index].options = list(self.current_host.options)
+                        cfg.hosts[target_index].raw_lines = list(self.current_host.raw_lines)
+                    else:
+                        try:
+                            cfg.hosts.append(self.current_host)
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+                try:
+                    warnings = parser.validate()
+                    if warnings:
+                        try:
+                            self._show_message(_(f"Validation: {warnings[0]}"))
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+                try:
+                    parser.write(backup=True)
+                except Exception as e:
+                    try:
+                        self.app._show_error(_(f"Failed to save {parser.config_path}: {e}"))
+                    except Exception:
+                        pass
+                    return
+                try:
+                    expected_content = parser._generate_content()
+                    try:
+                        with open(parser.config_path, "r", encoding="utf-8") as f:
+                            on_disk = f.read()
+                    except FileNotFoundError:
+                        on_disk = ""
+                    if on_disk != expected_content:
+                        parser._atomic_write(expected_content)
+                        try:
+                            with open(parser.config_path, "r", encoding="utf-8") as f:
+                                verify = f.read()
+                        except Exception:
+                            verify = None
+                        if verify != expected_content:
+                            try:
+                                self.app._show_error(_(f"Failed to persist changes to {parser.config_path}. Check permissions / sandbox."))
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
+                self.original_host_state = copy.deepcopy(self.current_host)
+                self.original_raw_content = "\n".join(self.current_host.raw_lines)
+                if self.buffer is not None:
+                    try:
+                        self.buffer.remove_all_tags(self.buffer.get_start_iter(), self.buffer.get_end_iter())
+                    except Exception:
+                        pass
+                try:
+                    self._show_message(_(f"Configuration saved → {parser.config_path}"))
+                except Exception:
+                    pass
+                try:
+                    if hasattr(main_window, "_write_and_reload"):
+                        main_window._write_and_reload(show_status=False)
+                except Exception:
+                    pass
+            else:
+                self.emit("host-save", self.current_host)
+                if main_window and hasattr(main_window, "_write_and_reload"):
+                    main_window._write_and_reload(show_status=True)
+                elif main_window and hasattr(main_window, "_on_save_clicked"):
+                    main_window._on_save_clicked(None)
+        finally:
+            try:
+                self._touched_options.clear()
+                self._update_button_sensitivity()
+            except Exception:
+                pass
 
     def _on_revert_clicked(self, button):
         """Reverts the current host's changes to its last loaded state by reloading the configuration."""
@@ -1059,7 +1204,7 @@ class HostEditor(Gtk.Box):
         
         hostname = self.hostname_entry.get_text().strip()
         if not hostname and self.current_host.patterns:
-            hostname = self.current_host.patterns[0]  # Fallback to pattern if hostname is empty
+            hostname = self.current_host.patterns[0]
 
         ssh_exec = ["ssh"]
         try:
@@ -1090,12 +1235,10 @@ class HostEditor(Gtk.Box):
         if proxy_jump_val:
             command += ["-J", proxy_jump_val]
 
-        # Append all other configured options as -o Key=Value so the test reflects the host settings
         special_keys = {
             'Host', 'HostName', 'User', 'Port', 'IdentityFile', 'ProxyJump'
         }
 
-        # Build a dict of current options
         options_dict = {}
         try:
             for opt in self.current_host.options:
@@ -1103,26 +1246,22 @@ class HostEditor(Gtk.Box):
         except Exception:
             pass
 
-        # Ensure some sensible defaults only if not explicitly set by the user in the editor
         def maybe_add_default(key: str, value: str):
             if key not in options_dict or not (options_dict.get(key) or "").strip():
                 command.extend(["-o", f"{key}={value}"])
 
-        # Respect user selections first, then add safe defaults
         for key, value in options_dict.items():
             if key in special_keys:
                 continue
             if (value or "").strip():
                 command.extend(["-o", f"{key}={value}"])
 
-        # Safe defaults if not set
         maybe_add_default("ConnectTimeout", "8")
         maybe_add_default("StrictHostKeyChecking", "accept-new")
         maybe_add_default("ControlMaster", "no")
         maybe_add_default("ControlPath", "none")
         maybe_add_default("ControlPersist", "no")
 
-        # Target and command
         command += [hostname, "exit"]
 
         dialog.start_test(command, hostname)
@@ -1142,7 +1281,6 @@ class HostEditor(Gtk.Box):
         self.proxy_cmd_entry.set_text(self.current_host.get_option('ProxyCommand') or "")
         self.local_forward_entry.set_text(self.current_host.get_option('LocalForward') or "")
         self.remote_forward_entry.set_text(self.current_host.get_option('RemoteForward') or "")
-        # Advanced
         self.compression_switch.set_active((self.current_host.get_option('Compression') or 'no').lower() == 'yes')
         self.serveralive_interval_entry.set_text(self.current_host.get_option('ServerAliveInterval') or "0")
         self.serveralive_count_entry.set_text(self.current_host.get_option('ServerAliveCountMax') or "3")

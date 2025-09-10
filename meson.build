@@ -1,4 +1,4 @@
-project('ssh-config-studio', 'c',
+project('ssh-studio', 'c',
   version: '1.2.0',
   license: 'MIT',
   meson_version: '>= 0.60.0',
@@ -11,16 +11,16 @@ python_installation = python.find_installation()
 
 gnome = import('gnome')
 
-application_id = 'com.sshconfigstudio.app'
+application_id = 'com.sshstudio.app'
 
 i18n = import('i18n')
-subdir('po') # Translations directory
+subdir('po')
 
 subdir('src')
 
 subdir('data')
 
-install_data(join_paths(meson.current_source_dir(), 'data', 'ssh-config-studio.desktop'),
+install_data(join_paths(meson.current_source_dir(), 'data', 'ssh-studio.desktop'),
              rename: application_id + '.desktop',
              install_dir: join_paths(get_option('datadir'), 'applications'))
 

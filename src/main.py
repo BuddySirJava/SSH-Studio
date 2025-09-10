@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SSH Config Studio: Main Application Entry Point."""
+"""SSH-Studio: Main Application Entry Point."""
 
 import sys
 import gi
@@ -14,7 +14,7 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Gio, GLib, Gdk, Adw
 
 try:
-    from ssh_config_studio.ssh_config_parser import SSHConfigParser
+    from ssh_studio.ssh_config_parser import SSHConfigParser
 except ImportError:
     from ssh_config_parser import SSHConfigParser
 
@@ -28,7 +28,7 @@ if os.getenv('FLATPAK_ID'):
 class SSHConfigStudioApp(Adw.Application):    
     def __init__(self):
         super().__init__(
-            application_id="com.sshconfigstudio.app",
+            application_id="com.sshstudio.app",
             flags=Gio.ApplicationFlags.FLAGS_NONE
         )
         
@@ -37,7 +37,7 @@ class SSHConfigStudioApp(Adw.Application):
         
     def do_activate(self):
         try:
-            from ssh_config_studio.ui.main_window import MainWindow
+            from ssh_studio.ui.main_window import MainWindow
         except ImportError:
             from ui.main_window import MainWindow
         
@@ -51,27 +51,33 @@ class SSHConfigStudioApp(Adw.Application):
         Adw.Application.do_startup(self)
 
         try:
-            locale_dir = os.path.join(GLib.get_user_data_dir(), 'locale')
-            gettext.bindtextdomain('ssh-config-studio', locale_dir)
-            gettext.textdomain('ssh-config-studio')
+            # Prefer system install locale dir, fallback to user data dir
+            system_locale_dir = os.path.join(get_option := getattr(GLib, 'get_user_data_dir'), 'locale') if False else '/app/share/locale'
+            gettext.bindtextdomain('ssh-studio', system_locale_dir)
+            gettext.textdomain('ssh-studio')
         except Exception:
-            pass
+            try:
+                locale_dir = os.path.join(GLib.get_user_data_dir(), 'locale')
+                gettext.bindtextdomain('ssh-studio', locale_dir)
+                gettext.textdomain('ssh-studio')
+            except Exception:
+                pass
 
         if os.getenv('FLATPAK_ID'):
             try:
-                resource = Gio.Resource.load('/app/share/com.sshconfigstudio.app/ssh-config-studio-resources.gresource')
+                resource = Gio.Resource.load('/app/share/com.sshstudio.app/ssh-studio-resources.gresource')
                 Gio.resources_register(resource)
                 logging.info("Registered GResource from Flatpak install directory")
             except Exception:
                 pass
         else:
             resource_candidates = [
-                os.path.join(GLib.get_user_data_dir(), 'com.sshconfigstudio.app', 'ssh-config-studio-resources.gresource'),
-                os.path.join(GLib.get_user_data_dir(), 'ssh-config-studio-resources.gresource'),
-                '/app/share/com.sshconfigstudio.app/ssh-config-studio-resources.gresource',
-                '/app/share/ssh-config-studio-resources.gresource',
-                os.path.join(GLib.get_home_dir(), '.local', 'share', 'com.sshconfigstudio.app', 'ssh-config-studio-resources.gresource'),
-                'data/ssh-config-studio-resources.gresource',
+                os.path.join(GLib.get_user_data_dir(), 'com.sshstudio.app', 'ssh-studio-resources.gresource'),
+                os.path.join(GLib.get_user_data_dir(), 'ssh-studio-resources.gresource'),
+                '/app/share/com.sshstudio.app/ssh-studio-resources.gresource',
+                '/app/share/ssh-studio-resources.gresource',
+                os.path.join(GLib.get_home_dir(), '.local', 'share', 'com.sshstudio.app', 'ssh-studio-resources.gresource'),
+                'data/ssh-studio-resources.gresource',
             ]
             for candidate in resource_candidates:
                 try:
@@ -128,7 +134,7 @@ class SSHConfigStudioApp(Adw.Application):
         try:
             if os.getenv('FLATPAK_ID'): # Flatpak fast path for CSS
                 css_provider = Gtk.CssProvider()
-                css_provider.load_from_resource('/com/sshconfigstudio/app/ssh-config-studio.css')
+                css_provider.load_from_resource('/com/sshstudio/app/ssh-studio.css')
                 Gtk.StyleContext.add_provider_for_display(
                     Gdk.Display.get_default(),
                     css_provider,
@@ -139,7 +145,7 @@ class SSHConfigStudioApp(Adw.Application):
             else: # Existing fallback logic for non-Flatpak
                 try:
                     css_provider = Gtk.CssProvider()
-                    css_provider.load_from_resource('/com/sshconfigstudio/app/ssh-config-studio.css')
+                    css_provider.load_from_resource('/com/sshstudio/app/ssh-studio.css')
                     Gtk.StyleContext.add_provider_for_display(
                         Gdk.Display.get_default(),
                         css_provider,
@@ -151,12 +157,12 @@ class SSHConfigStudioApp(Adw.Application):
                     logging.warning(f"Failed to load CSS from GResource: {e}")
 
                 css_candidates = [
-                    os.path.join(GLib.get_user_data_dir(), 'com.sshconfigstudio.app', 'ssh-config-studio.css'),
-                    os.path.join(GLib.get_user_data_dir(), 'ssh-config-studio.css'),
-                    '/app/share/com.sshconfigstudio.app/ssh-config-studio.css',
-                    '/app/share/ssh-config-studio.css',
-                    os.path.join(GLib.get_home_dir(), '.local', 'share', 'com.sshconfigstudio.app', 'ssh-config-studio.css'),
-                    'data/ssh-config-studio.css',
+                    os.path.join(GLib.get_user_data_dir(), 'com.sshstudio.app', 'ssh-studio.css'),
+                    os.path.join(GLib.get_user_data_dir(), 'ssh-studio.css'),
+                    '/app/share/com.sshstudio.app/ssh-studio.css',
+                    '/app/share/ssh-studio.css',
+                    os.path.join(GLib.get_home_dir(), '.local', 'share', 'com.sshstudio.app', 'ssh-studio.css'),
+                    'data/ssh-studio.css',
                 ]
                 
                 for candidate in css_candidates:
@@ -207,7 +213,7 @@ class SSHConfigStudioApp(Adw.Application):
 def main():
     app = SSHConfigStudioApp()
     try:
-        app.set_default_icon_name('com.sshconfigstudio.app')
+        app.set_default_icon_name('com.sshstudio.app')
     except Exception:
         pass
     return app.run(sys.argv)

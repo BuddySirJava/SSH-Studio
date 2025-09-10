@@ -1,10 +1,13 @@
 
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gtk, Gio, GObject, Adw
+from gi.repository import Gtk, Gio, GObject, Adw, GLib
 from gettext import gettext as _
+import os
+import json
+from pathlib import Path
 
-@Gtk.Template(resource_path="/com/sshconfigstudio/app/ui/preferences_dialog.ui")
+@Gtk.Template(resource_path="/com/sshstudio/app/ui/preferences_dialog.ui")
 class PreferencesDialog(Adw.PreferencesWindow):
     """Application preferences dialog using Adwaita components."""
     
@@ -29,11 +32,21 @@ class PreferencesDialog(Adw.PreferencesWindow):
             self.set_default_size(600, 500)
         except Exception:
             pass
-        self._connect_signals()
+        self._load_preferences_safely()
+        GLib.idle_add(self._connect_signals)
     
     def _connect_signals(self):
         self.config_path_button.connect("clicked", self._on_config_path_clicked)
         self.backup_dir_button.connect("clicked", self._on_backup_dir_clicked)
+        self.connect("close-request", self._on_close_request)
+        self.config_path_entry.connect("changed", self._on_entry_changed)
+        self.backup_dir_entry.connect("changed", self._on_entry_changed)
+        self.auto_backup_switch.connect("notify::active", self._on_switch_toggled)
+        self.dark_theme_switch.connect("notify::active", self._on_switch_toggled)
+        self.raw_wrap_switch.connect("notify::active", self._on_switch_toggled)
+        self.editor_font_spin.connect("notify::value", self._on_spin_changed)
+        
+        self.editor_font_spin.get_adjustment().connect("value-changed", self._on_spin_changed)
 
     def _on_config_path_clicked(self, button):
         dialog = Gtk.FileChooserDialog(
@@ -69,6 +82,73 @@ class PreferencesDialog(Adw.PreferencesWindow):
             if folder:
                 self.backup_dir_entry.set_text(folder.get_path())
         dialog.destroy()
+
+    def _get_config_dir(self) -> str:
+        base_dir = GLib.get_user_config_dir() or os.path.join(str(Path.home()), ".config")
+        return os.path.join(base_dir, "ssh-studio")
+
+    def _get_prefs_path(self) -> str:
+        return os.path.join(self._get_config_dir(), "preferences.json")
+
+    def _ensure_config_dir(self) -> None:
+        os.makedirs(self._get_config_dir(), exist_ok=True)
+
+    def _set_default_preferences(self) -> None:
+        """Set default preference values."""
+        import os
+        default_ssh_config = os.path.expanduser("~/.ssh/config")
+        self.config_path_entry.set_text(default_ssh_config)
+        
+        default_backup = os.path.expanduser("~/.ssh/backups")
+        self.backup_dir_entry.set_text(default_backup)
+        
+        self.auto_backup_switch.set_active(True)
+        self.dark_theme_switch.set_active(False)
+        self.raw_wrap_switch.set_active(True)
+        
+        self.editor_font_spin.set_value(12.0)
+
+    def _load_preferences_safely(self) -> None:
+        try:
+            path = self._get_prefs_path()
+            if os.path.exists(path) and os.path.isfile(path):
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, dict):
+                    self.set_preferences(data)
+                else:
+                    self._set_default_preferences()
+            else:
+                self._set_default_preferences()
+        except Exception:
+            self._set_default_preferences()
+
+    def _save_preferences_safely(self) -> None:
+        try:
+            self._ensure_config_dir()
+            prefs = self.get_preferences()
+            target_path = self._get_prefs_path()
+            tmp_path = target_path + ".tmp"
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                json.dump(prefs, f, ensure_ascii=False, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, target_path)
+        except Exception:
+            pass
+
+    def _on_entry_changed(self, entry):
+        self._save_preferences_safely()
+
+    def _on_switch_toggled(self, switch, pspec):
+        self._save_preferences_safely()
+
+    def _on_spin_changed(self, spin, pspec=None):
+        self._save_preferences_safely()
+
+    def _on_close_request(self, window):
+        self._save_preferences_safely()
+        return False
 
     def get_preferences(self) -> dict:
         return {

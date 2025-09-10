@@ -26,11 +26,11 @@ compiled_ui_stamp = custom_target(
   command: ['touch', '@OUTPUT@'],
 )
 
-css_copy = configure_file(input: 'ssh-config-studio.css', output: 'ssh-config-studio.css', copy: true)
+css_copy = configure_file(input: 'ssh-studio.css', output: 'ssh-studio.css', copy: true)
 icon_copy = configure_file(input: 'media/icon_256.png', output: 'icon_256.png', copy: true)
 
-gnome.compile_resources('ssh-config-studio-resources',
-  'ssh-config-studio.gresource.xml',
+gnome.compile_resources('ssh-studio-resources',
+  'ssh-studio.gresource.xml',
   source_dir: join_paths(meson.current_build_dir(), 'ui_compiled.stamp.p'),
   dependencies: compiled_ui_stamp,
   gresource_bundle: true,

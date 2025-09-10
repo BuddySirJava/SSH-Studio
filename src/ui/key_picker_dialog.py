@@ -6,7 +6,7 @@ from gettext import gettext as _
 from pathlib import Path
 
 
-@Gtk.Template(resource_path="/com/sshconfigstudio/app/ui/key_picker_dialog.ui")
+@Gtk.Template(resource_path="/com/sshstudio/app/ui/key_picker_dialog.ui")
 class KeyPickerDialog(Adw.Dialog):
     __gtype_name__ = "KeyPickerDialog"
 

@@ -2,7 +2,7 @@ using Gtk 4.0;
 using Adw 1;
 
 template $MainWindow: Adw.ApplicationWindow {
-  title: _("SSH Config Studio");
+  title: _("SSH-Studio");
   default-width: 1200;
   default-height: 800;
 
@@ -14,7 +14,7 @@ template $MainWindow: Adw.ApplicationWindow {
 
         [title]
         Label {
-          label: _("SSH Config Studio");
+          label: _("SSH-Studio");
 
           styles [
             "title",
@@ -22,7 +22,7 @@ template $MainWindow: Adw.ApplicationWindow {
         }
         [start]
         Button toggle_sidebar_button {
-          icon-name: "sidebar-expand-left-symbolic";
+          icon-name: "sidebar-show-symbolic";
           tooltip-text: _("Show Host Editor");
 
           styles [

@@ -5,11 +5,11 @@ from gi.repository import Gtk, GObject, Pango, Adw
 from gettext import gettext as _
 
 try:
-	from ssh_config_studio.ssh_config_parser import SSHHost, SSHOption
+	from ssh_studio.ssh_config_parser import SSHHost, SSHOption
 except ImportError:
 	from ssh_config_parser import SSHHost, SSHOption
 
-@Gtk.Template(resource_path="/com/sshconfigstudio/app/ui/host_list.ui")
+@Gtk.Template(resource_path="/com/sshstudio/app/ui/host_list.ui")
 class HostList(Gtk.Box):
     
     __gtype_name__ = "HostList"

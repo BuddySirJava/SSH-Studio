@@ -10,9 +10,9 @@ from .host_list import HostList
 from .host_editor import HostEditor
 from .search_bar import SearchBar
 
-@Gtk.Template(resource_path="/com/sshconfigstudio/app/ui/main_window.ui")
+@Gtk.Template(resource_path="/com/sshstudio/app/ui/main_window.ui")
 class MainWindow(Adw.ApplicationWindow):
-    """Main application window for SSH Config Studio."""
+    """Main application window for SSH-Studio."""
     
     __gtype_name__ = "MainWindow"
 
@@ -37,7 +37,14 @@ class MainWindow(Adw.ApplicationWindow):
         self.is_dirty = False
         self._raw_wrap_lines = False
         
+        try:
+            if hasattr(self, 'host_editor') and self.host_editor is not None:
+                self.host_editor.set_app(self)
+        except Exception:
+            pass
+
         self._connect_signals()
+        self._load_preferences()
         self._load_config()
         
         self.connect("notify::has-focus", self._on_window_focus_changed)
@@ -49,7 +56,33 @@ class MainWindow(Adw.ApplicationWindow):
         except Exception:
             pass
     
-    
+    def _load_preferences(self):
+        """Load preferences from the saved file and apply them to the window."""
+        try:
+            from .preferences_dialog import PreferencesDialog
+            temp_dialog = PreferencesDialog(self)
+            prefs = temp_dialog.get_preferences()
+            temp_dialog.destroy()
+            
+            if prefs.get("editor_font_size"):
+                self._editor_font_size = int(prefs["editor_font_size"])
+            if "prefer_dark_theme" in prefs:
+                self._prefer_dark_theme = bool(prefs["prefer_dark_theme"])
+            if "raw_wrap_lines" in prefs:
+                self._raw_wrap_lines = bool(prefs["raw_wrap_lines"])
+            
+            if hasattr(self, '_prefer_dark_theme') and self._prefer_dark_theme:
+                try:
+                    from gi.repository import Adw
+                    style_manager = Adw.StyleManager.get_default()
+                    style_manager.set_color_scheme(Adw.ColorScheme.FORCE_DARK)
+                except Exception:
+                    pass
+                    
+        except Exception:
+            self._editor_font_size = 12
+            self._prefer_dark_theme = False
+            self._raw_wrap_lines = False
     
     def show_toast(self, message: str):
         """Show a transient toast using Adw.ToastOverlay."""
@@ -132,6 +165,12 @@ class MainWindow(Adw.ApplicationWindow):
         self.host_editor.connect("host-save", self._on_host_save)
         self.host_editor.connect("editor-validity-changed", self._on_editor_validity_changed)
         self.host_editor.connect("show-toast", self._on_show_toast)
+
+        try:
+            if hasattr(self.host_editor, 'save_button') and self.host_editor.save_button is not None:
+                self.host_editor.save_button.set_sensitive(False)
+        except Exception:
+            pass
         
         self.search_bar.connect("search-changed", self._on_search_changed)
         
@@ -172,18 +211,10 @@ class MainWindow(Adw.ApplicationWindow):
             if self.toggle_sidebar_button is not None:
                 if collapsed:
                     try:
-                        self.toggle_sidebar_button.set_icon_name("sidebar-collapse-right-symbolic")
-                    except Exception:
-                        pass
-                    try:
                         self.toggle_sidebar_button.set_tooltip_text(_("Hide Host Editor"))
                     except Exception:
                         pass
                 else:
-                    try:
-                        self.toggle_sidebar_button.set_icon_name("sidebar-expand-left-symbolic")
-                    except Exception:
-                        pass
                     try:
                         self.toggle_sidebar_button.set_tooltip_text(_("Show Host Editor"))
                     except Exception:
@@ -530,12 +561,12 @@ class MainWindow(Adw.ApplicationWindow):
         """Show the about dialog using Adwaita's AboutWindow."""
         about_window = Adw.AboutWindow(
             transient_for=self,
-            application_name=_("SSH Config Studio"),
-            application_icon="com.sshconfigstudio.app",
+            application_name=_("SSH-Studio"),
+            application_icon="com.sshstudio.app",
             version="1.2.0",
             developer_name=_("Made with ❤️ by Mahyar Darvishi"),
-            website="https://github.com/BuddySirJava/ssh-config-studio",
-            issue_url="https://github.com/BuddySirJava/ssh-config-studio/issues",
+            website="https://github.com/BuddySirJava/ssh-studio",
+            issue_url="https://github.com/BuddySirJava/ssh-studio/issues",
             developers=["Mahyar Darvishi"],
             copyright=_("© 2025 Mahyar Darvishi"),
             license_type=Gtk.License.MIT_X11,
@@ -543,12 +574,12 @@ class MainWindow(Adw.ApplicationWindow):
         )
         
         try:
-            texture = Gdk.Texture.new_from_resource("/com/sshconfigstudio/app/media/icon_256.png")
+            texture = Gdk.Texture.new_from_resource("/com/sshstudio/app/media/icon_256.png")
             about_window.set_logo(texture)
         except Exception:
             pass
         about_window.set_debug_info(f"""
-SSH Config Studio {about_window.get_version()}
+SSH-Studio {about_window.get_version()}
 GTK {Gtk.get_major_version()}.{Gtk.get_minor_version()}.{Gtk.get_micro_version()}
 Adwaita {Adw.get_major_version()}.{Adw.get_minor_version()}.{Adw.get_micro_version()}
 Python {sys.version}

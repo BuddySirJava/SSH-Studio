@@ -1,15 +1,16 @@
 {
-    "app-id": "com.sshconfigstudio.app",
+    "app-id": "com.sshstudio.app",
     "runtime": "org.gnome.Platform",
     "runtime-version": "48",
     "sdk": "org.gnome.Sdk",
-    "command": "ssh-config-studio",
+    "command": "ssh-studio",
     "finish-args": [
         "--share=ipc",
         "--socket=fallback-x11",
         "--socket=wayland",
         "--share=network",
         "--filesystem=~/.ssh:rw",
+        "--filesystem=~/.config:rw",
         "--socket=ssh-auth",
         "--filesystem=xdg-data/icons:ro",
         "--talk-name=org.freedesktop.Flatpak"
@@ -30,7 +31,7 @@
             ]
         },
         {
-            "name": "ssh-config-studio",
+            "name": "ssh-studio",
             "buildsystem": "meson",
             "sources": [
                 {
@@ -39,8 +40,8 @@
                 }
             ],
             "post-install": [
-                "printf '#!/usr/bin/env bash\\nexec python3 -m ssh_config_studio.main \"$@\"\\n' > /app/bin/ssh-config-studio\n",
-                "chmod +x /app/bin/ssh-config-studio"
+                "printf '#!/usr/bin/env bash\\nexec python3 -m ssh_studio.main \"$@\"\\n' > /app/bin/ssh-studio\n",
+                "chmod +x /app/bin/ssh-studio"
             ],
             "cleanup": [
                 "/include",

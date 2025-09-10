@@ -6,7 +6,7 @@ import threading
 from gettext import gettext as _
 import os
 
-@Gtk.Template(resource_path="/com/sshconfigstudio/app/ui/test_connection_dialog.ui")
+@Gtk.Template(resource_path="/com/sshstudio/app/ui/test_connection_dialog.ui")
 class TestConnectionDialog(Adw.Window):
     __gtype_name__ = "TestConnectionDialog"
 

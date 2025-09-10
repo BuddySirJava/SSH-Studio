@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: ssh-config-studio 1.2.0\n"
+"Project-Id-Version: ssh-studio 1.2.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-09-05 00:28+0330\n"
 "PO-Revision-Date: 2025-01-01 00:00+0000\n"
@@ -152,8 +152,8 @@ msgstr ""
 #: src/ui/main_window.py:409 data/ui/main_window.blp:5
 #: data/ui/main_window.blp:17
 #, fuzzy
-msgid "SSH Config Studio"
-msgstr "SSH Config Studio"
+msgid "SSH-Studio"
+msgstr "SSH-Studio"
 
 #: src/ui/main_window.py:412
 msgid "Made with ❤️ by Mahyar Darvishi"
@@ -288,7 +288,7 @@ msgstr ""
 #: data/ui/host_editor.blp:236
 #, fuzzy
 msgid "Raw Configuration"
-msgstr "SSH Config Studio"
+msgstr "SSH-Studio"
 
 #: data/ui/host_editor.blp:237
 msgid "Edit the raw SSH configuration and see changes highlighted"
@@ -342,7 +342,7 @@ msgstr ""
 #: data/ui/preferences_dialog.blp:24
 #, fuzzy
 msgid "Configuration"
-msgstr "SSH Config Studio"
+msgstr "SSH-Studio"
 
 #: data/ui/preferences_dialog.blp:25
 msgid "SSH configuration file and backup settings"
@@ -351,7 +351,7 @@ msgstr ""
 #: data/ui/preferences_dialog.blp:28
 #, fuzzy
 msgid "SSH Config Path"
-msgstr "SSH Config Studio"
+msgstr "SSH-Studio"
 
 #: data/ui/preferences_dialog.blp:29
 msgid "Path to your SSH configuration file"

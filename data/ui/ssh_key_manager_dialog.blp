@@ -30,6 +30,7 @@ template $SSHKeyManagerDialog: Adw.Dialog {
           Adw.ViewStackPage {
             name: "private";
             title: _("Private Keys");
+            icon-name: "dialog-password-symbolic";
             child: Adw.Clamp {
               maximum-size: 900; tightening-threshold: 600;
               child: ScrolledWindow { vexpand: true; hexpand: true; has-frame: false; 
@@ -41,6 +42,7 @@ template $SSHKeyManagerDialog: Adw.Dialog {
           Adw.ViewStackPage {
             name: "public";
             title: _("Public Keys");
+            icon-name: "user-info-symbolic";
             child: Adw.Clamp {
               maximum-size: 900; tightening-threshold: 600;
               child: ScrolledWindow { vexpand: true; hexpand: true; has-frame: false; 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-  <gresource prefix="/com/sshconfigstudio/app">
+  <gresource prefix="/com/sshstudio/app">
     <file alias="ui/main_window.ui" preprocess="xml-stripblanks">main_window.ui</file>
     <file alias="ui/host_editor.ui" preprocess="xml-stripblanks">host_editor.ui</file>
     <file alias="ui/host_list.ui" preprocess="xml-stripblanks">host_list.ui</file>
@@ -10,7 +10,7 @@
     <file alias="ui/ssh_key_manager_dialog.ui" preprocess="xml-stripblanks">ssh_key_manager_dialog.ui</file>
     <file alias="ui/generate_key_dialog.ui" preprocess="xml-stripblanks">generate_key_dialog.ui</file>
     <file alias="ui/key_picker_dialog.ui" preprocess="xml-stripblanks">key_picker_dialog.ui</file>
-    <file>ssh-config-studio.css</file>
+    <file>ssh-studio.css</file>
     <file alias="media/icon_256.png">icon_256.png</file>
   </gresource>
 </gresources>

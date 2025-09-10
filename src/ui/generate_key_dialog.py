@@ -5,7 +5,7 @@ from gi.repository import Gtk, Adw
 from gettext import gettext as _
 
 
-@Gtk.Template(resource_path="/com/sshconfigstudio/app/ui/generate_key_dialog.ui")
+@Gtk.Template(resource_path="/com/sshstudio/app/ui/generate_key_dialog.ui")
 class GenerateKeyDialog(Adw.Dialog):
     __gtype_name__ = "GenerateKeyDialog"
 
@@ -58,7 +58,7 @@ class GenerateKeyDialog(Adw.Dialog):
         size_item = self.size_row.get_selected_item()
         size = int(size_item.get_string()) if size_item and self.size_row.get_visible() else 2048
         name = self.name_row.get_text() or "id_ed25519"
-        comment = self.comment_row.get_text() or "ssh-config-studio"
+        comment = self.comment_row.get_text() or "ssh-studio"
         passphrase = self.pass_row.get_text() or ""
         return {
             "type": key_type,

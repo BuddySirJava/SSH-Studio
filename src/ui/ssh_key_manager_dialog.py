@@ -7,7 +7,7 @@ from pathlib import Path
 import subprocess
 
 
-@Gtk.Template(resource_path="/com/sshconfigstudio/app/ui/ssh_key_manager_dialog.ui")
+@Gtk.Template(resource_path="/com/sshstudio/app/ui/ssh_key_manager_dialog.ui")
 class SSHKeyManagerDialog(Adw.Dialog):
     __gtype_name__ = "SSHKeyManagerDialog"
 
@@ -214,7 +214,7 @@ class SSHKeyManagerDialog(Adw.Dialog):
                 name = f"{base_name}_{j}"
             key_path = self._home_ssh / name
             key_type = (opts.get("type") or "ed25519").lower()
-            comment = opts.get("comment") or "ssh-config-studio"
+            comment = opts.get("comment") or "ssh-studio"
             passphrase = opts.get("passphrase") or ""
             if key_type == "rsa":
                 size = int(opts.get("size") or 2048)
