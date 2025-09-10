@@ -4,10 +4,11 @@
 
   <h1>
     SSH Config Studio
-    <img src="https://img.shields.io/badge/platform-Linux-lightgrey.svg" alt="Platform" />
-    <img src="https://img.shields.io/badge/GTK-4-green" alt="GTK" />
-    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" />
   </h1>
+
+  <img src="https://img.shields.io/badge/GTK-4.0-4A90E2?style=for-the-badge&logo=gtk&logoColor=white" alt="GTK" />
+  <img src="https://img.shields.io/badge/License-GPL%20v3-00D4AA?style=for-the-badge&logo=gnu&logoColor=white" alt="License" />
+  <img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
 
   <p>A native <strong>GTK4 desktop app</strong> for editing and validating your <code>~/.ssh/config</code>.</p>
   <p>Search, edit, and validate SSH hosts with a clean UI — no need to touch terminal editors.</p>
@@ -83,4 +84,4 @@ Issues and pull requests are welcome. Please keep code readable and small, focus
 
 ### License
 
-This project is licensed under the [MIT License](https://opensource.org/license/mit).
+This project is licensed under the [GNU General Public License v3.0](LICENSE).

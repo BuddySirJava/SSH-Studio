@@ -36,6 +36,7 @@ run/
 # i18n compiled catalogs
 po/**/*.mo
 
+
 # Flatpak/Flatpak Builder
 .flatpak-builder/
 repo/
