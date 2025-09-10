@@ -152,6 +152,10 @@ class MainWindow(Adw.ApplicationWindow):
         prefs_action.connect("activate", self._on_preferences)
         actions.add_action(prefs_action)
         
+        manage_keys_action = Gio.SimpleAction.new("manage-keys", None)
+        manage_keys_action.connect("activate", self._on_manage_keys)
+        actions.add_action(manage_keys_action)
+
         about_action = Gio.SimpleAction.new("about", None)
         about_action.connect("activate", self._on_about)
         actions.add_action(about_action)
@@ -459,6 +463,12 @@ class MainWindow(Adw.ApplicationWindow):
         """Handle reload action."""
         self._load_config()
     
+    def _on_manage_keys(self, action, param):
+        """Open the SSH Key Manager dialog."""
+        from .ssh_key_manager_dialog import SSHKeyManagerDialog
+        dialog = SSHKeyManagerDialog(self)
+        dialog.present(self)
+
     def _on_preferences(self, action, param):
         """Handle preferences action."""
         from .preferences_dialog import PreferencesDialog
@@ -522,7 +532,7 @@ class MainWindow(Adw.ApplicationWindow):
             transient_for=self,
             application_name=_("SSH Config Studio"),
             application_icon="com.sshconfigstudio.app",
-            version="1.1.2",
+            version="1.2.0",
             developer_name=_("Made with ❤️ by Mahyar Darvishi"),
             website="https://github.com/BuddySirJava/ssh-config-studio",
             issue_url="https://github.com/BuddySirJava/ssh-config-studio/issues",

@@ -7,6 +7,9 @@ blueprint_files = files(
   'ui/preferences_dialog.blp',
   'ui/search_bar.blp',
   'ui/test_connection_dialog.blp',
+  'ui/ssh_key_manager_dialog.blp',
+  'ui/generate_key_dialog.blp',
+  'ui/key_picker_dialog.blp',
 )
 
 bp_gen = generator(blueprint_compiler,

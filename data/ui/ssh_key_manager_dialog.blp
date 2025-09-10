@@ -1,0 +1,64 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $SSHKeyManagerDialog: Adw.Dialog {
+  Adw.ToastOverlay toast_overlay {
+    Adw.ToolbarView {
+      width-request: 860;
+      height-request: 620;
+
+      [top]
+      Adw.HeaderBar {
+        [title]
+        Adw.ViewSwitcher { policy: wide; stack: stack; }
+
+        [end]
+        Box {
+          spacing: 6;
+          Button generate_button { label: _("Generate…"); css-classes: ["suggested-action"]; }
+          Button import_button { label: _("Import…"); }
+        }
+      }
+
+      content: Box {
+        orientation: vertical;
+        margin-start: 12; margin-end: 12; margin-top: 12; margin-bottom: 12; spacing: 12;
+
+        Adw.ViewStack stack {
+          vexpand: true;
+
+          Adw.ViewStackPage {
+            name: "private";
+            title: _("Private Keys");
+            child: Adw.Clamp {
+              maximum-size: 900; tightening-threshold: 600;
+              child: ScrolledWindow { vexpand: true; hexpand: true; has-frame: false; 
+                ListBox private_list { selection-mode: single; vexpand: true; hexpand: true; css-classes: ["boxed-list"]; }
+              };
+            };
+          }
+
+          Adw.ViewStackPage {
+            name: "public";
+            title: _("Public Keys");
+            child: Adw.Clamp {
+              maximum-size: 900; tightening-threshold: 600;
+              child: ScrolledWindow { vexpand: true; hexpand: true; has-frame: false; 
+                ListBox public_list { selection-mode: single; vexpand: true; hexpand: true; css-classes: ["boxed-list"]; }
+              };
+            };
+          }
+        }
+
+        Box { orientation: horizontal; halign: end; spacing: 6;
+          Button copy_pub_button { label: _("Copy Public Key"); }
+          Button reveal_button { label: _("Reveal in Files"); }
+          Button delete_button { label: _("Delete"); css-classes: ["destructive-action"]; }
+        }
+      };
+    }
+  }
+}
+
+
+

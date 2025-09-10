@@ -1,0 +1,61 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $GenerateKeyDialog: Adw.Dialog {
+  Adw.ToastOverlay toast_overlay {
+    Box {
+      orientation: vertical;
+      width-request: 520;
+      height-request: 420;
+
+      [header]
+      Adw.HeaderBar {
+        [title]
+        Label { label: _("Generate SSH Key"); css-classes: ["title"]; }
+      }
+
+      Adw.Clamp {
+        maximum-size: 760;
+        child: Adw.PreferencesPage {
+          Adw.PreferencesGroup {
+            title: _("Key Options");
+            Adw.ComboRow type_row {
+              title: _("Type");
+              subtitle: _("ed25519 recommended");
+            }
+            Adw.ComboRow size_row {
+              title: _("RSA Size");
+              subtitle: _("Only for RSA");
+              visible: false;
+            }
+            Adw.EntryRow name_row {
+              title: _("File name");
+              text: "id_ed25519";
+            }
+            Adw.EntryRow comment_row {
+              title: _("Comment");
+              text: "ssh-config-studio";
+            }
+            Adw.PasswordEntryRow pass_row {
+              title: _("Passphrase");
+            }
+          }
+        };
+      }
+
+      Box {
+        orientation: horizontal;
+        halign: end;
+        spacing: 6;
+        margin-start: 12;
+        margin-end: 12;
+        margin-top: 12;
+        margin-bottom: 12;
+        Button cancel_btn { label: _("Cancel"); }
+        Button generate_btn { label: _("Generate"); css-classes: ["suggested-action"]; }
+      }
+    }
+  }
+}
+
+

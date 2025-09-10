@@ -131,6 +131,12 @@ template $HostEditor: Box {
                 icon-name: "document-open-symbolic";
                 tooltip-text: _("Choose Identity File");
               }
+
+              [suffix]
+              Button identity_pick_button {
+                icon-name: "dialog-password-symbolic";
+                tooltip-text: _("Pick from existing SSH keys");
+              }
             }
 
             Adw.ActionRow {

@@ -1,0 +1,39 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $KeyPickerDialog: Adw.Dialog {
+  Adw.ToastOverlay toast_overlay {
+    Adw.ToolbarView {
+      width-request: 760;
+      height-request: 520;
+
+      [top]
+      Adw.HeaderBar {
+        [title]
+        Label { label: _("Pick SSH Key"); css-classes: ["title"]; }
+
+        [end]
+        Button generate_btn { label: _("Generate…"); css-classes: ["suggested-action"]; }
+      }
+
+      content: Adw.Clamp {
+        maximum-size: 900;
+        tightening-threshold: 600;
+        margin-top: 12;
+        margin-bottom: 12;
+        child: ScrolledWindow {
+          vexpand: true; hexpand: true; has-frame: false;
+          ListBox public_list { selection-mode: single; vexpand: true; hexpand: true; css-classes: ["boxed-list"]; }
+        };
+      };
+
+      [bottom]
+      Box { orientation: horizontal; halign: end; spacing: 6; margin-start: 12; margin-end: 12; margin-top: 12; margin-bottom: 12;
+        Button cancel_btn { label: _("Cancel"); }
+        Button use_btn { label: _("Use Key"); css-classes: ["suggested-action"]; sensitive: false; }
+      }
+    }
+  }
+}
+
+

@@ -30,6 +30,7 @@ class HostEditor(Gtk.Box):
     port_error_label = Gtk.Template.Child()
     identity_entry = Gtk.Template.Child()
     identity_button = Gtk.Template.Child()
+    identity_pick_button = Gtk.Template.Child()
     forward_agent_switch = Gtk.Template.Child()
     proxy_jump_entry = Gtk.Template.Child()
     proxy_cmd_entry = Gtk.Template.Child()
@@ -135,7 +136,6 @@ class HostEditor(Gtk.Box):
         connect_touch(self.local_forward_entry, "changed", "LocalForward")
         connect_touch(self.remote_forward_entry, "changed", "RemoteForward")
 
-        # Advanced switches/entries
         connect_touch(self.compression_switch, "state-set", "Compression")
         connect_touch(self.serveralive_interval_entry, "changed", "ServerAliveInterval")
         connect_touch(self.serveralive_count_entry, "changed", "ServerAliveCountMax")
@@ -189,6 +189,8 @@ class HostEditor(Gtk.Box):
 
     def _connect_buttons(self):
         self.identity_button.connect("clicked", self._on_identity_file_clicked)
+        if hasattr(self, 'identity_pick_button') and self.identity_pick_button:
+            self.identity_pick_button.connect("clicked", self._on_identity_pick_clicked)
         self.add_custom_button.connect("clicked", self._on_add_custom_option)
         self.copy_row.connect("activated", lambda r: self._on_copy_ssh_command(None))
         self.test_row.connect("activated", lambda r: self._on_test_connection(None))
@@ -565,7 +567,6 @@ class HostEditor(Gtk.Box):
         update_if_touched('User', self.user_entry.get_text())
         update_if_touched('Port', self.port_entry.get_text())
         update_if_touched('IdentityFile', self.identity_entry.get_text())
-        # ForwardAgent default is 'no' -> omit when 'no'
         if 'ForwardAgent' in self._touched_options:
             fa = 'yes' if self.forward_agent_switch.get_active() else 'no'
             update_if_touched('ForwardAgent', fa, default_absent_values=['no'])
@@ -702,6 +703,49 @@ class HostEditor(Gtk.Box):
         
         dialog.connect("response", self._on_identity_file_response)
         dialog.present()
+
+    def _on_identity_pick_clicked(self, button):
+        from .key_picker_dialog import KeyPickerDialog
+        dlg = KeyPickerDialog(self)
+        def on_key_selected(dlg_obj, private_path: str):
+            if private_path:
+                self.identity_entry.set_text(private_path)
+        dlg.connect('key-selected', on_key_selected)
+        def on_generate(*_):
+            from .generate_key_dialog import GenerateKeyDialog
+            gen = GenerateKeyDialog(self)
+            def after_gen(*__):
+                opts = gen.get_options(); gen.close()
+                try:
+                    import subprocess
+                    from pathlib import Path
+                    ssh_dir = Path.home()/'.ssh'; ssh_dir.mkdir(parents=True, exist_ok=True)
+                    name = opts.get('name') or 'id_ed25519'
+                    base = name; i = 0
+                    while (ssh_dir/name).exists(): i+=1; name = f"{base}_{i}"
+                    key_path = ssh_dir/name
+                    key_type = (opts.get('type') or 'ed25519').lower()
+                    comment = opts.get('comment') or 'ssh-config-studio'
+                    passphrase = opts.get('passphrase') or ''
+                    if key_type == 'rsa':
+                        size = int(opts.get('size') or 2048)
+                        cmd = ['ssh-keygen','-t','rsa','-b',str(size),'-f',str(key_path),'-N',passphrase,'-C',comment]
+                    elif key_type == 'ecdsa':
+                        cmd = ['ssh-keygen','-t','ecdsa','-f',str(key_path),'-N',passphrase,'-C',comment]
+                    else:
+                        cmd = ['ssh-keygen','-t','ed25519','-f',str(key_path),'-N',passphrase,'-C',comment]
+                    subprocess.run(cmd, check=True)
+                    try:
+                        dlg._load_keys()
+                    except Exception:
+                        pass
+                    self.identity_entry.set_text(str(key_path))
+                except Exception:
+                    pass
+            gen.generate_btn.connect('clicked', after_gen)
+            gen.present(self.get_root())
+        dlg.generate_btn.connect('clicked', on_generate)
+        dlg.present(self.get_root())
 
     def _on_identity_file_response(self, dialog, response_id):
         try:
@@ -962,7 +1006,6 @@ class HostEditor(Gtk.Box):
     def _on_save_clicked(self, button):
         """Handle save button click."""
         if self.current_host:
-            # Emit signal to main window to handle saving
             self.emit("host-save", self.current_host)
 
     def _on_revert_clicked(self, button):
@@ -997,7 +1040,6 @@ class HostEditor(Gtk.Box):
         if hasattr(self, 'save_button'):
             self.save_button.set_sensitive(False)
         self._show_message(_(f"Reverted changes for {self.current_host.patterns[0]}"))
-        # Clear touched options after revert
         self._touched_options.clear()
 
     def _update_button_sensitivity(self):
@@ -1015,12 +1057,10 @@ class HostEditor(Gtk.Box):
         
         dialog = TestConnectionDialog(parent=self.get_root())
         
-        # Construct the SSH command
         hostname = self.hostname_entry.get_text().strip()
         if not hostname and self.current_host.patterns:
             hostname = self.current_host.patterns[0]  # Fallback to pattern if hostname is empty
 
-        # Use host SSH when running inside Flatpak
         ssh_exec = ["ssh"]
         try:
             if os.environ.get("FLATPAK_ID"):
@@ -1028,7 +1068,6 @@ class HostEditor(Gtk.Box):
         except Exception:
             pass
 
-        # Base safety options for a quick, non-interactive test
         command = [
             *ssh_exec,
             "-q",
@@ -1037,7 +1076,6 @@ class HostEditor(Gtk.Box):
             "-o", "NumberOfPasswordPrompts=0",
         ]
 
-        # Map common fields to flags
         user_val = self.user_entry.get_text().strip()
         port_val = self.port_entry.get_text().strip()
         ident_val = self.identity_entry.get_text().strip()

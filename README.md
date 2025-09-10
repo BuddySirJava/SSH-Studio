@@ -29,6 +29,7 @@
 - **Search and filter**: Quickly find hosts across aliases, hostnames, users, and identities.
 - **Raw/Diff view**: Edit raw `ssh_config` text with instant diff highlighting.
 - **Quick actions**: Copy SSH command, test connection, and revert changes.
+- **SSH Key Management**: Easily import, generate and use your Public/Private keys.
 - **Safe saves**: Automatic backups (configurable), atomic writes, and include support.
 - **Keyboard- and mouse-friendly**: Smooth GTK 4 UI, dark theme preference.
 
@@ -60,7 +61,7 @@ flatpak run com.sshconfigstudio.app
 ### Project structure (high-level)
 
 - `src/ssh_config_parser.py`: Parse/validate/generate SSH config safely.
-- `src/ui/`: Adw widgets (`MainWindow`, `HostList`, `HostEditor`, `SearchBar`, `PreferencesDialog`, `TestConnectionDialog`).
+- `src/ui/`: Adw widgets (`MainWindow`, `HostList`, `HostEditor`, `SearchBar`, `PreferencesDialog`, `TestConnectionDialog`, `SSH Key Manager`).
 - `data/ui/*.ui`: GTK Builder UI blueprints.
 - `data/ssh-config-studio.gresource.xml`: GResource manifest.
 - `data/media/`: App icon and screenshots.
