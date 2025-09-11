@@ -45,10 +45,10 @@ You can clone and run from GNOME Builder.
 If you prefer Flatpak, use the manifest to build the project.
 
 ```bash
-flatpak-builder --user --force-clean --install-deps-from=flathub build-dir com.sshstudio.app.json --install
+flatpak-builder --user --force-clean --install-deps-from=flathub build-dir io.github.BuddySirJava.SSHStudio.json --install
 
 # Run
-flatpak run com.sshstudio.app
+flatpak run io.github.BuddySirJava.SSHStudio
 ```
 
 ### Usage
@@ -67,7 +67,7 @@ flatpak run com.sshstudio.app
 - `data/media/`: App icon and screenshots.
 - `src/main.py`: Application entry point.
 - `meson.build`, `data/meson.build`, `src/meson.build`: Build and install rules.
-- `com.sshstudio.app.json`: Flatpak manifest.
+- `io.github.BuddySirJava.SSHStudio.json`: Flatpak manifest.
 - `po/`: Translations.
 
 ### Known issues

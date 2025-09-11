@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 
-@Gtk.Template(resource_path="/com/sshstudio/app/ui/preferences_dialog.ui")
+@Gtk.Template(resource_path="/io/github/BuddySirJava/SSHStudio/ui/preferences_dialog.ui")
 class PreferencesDialog(Adw.PreferencesWindow):
     """Application preferences dialog using Adwaita components."""
 

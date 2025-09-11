@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-  <gresource prefix="/com/sshstudio/app">
+  <gresource prefix="/io/github/BuddySirJava/SSHStudio">
     <file alias="ui/main_window.ui" preprocess="xml-stripblanks">main_window.ui</file>
     <file alias="ui/host_editor.ui" preprocess="xml-stripblanks">host_editor.ui</file>
     <file alias="ui/host_list.ui" preprocess="xml-stripblanks">host_list.ui</file>

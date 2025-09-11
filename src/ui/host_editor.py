@@ -18,7 +18,7 @@ from gettext import gettext as _
 import os
 
 
-@Gtk.Template(resource_path="/com/sshstudio/app/ui/host_editor.ui")
+@Gtk.Template(resource_path="/io/github/BuddySirJava/SSHStudio/ui/host_editor.ui")
 class HostEditor(Gtk.Box):
 
     __gtype_name__ = "HostEditor"

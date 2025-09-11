@@ -28,7 +28,7 @@ if os.getenv("FLATPAK_ID"):
 class SSHConfigStudioApp(Adw.Application):
     def __init__(self):
         super().__init__(
-            application_id="com.sshstudio.app", flags=Gio.ApplicationFlags.FLAGS_NONE
+            application_id="io.github.BuddySirJava.SSHStudio", flags=Gio.ApplicationFlags.FLAGS_NONE
         )
 
         self.parser = None
@@ -69,7 +69,7 @@ class SSHConfigStudioApp(Adw.Application):
         if os.getenv("FLATPAK_ID"):
             try:
                 resource = Gio.Resource.load(
-                    "/app/share/com.sshstudio.app/ssh-studio-resources.gresource"
+                    "/app/share/io.github.BuddySirJava.SSHStudio/ssh-studio-resources.gresource"
                 )
                 Gio.resources_register(resource)
                 logging.info("Registered GResource from Flatpak install directory")
@@ -79,19 +79,19 @@ class SSHConfigStudioApp(Adw.Application):
             resource_candidates = [
                 os.path.join(
                     GLib.get_user_data_dir(),
-                    "com.sshstudio.app",
+                    "io.github.BuddySirJava.SSHStudio",
                     "ssh-studio-resources.gresource",
                 ),
                 os.path.join(
                     GLib.get_user_data_dir(), "ssh-studio-resources.gresource"
                 ),
-                "/app/share/com.sshstudio.app/ssh-studio-resources.gresource",
+                "/app/share/io.github.BuddySirJava.SSHStudio/ssh-studio-resources.gresource",
                 "/app/share/ssh-studio-resources.gresource",
                 os.path.join(
                     GLib.get_home_dir(),
                     ".local",
                     "share",
-                    "com.sshstudio.app",
+                    "io.github.BuddySirJava.SSHStudio",
                     "ssh-studio-resources.gresource",
                 ),
                 "data/ssh-studio-resources.gresource",
@@ -150,7 +150,7 @@ class SSHConfigStudioApp(Adw.Application):
         try:
             if os.getenv("FLATPAK_ID"):  # Flatpak fast path for CSS
                 css_provider = Gtk.CssProvider()
-                css_provider.load_from_resource("/com/sshstudio/app/ssh-studio.css")
+                css_provider.load_from_resource("/io/github/BuddySirJava/SSHStudio/ssh-studio.css")
                 Gtk.StyleContext.add_provider_for_display(
                     Gdk.Display.get_default(),
                     css_provider,
@@ -161,7 +161,7 @@ class SSHConfigStudioApp(Adw.Application):
             else:  # Existing fallback logic for non-Flatpak
                 try:
                     css_provider = Gtk.CssProvider()
-                    css_provider.load_from_resource("/com/sshstudio/app/ssh-studio.css")
+                    css_provider.load_from_resource("/io/github/BuddySirJava/SSHStudio/ssh-studio.css")
                     Gtk.StyleContext.add_provider_for_display(
                         Gdk.Display.get_default(),
                         css_provider,
@@ -174,16 +174,16 @@ class SSHConfigStudioApp(Adw.Application):
 
                 css_candidates = [
                     os.path.join(
-                        GLib.get_user_data_dir(), "com.sshstudio.app", "ssh-studio.css"
+                        GLib.get_user_data_dir(), "io.github.BuddySirJava.SSHStudio", "ssh-studio.css"
                     ),
                     os.path.join(GLib.get_user_data_dir(), "ssh-studio.css"),
-                    "/app/share/com.sshstudio.app/ssh-studio.css",
+                    "/app/share/io.github.BuddySirJava.SSHStudio/ssh-studio.css",
                     "/app/share/ssh-studio.css",
                     os.path.join(
                         GLib.get_home_dir(),
                         ".local",
                         "share",
-                        "com.sshstudio.app",
+                        "io.github.BuddySirJava.SSHStudio",
                         "ssh-studio.css",
                     ),
                     "data/ssh-studio.css",
@@ -238,7 +238,7 @@ class SSHConfigStudioApp(Adw.Application):
 def main():
     app = SSHConfigStudioApp()
     try:
-        app.set_default_icon_name("com.sshstudio.app")
+        app.set_default_icon_name("io.github.BuddySirJava.SSHStudio")
     except Exception:
         pass
     return app.run(sys.argv)

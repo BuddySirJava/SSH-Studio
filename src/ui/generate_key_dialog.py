@@ -6,7 +6,7 @@ from gi.repository import Gtk, Adw
 from gettext import gettext as _
 
 
-@Gtk.Template(resource_path="/com/sshstudio/app/ui/generate_key_dialog.ui")
+@Gtk.Template(resource_path="/io/github/BuddySirJava/SSHStudio/ui/generate_key_dialog.ui")
 class GenerateKeyDialog(Adw.Dialog):
     __gtype_name__ = "GenerateKeyDialog"
 
