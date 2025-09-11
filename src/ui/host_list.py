@@ -11,7 +11,7 @@ except ImportError:
     from ssh_config_parser import SSHHost, SSHOption
 
 
-@Gtk.Template(resource_path="/io/github/BuddySirJava/SSHStudio/ui/host_list.ui")
+@Gtk.Template(resource_path="/io/github/BuddySirJava/SSH-Studio/ui/host_list.ui")
 class HostList(Gtk.Box):
 
     __gtype_name__ = "HostList"

@@ -11,7 +11,7 @@ python_installation = python.find_installation()
 
 gnome = import('gnome')
 
-application_id = 'io.github.BuddySirJava.SSHStudio'
+application_id = 'io.github.BuddySirJava.SSH-Studio'
 
 i18n = import('i18n')
 subdir('po')

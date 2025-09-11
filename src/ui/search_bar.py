@@ -5,7 +5,7 @@ from gi.repository import Gtk, GObject, GLib
 from gettext import gettext as _
 
 
-@Gtk.Template(resource_path="/io/github/BuddySirJava/SSHStudio/ui/search_bar.ui")
+@Gtk.Template(resource_path="/io/github/BuddySirJava/SSH-Studio/ui/search_bar.ui")
 class SearchBar(Gtk.Box):
 
     __gtype_name__ = "SearchBar"

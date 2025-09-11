@@ -1,5 +1,5 @@
 {
-    "app-id": "io.github.BuddySirJava.SSHStudio",
+    "app-id": "io.github.BuddySirJava.SSH-Studio",
     "runtime": "org.gnome.Platform",
     "runtime-version": "48",
     "sdk": "org.gnome.Sdk",
@@ -8,12 +8,11 @@
         "--share=ipc",
         "--socket=fallback-x11",
         "--socket=wayland",
+        "--filesystem=xdg-data/icons:ro",
         "--share=network",
         "--filesystem=~/.ssh:rw",
-        "--filesystem=~/.config:rw",
         "--socket=ssh-auth",
-        "--filesystem=xdg-data/icons:ro",
-        "--talk-name=org.freedesktop.Flatpak"
+        "--filesystem=~/.config:rw"
     ],
     "modules": [
         {

@@ -12,7 +12,7 @@ from .host_editor import HostEditor
 from .search_bar import SearchBar
 
 
-@Gtk.Template(resource_path="/io/github/BuddySirJava/SSHStudio/ui/main_window.ui")
+@Gtk.Template(resource_path="/io/github/BuddySirJava/SSH-Studio/ui/main_window.ui")
 class MainWindow(Adw.ApplicationWindow):
     """Main application window for SSH-Studio."""
 
@@ -589,7 +589,7 @@ class MainWindow(Adw.ApplicationWindow):
         about_window = Adw.AboutWindow(
             transient_for=self,
             application_name=_("SSH-Studio"),
-            application_icon="io.github.BuddySirJava.SSHStudio",
+            application_icon="io.github.BuddySirJava.SSH-Studio",
             version="1.2.1",
             developer_name=_("Made with ❤️ by Mahyar Darvishi"),
             website="https://github.com/BuddySirJava/ssh-studio",
@@ -604,7 +604,7 @@ class MainWindow(Adw.ApplicationWindow):
 
         try:
             texture = Gdk.Texture.new_from_resource(
-                "/io/github/BuddySirJava/SSHStudio/media/icon_256.png"
+                "/io/github/BuddySirJava/SSH-Studio/media/icon_256.png"
             )
             about_window.set_logo(texture)
         except Exception:
