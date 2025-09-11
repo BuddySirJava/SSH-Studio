@@ -1,6 +1,7 @@
 import gi
-gi.require_version('Gtk', '4.0')
-gi.require_version('Adw', '1')
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
 from gi.repository import Gtk, Gio, GLib, GObject, Adw
 from gettext import gettext as _
 from pathlib import Path
@@ -64,25 +65,36 @@ class SSHKeyManagerDialog(Adw.Dialog):
                     if name in {"known_hosts", "config", "authorized_keys"}:
                         continue
                     if name.endswith(".pub"):
-                        public_keys.append({
-                            "name": name,
-                            "path": str(path),
-                            "pub": None,
-                        })
+                        public_keys.append(
+                            {
+                                "name": name,
+                                "path": str(path),
+                                "pub": None,
+                            }
+                        )
                     else:
                         if path.suffix == "":
                             pub_path = path.with_name(name + ".pub")
-                            private_keys.append({
-                                "name": name,
-                                "path": str(path),
-                                "pub": str(pub_path) if pub_path.exists() else None,
-                            })
+                            private_keys.append(
+                                {
+                                    "name": name,
+                                    "path": str(path),
+                                    "pub": str(pub_path) if pub_path.exists() else None,
+                                }
+                            )
         except Exception:
             pass
         return private_keys, public_keys
 
     def _create_row_for_key(self, key_info):
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, margin_start=12, margin_end=12, margin_top=8, margin_bottom=8)
+        box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=12,
+            margin_start=12,
+            margin_end=12,
+            margin_top=8,
+            margin_bottom=8,
+        )
         label = Gtk.Label(label=key_info["name"], halign=Gtk.Align.START, hexpand=True)
         sub = Gtk.Label(label=key_info["path"], halign=Gtk.Align.END)
         sub.get_style_context().add_class("dim-label")
@@ -94,7 +106,9 @@ class SSHKeyManagerDialog(Adw.Dialog):
         return row
 
     def _get_selected_key(self):
-        row = self.private_list.get_selected_row() or self.public_list.get_selected_row()
+        row = (
+            self.private_list.get_selected_row() or self.public_list.get_selected_row()
+        )
         return getattr(row, "key_info", None) if row else None
 
     def _on_row_selected(self, listbox, row):
@@ -110,11 +124,14 @@ class SSHKeyManagerDialog(Adw.Dialog):
 
     def _on_generate_clicked(self, button):
         from .generate_key_dialog import GenerateKeyDialog
+
         dlg = GenerateKeyDialog(self)
+
         def on_generate(*_):
             opts = dlg.get_options()
             dlg.close()
             self._generate_key_with_options(opts)
+
         dlg.generate_btn.connect("clicked", on_generate)
         dlg.present(self)
 
@@ -185,7 +202,9 @@ class SSHKeyManagerDialog(Adw.Dialog):
             message_type=Gtk.MessageType.QUESTION,
             buttons=Gtk.ButtonsType.OK_CANCEL,
             text=_("Delete key?"),
-            secondary_text=_("This will permanently delete the selected private key (and public key if present)."),
+            secondary_text=_(
+                "This will permanently delete the selected private key (and public key if present)."
+            ),
         )
 
         def on_resp(dlg, resp):
@@ -218,11 +237,43 @@ class SSHKeyManagerDialog(Adw.Dialog):
             passphrase = opts.get("passphrase") or ""
             if key_type == "rsa":
                 size = int(opts.get("size") or 2048)
-                cmd = ["ssh-keygen", "-t", "rsa", "-b", str(size), "-f", str(key_path), "-N", passphrase, "-C", comment]
+                cmd = [
+                    "ssh-keygen",
+                    "-t",
+                    "rsa",
+                    "-b",
+                    str(size),
+                    "-f",
+                    str(key_path),
+                    "-N",
+                    passphrase,
+                    "-C",
+                    comment,
+                ]
             elif key_type == "ecdsa":
-                cmd = ["ssh-keygen", "-t", "ecdsa", "-f", str(key_path), "-N", passphrase, "-C", comment]
+                cmd = [
+                    "ssh-keygen",
+                    "-t",
+                    "ecdsa",
+                    "-f",
+                    str(key_path),
+                    "-N",
+                    passphrase,
+                    "-C",
+                    comment,
+                ]
             else:
-                cmd = ["ssh-keygen", "-t", "ed25519", "-f", str(key_path), "-N", passphrase, "-C", comment]
+                cmd = [
+                    "ssh-keygen",
+                    "-t",
+                    "ed25519",
+                    "-f",
+                    str(key_path),
+                    "-N",
+                    passphrase,
+                    "-C",
+                    comment,
+                ]
             subprocess.run(cmd, check=True)
             self._show_toast(_("Key generated"))
             self._load_keys()
@@ -239,5 +290,3 @@ class SSHKeyManagerDialog(Adw.Dialog):
             self.toast_overlay.add_toast(toast)
         except Exception:
             pass
-
-

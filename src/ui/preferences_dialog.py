@@ -1,16 +1,17 @@
-
 import gi
-gi.require_version('Gtk', '4.0')
+
+gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gio, GObject, Adw, GLib
 from gettext import gettext as _
 import os
 import json
 from pathlib import Path
 
+
 @Gtk.Template(resource_path="/com/sshstudio/app/ui/preferences_dialog.ui")
 class PreferencesDialog(Adw.PreferencesWindow):
     """Application preferences dialog using Adwaita components."""
-    
+
     __gtype_name__ = "PreferencesDialog"
 
     config_path_entry = Gtk.Template.Child()
@@ -34,7 +35,7 @@ class PreferencesDialog(Adw.PreferencesWindow):
             pass
         self._load_preferences_safely()
         GLib.idle_add(self._connect_signals)
-    
+
     def _connect_signals(self):
         self.config_path_button.connect("clicked", self._on_config_path_clicked)
         self.backup_dir_button.connect("clicked", self._on_backup_dir_clicked)
@@ -45,14 +46,16 @@ class PreferencesDialog(Adw.PreferencesWindow):
         self.dark_theme_switch.connect("notify::active", self._on_switch_toggled)
         self.raw_wrap_switch.connect("notify::active", self._on_switch_toggled)
         self.editor_font_spin.connect("notify::value", self._on_spin_changed)
-        
-        self.editor_font_spin.get_adjustment().connect("value-changed", self._on_spin_changed)
+
+        self.editor_font_spin.get_adjustment().connect(
+            "value-changed", self._on_spin_changed
+        )
 
     def _on_config_path_clicked(self, button):
         dialog = Gtk.FileChooserDialog(
             title=_("Choose SSH Config File"),
             transient_for=self,
-            action=Gtk.FileChooserAction.OPEN
+            action=Gtk.FileChooserAction.OPEN,
         )
         dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
         dialog.add_button(_("Open"), Gtk.ResponseType.OK)
@@ -69,7 +72,7 @@ class PreferencesDialog(Adw.PreferencesWindow):
         dialog = Gtk.FileChooserDialog(
             title=_("Choose Backup Directory"),
             transient_for=self,
-            action=Gtk.FileChooserAction.SELECT_FOLDER
+            action=Gtk.FileChooserAction.SELECT_FOLDER,
         )
         dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
         dialog.add_button(_("Select"), Gtk.ResponseType.OK)
@@ -84,7 +87,9 @@ class PreferencesDialog(Adw.PreferencesWindow):
         dialog.destroy()
 
     def _get_config_dir(self) -> str:
-        base_dir = GLib.get_user_config_dir() or os.path.join(str(Path.home()), ".config")
+        base_dir = GLib.get_user_config_dir() or os.path.join(
+            str(Path.home()), ".config"
+        )
         return os.path.join(base_dir, "ssh-studio")
 
     def _get_prefs_path(self) -> str:
@@ -96,16 +101,17 @@ class PreferencesDialog(Adw.PreferencesWindow):
     def _set_default_preferences(self) -> None:
         """Set default preference values."""
         import os
+
         default_ssh_config = os.path.expanduser("~/.ssh/config")
         self.config_path_entry.set_text(default_ssh_config)
-        
+
         default_backup = os.path.expanduser("~/.ssh/backups")
         self.backup_dir_entry.set_text(default_backup)
-        
+
         self.auto_backup_switch.set_active(True)
         self.dark_theme_switch.set_active(False)
         self.raw_wrap_switch.set_active(True)
-        
+
         self.editor_font_spin.set_value(12.0)
 
     def _load_preferences_safely(self) -> None:
@@ -157,7 +163,7 @@ class PreferencesDialog(Adw.PreferencesWindow):
             "auto_backup": self.auto_backup_switch.get_active(),
             "editor_font_size": int(self.editor_font_spin.get_value()),
             "prefer_dark_theme": self.dark_theme_switch.get_active(),
-            "raw_wrap_lines": self.raw_wrap_switch.get_active()
+            "raw_wrap_lines": self.raw_wrap_switch.get_active(),
         }
 
     def set_preferences(self, prefs: dict):

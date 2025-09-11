@@ -1,6 +1,7 @@
 import gi
-gi.require_version('Gtk', '4.0')
-gi.require_version('Adw', '1')
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw, GObject
 from gettext import gettext as _
 from pathlib import Path
@@ -11,7 +12,7 @@ class KeyPickerDialog(Adw.Dialog):
     __gtype_name__ = "KeyPickerDialog"
 
     __gsignals__ = {
-        'key-selected': (GObject.SignalFlags.RUN_LAST, None, (str,)),
+        "key-selected": (GObject.SignalFlags.RUN_LAST, None, (str,)),
     }
 
     toast_overlay = Gtk.Template.Child()
@@ -32,15 +33,17 @@ class KeyPickerDialog(Adw.Dialog):
         for lst in (self.public_list,):
             row = lst.get_first_child()
             while row is not None:
-                nxt = row.get_next_sibling(); lst.remove(row); row = nxt
+                nxt = row.get_next_sibling()
+                lst.remove(row)
+                row = nxt
         if ssh_dir.exists():
             for path in sorted(ssh_dir.iterdir()):
                 if not path.is_file():
                     continue
                 name = path.name
-                if name in {"config","known_hosts","authorized_keys"}:
+                if name in {"config", "known_hosts", "authorized_keys"}:
                     continue
-                if name.endswith('.pub'):
+                if name.endswith(".pub"):
                     self.public_list.append(self._row_for(path))
         self._update_use_sensitivity()
 
@@ -66,15 +69,11 @@ class KeyPickerDialog(Adw.Dialog):
 
     def _on_use(self, *_):
         row = self.public_list.get_selected_row()
-        if row and hasattr(row, 'path_value'):
+        if row and hasattr(row, "path_value"):
             path = Path(row.path_value)
             private = path.with_suffix("") if path.suffix == ".pub" else path
             self.selected_path = str(private)
             try:
-                self.emit('key-selected', self.selected_path)
+                self.emit("key-selected", self.selected_path)
             finally:
                 self.close()
-
-
-
-

@@ -27,6 +27,7 @@ class SSHOption:
     def __str__(self) -> str:
         return f"{self.indentation}{self.key} {self.value}".rstrip()
 
+
 @dataclass
 class SSHHost:
     patterns: List[str] = field(default_factory=list)
@@ -52,21 +53,25 @@ class SSHHost:
                 found_host_line = True
                 continue
             elif stripped.lower().startswith("host ") and found_host_line:
-                raise ValueError("Multiple Host declarations found within a single raw host block.")
+                raise ValueError(
+                    "Multiple Host declarations found within a single raw host block."
+                )
 
             m = re.match(r"^(\S+)\s+(.+)$", stripped)
             if m:
                 key, value = m.group(1), m.group(2)
                 indentation = line[: len(line) - len(line.lstrip())]
-                host.options.append(SSHOption(key=key, value=value, indentation=indentation))
+                host.options.append(
+                    SSHOption(key=key, value=value, indentation=indentation)
+                )
                 host.raw_lines.append(line)
             else:
                 # Preserve unknown lines that are not comments or options
                 host.raw_lines.append(line)
-        
+
         if not found_host_line:
             raise ValueError("No Host declaration found in raw host block.")
-        
+
         return host
 
     def get_option(self, key: str) -> Optional[str]:
@@ -89,6 +94,7 @@ class SSHHost:
                 return True
         return False
 
+
 @dataclass
 class SSHConfig:
     file_path: Path
@@ -102,7 +108,9 @@ class SSHConfig:
         current_content_lines = []
         for opt in self.global_options:
             current_content_lines.append(str(opt))
-        if self.global_options and (not current_content_lines or current_content_lines[-1].strip() != ""):
+        if self.global_options and (
+            not current_content_lines or current_content_lines[-1].strip() != ""
+        ):
             current_content_lines.append("")
         for host in self.hosts:
             current_content_lines.append(f"Host {' '.join(host.patterns)}")
@@ -115,12 +123,12 @@ class SSHConfig:
             current_content_lines.append(f"Include {inc}")
 
         # Compare with original_lines, ignoring trailing newlines from original file reading
-        original_clean_lines = [line.rstrip('\n') for line in self.original_lines]
-        
+        original_clean_lines = [line.rstrip("\n") for line in self.original_lines]
+
         # Remove empty lines from the end of both lists for robust comparison
         while original_clean_lines and original_clean_lines[-1] == "":
             original_clean_lines.pop()
-        
+
         return current_content_lines != original_clean_lines
 
     def get_host(self, alias: str) -> Optional[SSHHost]:
@@ -138,6 +146,7 @@ class SSHConfig:
             return True
         except ValueError:
             return False
+
 
 class SSHConfigParser:
     def __init__(self, config_path: Optional[Path] = None) -> None:
@@ -172,7 +181,9 @@ class SSHConfigParser:
             except Exception:
                 pass
 
-        effective_backup = backup and self.auto_backup_enabled and self.config_path.exists()
+        effective_backup = (
+            backup and self.auto_backup_enabled and self.config_path.exists()
+        )
         if effective_backup and not self._have_backed_up_this_session:
             self._backup_file()
             self._have_backed_up_this_session = True
@@ -194,9 +205,13 @@ class SSHConfigParser:
                 try:
                     p = int(port)
                     if p < 1 or p > 65535:
-                        errors.append(f"Invalid port for host {host.patterns[0]}: {port}")
+                        errors.append(
+                            f"Invalid port for host {host.patterns[0]}: {port}"
+                        )
                 except ValueError:
-                    errors.append(f"Port is not an integer for host {host.patterns[0]}: {port}")
+                    errors.append(
+                        f"Port is not an integer for host {host.patterns[0]}: {port}"
+                    )
         for host in self.config.hosts:
             ident = host.get_option("IdentityFile")
             if ident:
@@ -204,7 +219,9 @@ class SSHConfigParser:
                 if not path.is_absolute():
                     path = Path.home() / ".ssh" / ident
                 if not path.exists():
-                    errors.append(f"IdentityFile not found for host {host.patterns[0]}: {ident}")
+                    errors.append(
+                        f"IdentityFile not found for host {host.patterns[0]}: {ident}"
+                    )
         return errors
 
     def _parse_main_lines(self, lines: List[str]) -> None:
@@ -232,7 +249,9 @@ class SSHConfigParser:
                     current_host.end_line = idx - 1
                     self.config.hosts.append(current_host)
                 patterns = stripped.split(None, 1)[1].split()
-                current_host = SSHHost(patterns=patterns, start_line=idx, raw_lines=[line])
+                current_host = SSHHost(
+                    patterns=patterns, start_line=idx, raw_lines=[line]
+                )
                 in_host = True
                 continue
 

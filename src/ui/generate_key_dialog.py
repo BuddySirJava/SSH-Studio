@@ -1,6 +1,7 @@
 import gi
-gi.require_version('Gtk', '4.0')
-gi.require_version('Adw', '1')
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw
 from gettext import gettext as _
 
@@ -54,9 +55,17 @@ class GenerateKeyDialog(Adw.Dialog):
             pass
 
     def get_options(self):
-        key_type = self.type_row.get_selected_item().get_string() if self.type_row.get_selected_item() else "ed25519"
+        key_type = (
+            self.type_row.get_selected_item().get_string()
+            if self.type_row.get_selected_item()
+            else "ed25519"
+        )
         size_item = self.size_row.get_selected_item()
-        size = int(size_item.get_string()) if size_item and self.size_row.get_visible() else 2048
+        size = (
+            int(size_item.get_string())
+            if size_item and self.size_row.get_visible()
+            else 2048
+        )
         name = self.name_row.get_text() or "id_ed25519"
         comment = self.comment_row.get_text() or "ssh-studio"
         passphrase = self.pass_row.get_text() or ""
@@ -67,5 +76,3 @@ class GenerateKeyDialog(Adw.Dialog):
             "comment": comment,
             "passphrase": passphrase,
         }
-
-
