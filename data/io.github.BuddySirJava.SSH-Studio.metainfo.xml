@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
   <id>io.github.BuddySirJava.SSH-Studio</id>
-  <name>SSH-Studio</name>
+  <name>SSH Studio</name>
   <summary>SSH configuration editor</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
@@ -11,8 +11,8 @@
   <launchable type="desktop-id">io.github.BuddySirJava.SSH-Studio.desktop</launchable>
   <categories>
     <category>System</category>
-    <category>Network</category>
-    <category>GTK</category>
+    <category>Utility</category>
+    <category>Development</category>
   </categories>
   <provides>
     <binary>ssh-studio</binary>
@@ -20,12 +20,16 @@
   <content_rating type="oars-1.1"/>
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/master/assets/screenshots/ss1.png</image>
+      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/v1.2.1/assets/screenshots/ss1.png</image>
       <caption>Main window with host list and details</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/master/assets/screenshots/ss2.png</image>
-      <caption>Editing SSH host options</caption>
+      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/v1.2.1/assets/screenshots/ss2.png</image>
+      <caption>Synchronizing Raw/Diff View</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/v1.2.1/assets/screenshots/ss3.png</image>
+      <caption>SSH Key Management</caption>
     </screenshot>
   </screenshots>
   <releases>
@@ -33,7 +37,7 @@
   </releases>
   <url type="homepage">https://github.com/BuddySirJava/SSH-Studio</url>
   <url type="bugtracker">https://github.com/BuddySirJava/SSH-Studio/issues</url>
-  <developer id="io.github.buddysirjava">
+  <developer id="io.github.BuddySirJava">
     <name>Buddy</name>
   </developer>
 </component>
