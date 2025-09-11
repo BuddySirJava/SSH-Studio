@@ -20,21 +20,33 @@
             "config-opts": [
                 "--prefix=/app"
             ],
+            "cleanup": [
+                "/include",
+                "/lib/pkgconfig",
+                "/share/man",
+                "/share/pkgconfig",
+                "/share/gtk-doc",
+                "/share/doc",
+                "/share/devhelp",
+                "*.la",
+                "*.a"
+            ],
             "sources": [
                 {
                     "type": "git",
                     "url": "https://gitlab.gnome.org/jwestman/blueprint-compiler.git",
                     "tag": "v0.18.0"
                 }
-            ]
+            ],
+            "x-checker-data": {
+                "type": "git",
+                "url": "https://gitlab.gnome.org/jwestman/blueprint-compiler.git",
+                "tag-pattern": "^v([\\d.]+)$"
+            }
         },
         {
             "name": "ssh-studio",
             "buildsystem": "meson",
-            "post-install": [
-                "printf '#!/usr/bin/env bash\\nexec python3 -m ssh_studio.main \"$@\"\\n' > /app/bin/ssh-studio",
-                "chmod +x /app/bin/ssh-studio"
-            ],
             "sources": [
                 {
                     "type": "git",
@@ -52,7 +64,12 @@
                 "/share/devhelp",
                 "*.la",
                 "*.a"
-            ]
+            ],
+            "x-checker-data": {
+                "type": "git",
+                "url": "https://github.com/BuddySirJava/SSH-Studio.git",
+                "tag-pattern": "^v([\\d.]+)$"
+            }
         }
     ]
 }

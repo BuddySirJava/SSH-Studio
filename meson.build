@@ -23,6 +23,11 @@ subdir('data')
 install_data(join_paths(meson.current_source_dir(), 'data', application_id + '.desktop'),
              install_dir: join_paths(get_option('datadir'), 'applications'))
 
+install_data(join_paths(meson.current_source_dir(), 'data', 'ssh-studio.in'),
+             rename: 'ssh-studio',
+             install_mode: 'rwxr-xr-x',
+             install_dir: join_paths(get_option('bindir')))
+
 install_data(join_paths(meson.current_source_dir(), 'data', 'media', 'icon_256.png'),
              rename: application_id + '.png',
              install_dir: join_paths(get_option('datadir'), 'icons', 'hicolor', '256x256', 'apps'))
