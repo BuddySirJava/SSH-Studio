@@ -2,12 +2,24 @@
 <component type="desktop-application">
   <id>io.github.BuddySirJava.SSH-Studio</id>
   <name>SSH Studio</name>
-  <summary>SSH configuration editor</summary>
-  <metadata_license>CC0-1.0</metadata_license>
+<summary>Edit and validate your SSH config with a simple GTK 4 desktop app.</summary>  <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
-  <description>
-    <p>Manage SSH configuration files with a native GTK interface. SSH‑Studio helps you create, edit, and validate entries in your SSH config with a friendly UI, so you can organize hosts, keys, and connection options without memorizing syntax.</p>
-  </description>
+<description>
+  <p><strong>SSH Studio</strong> is a native GTK 4 desktop app for managing your <code>~/.ssh/config</code>. It provides a friendly interface to create, edit, and validate SSH hosts without diving into terminal editors.</p>
+
+  <p><em>Features include:</em></p>
+  <ul>
+    <li><p><strong>Visual host editor</strong> – Fill in common fields like <code>Host</code>, <code>HostName</code>, <code>User</code>, <code>Port</code>, and <code>IdentityFile</code> with ease.</p></li>
+    <li><p><strong>Inline validation</strong> – Duplicate aliases, invalid ports, and syntax errors are caught instantly.</p></li>
+    <li><p><strong>Search and filter</strong> – Quickly locate hosts by alias, hostname, user, or identity.</p></li>
+    <li><p><strong>Raw &amp; Diff view</strong> – Edit the raw <code>ssh_config</code> text with live diff highlighting.</p></li>
+    <li><p><strong>Quick actions</strong> – Copy a SSH command, test a connection, or revert changes in one click.</p></li>
+    <li><p><strong>SSH key management</strong> – Import, generate, and manage your keys directly in the app.</p></li>
+    <li><p><strong>Safe saves</strong> – Configurable automatic backups and atomic writes to protect your configuration.</p></li>
+    <li><p><strong>Designed for GNOME</strong> – Smooth GTK 4 interface with dark style preference, keyboard and mouse friendly.</p></li>
+  </ul>
+</description>
+
   <launchable type="desktop-id">io.github.BuddySirJava.SSH-Studio.desktop</launchable>
   <categories>
     <category>System</category>
