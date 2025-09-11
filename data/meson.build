@@ -36,3 +36,6 @@ gnome.compile_resources('ssh-studio-resources',
   gresource_bundle: true,
   install: true,
   install_dir: join_paths(get_option('datadir'), application_id))
+
+install_data('io.github.BuddySirJava.SSH-Studio.metainfo.xml',
+  install_dir: join_paths(get_option('datadir'), 'metainfo'))

@@ -8,11 +8,11 @@ import json
 from pathlib import Path
 
 
-@Gtk.Template(resource_path="/io/github/BuddySirJava/SSHStudio/ui/preferences_dialog.ui")
+@Gtk.Template(resource_path="/io/github/BuddySirJava/SSH-Studio/ui/preferences_dialog.ui")
 class PreferencesDialog(Adw.PreferencesWindow):
     """Application preferences dialog using Adwaita components."""
 
-    __gtype_name__ = "PreferencesDialog"
+    __gtype_name__ = "SSHStudioPreferencesDialog"
 
     config_path_entry = Gtk.Template.Child()
     config_path_button = Gtk.Template.Child()
@@ -87,9 +87,7 @@ class PreferencesDialog(Adw.PreferencesWindow):
         dialog.destroy()
 
     def _get_config_dir(self) -> str:
-        base_dir = GLib.get_user_config_dir() or os.path.join(
-            str(Path.home()), ".config"
-        )
+        base_dir = GLib.get_user_config_dir()
         return os.path.join(base_dir, "ssh-studio")
 
     def _get_prefs_path(self) -> str:
@@ -102,10 +100,10 @@ class PreferencesDialog(Adw.PreferencesWindow):
         """Set default preference values."""
         import os
 
-        default_ssh_config = os.path.expanduser("~/.ssh/config")
+        default_ssh_config = os.path.join(self._get_config_dir(), "ssh_config")
         self.config_path_entry.set_text(default_ssh_config)
 
-        default_backup = os.path.expanduser("~/.ssh/backups")
+        default_backup = os.path.join(self._get_config_dir(), "backups")
         self.backup_dir_entry.set_text(default_backup)
 
         self.auto_backup_switch.set_active(True)

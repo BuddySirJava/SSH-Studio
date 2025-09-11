@@ -5,6 +5,7 @@ Name=SSH-Studio
 GenericName=SSH Configuration Editor
 Comment=Manage SSH configuration files with a native GTK interface
 Exec=ssh-studio
+TryExec=ssh-studio
 Icon=io.github.BuddySirJava.SSH-Studio
 Terminal=false
 Categories=System;Network;GTK;

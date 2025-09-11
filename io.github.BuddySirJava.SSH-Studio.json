@@ -8,11 +8,10 @@
         "--share=ipc",
         "--socket=fallback-x11",
         "--socket=wayland",
-        "--filesystem=xdg-data/icons:ro",
         "--share=network",
         "--filesystem=~/.ssh:rw",
         "--socket=ssh-auth",
-        "--filesystem=~/.config:rw"
+        "--env=GTK_ICON_THEME=Adwaita"
     ],
     "modules": [
         {

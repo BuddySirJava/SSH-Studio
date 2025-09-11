@@ -50,7 +50,6 @@ class SSHConfigStudioApp(Adw.Application):
         Adw.Application.do_startup(self)
 
         try:
-            # Prefer system install locale dir, fallback to user data dir
             system_locale_dir = (
                 os.path.join(get_option := getattr(GLib, "get_user_data_dir"), "locale")
                 if False
@@ -73,6 +72,19 @@ class SSHConfigStudioApp(Adw.Application):
                 )
                 Gio.resources_register(resource)
                 logging.info("Registered GResource from Flatpak install directory")
+            except Exception:
+                pass
+            try:
+                icon_theme = Gtk.IconTheme.get_for_display(Gtk.Display.get_default())
+                icon_theme.add_search_path("/app/share/icons")
+                icon_theme.add_search_path("/usr/share/icons")
+                icon_theme.set_theme_name("Adwaita")
+            except Exception:
+                pass
+            try:
+                settings = Gtk.Settings.get_default()
+                if settings is not None:
+                    settings.set_property("gtk-icon-theme-name", "Adwaita")
             except Exception:
                 pass
         else:
@@ -154,7 +166,7 @@ class SSHConfigStudioApp(Adw.Application):
 
     def _load_css_styles(self):
         try:
-            if os.getenv("FLATPAK_ID"):  # Flatpak fast path for CSS
+            if os.getenv("FLATPAK_ID"):  
                 css_provider = Gtk.CssProvider()
                 css_provider.load_from_resource("/io/github/BuddySirJava/SSH-Studio/ssh-studio.css")
                 Gtk.StyleContext.add_provider_for_display(
@@ -164,7 +176,7 @@ class SSHConfigStudioApp(Adw.Application):
                 )
                 logging.info("Loaded CSS styles from GResource bundle (Flatpak)")
                 return
-            else:  # Existing fallback logic for non-Flatpak
+            else: 
                 try:
                     css_provider = Gtk.CssProvider()
                     css_provider.load_from_resource("/io/github/BuddySirJava/SSH-Studio/ssh-studio.css")

@@ -1,6 +1,6 @@
 project('ssh-studio', 'c',
   version: '1.2.1',
-  license: 'MIT',
+  license: 'GPL-3.0-only',
   meson_version: '>= 0.60.0',
   default_options: ['warning_level=2',
                     'buildtype=debugoptimized'])
@@ -30,4 +30,10 @@ install_data(join_paths(meson.current_source_dir(), 'data', 'media', 'icon_256.p
 install_data(join_paths(meson.current_source_dir(), 'data', 'media', 'icon_256.png'),
              rename: application_id + '.png',
              install_dir: join_paths(get_option('datadir'), 'icons', 'hicolor', '128x128', 'apps'))
+install_data(join_paths(meson.current_source_dir(), 'data', 'media', 'icon_512.png'),
+             rename: application_id + '.png',
+             install_dir: join_paths(get_option('datadir'), 'icons', 'hicolor', '512x512', 'apps'))
+install_data(join_paths(meson.current_source_dir(), 'data', 'media', 'icon.svg'),
+             rename: application_id + '.svg',
+             install_dir: join_paths(get_option('datadir'), 'icons', 'hicolor', 'scalable', 'apps'))
 
