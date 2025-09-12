@@ -70,10 +70,6 @@ flatpak run io.github.BuddySirJava.SSH-Studio
 - `io.github.BuddySirJava.SSH-Studio.json`: Flatpak manifest.
 - `po/`: Translations.
 
-### Known issues
-- When editng config using Raw/Diff, custom options added manualy wont appear on Advanced page.
-- Show/Hide Host editor button icon might not load. 
-
 ### Support
 
 - Open an issue on GitHub: `
