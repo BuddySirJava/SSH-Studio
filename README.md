@@ -59,7 +59,7 @@ flatpak run io.github.BuddySirJava.SSH-Studio
 ## Project structure
 
 - `src/ssh_config_parser.py` → Parse/validate/generate SSH config safely.
-- `src/ui/` → Custom Adwaita widgets (`MainWindow`, `HostList`, `HostEditor`, `SearchBar`, `PreferencesDialog`, `TestConnectionDialog`, `SSH Key Manager`).
+- `src/ui/` → Main App Components (`MainWindow`, `HostList`, `HostEditor`, `SearchBar`, `PreferencesDialog`, `TestConnectionDialog`, `SSH Key Manager`).
 - `data/ui/*.ui` → GTK Builder UI blueprints.
 - `data/ssh-studio.gresource.xml` → GResource manifest.
 - `data/media/` → App icon and screenshots.
