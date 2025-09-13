@@ -2,23 +2,23 @@
 <component type="desktop-application">
   <id>io.github.BuddySirJava.SSH-Studio</id>
   <name>SSH Studio</name>
-<summary>Edit and validate your SSH config with a simple GTK 4 desktop app.</summary>  <metadata_license>CC0-1.0</metadata_license>
+  <summary>Edit and validate your SSH config with a simple GTK 4 desktop app</summary>
+  <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
-<description>
-  <p><strong>SSH Studio</strong> is a native GTK 4 desktop app for managing your <code>~/.ssh/config</code>. It provides a friendly interface to create, edit, and validate SSH hosts without diving into terminal editors.</p>
-
-  <p><em>Features include:</em></p>
-  <ul>
-    <li><p><strong>Visual host editor</strong> – Fill in common fields like <code>Host</code>, <code>HostName</code>, <code>User</code>, <code>Port</code>, and <code>IdentityFile</code> with ease.</p></li>
-    <li><p><strong>Inline validation</strong> – Duplicate aliases, invalid ports, and syntax errors are caught instantly.</p></li>
-    <li><p><strong>Search and filter</strong> – Quickly locate hosts by alias, hostname, user, or identity.</p></li>
-    <li><p><strong>Raw &amp; Diff view</strong> – Edit the raw <code>ssh_config</code> text with live diff highlighting.</p></li>
-    <li><p><strong>Quick actions</strong> – Copy a SSH command, test a connection, or revert changes in one click.</p></li>
-    <li><p><strong>SSH key management</strong> – Import, generate, and manage your keys directly in the app.</p></li>
-    <li><p><strong>Safe saves</strong> – Configurable automatic backups and atomic writes to protect your configuration.</p></li>
-    <li><p><strong>Designed for GNOME</strong> – Smooth GTK 4 interface with dark style preference, keyboard and mouse friendly.</p></li>
-  </ul>
-</description>
+  <description>
+    <p>SSH Studio is a native GTK 4 desktop app for managing your SSH config. It provides a friendly interface to create, edit, and validate SSH hosts without diving into terminal editors.</p>
+    <p>Features include:</p>
+    <ul>
+      <li>Visual host editor – Fill in common fields like Host, HostName, User, Port, and IdentityFile with ease.</li>
+      <li>Inline validation – Duplicate aliases, invalid ports, and syntax errors are caught instantly.</li>
+      <li>Search and filter – Quickly locate hosts by alias, hostname, user, or identity.</li>
+      <li>Raw and Diff view – Edit the raw ssh_config text with live diff highlighting.</li>
+      <li>Quick actions – Copy a SSH command, test a connection, or revert changes in one click.</li>
+      <li>SSH key management – Import, generate, and manage your keys directly in the app.</li>
+      <li>Safe saves – Configurable automatic backups and atomic writes to protect your configuration.</li>
+      <li>Designed for GNOME – Smooth GTK 4 interface with dark style preference, keyboard and mouse friendly.</li>
+    </ul>
+  </description>
 
   <launchable type="desktop-id">io.github.BuddySirJava.SSH-Studio.desktop</launchable>
   <categories>
@@ -32,15 +32,15 @@
   <content_rating type="oars-1.1"/>
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/v1.2.1/assets/screenshots/ss1.png</image>
+      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.2.1/assets/screenshots/ss1.png</image>
       <caption>Main window with host list and details</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/v1.2.1/assets/screenshots/ss2.png</image>
+      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.2.1/assets/screenshots/ss2.png</image>
       <caption>Synchronizing Raw/Diff View</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/v1.2.1/assets/screenshots/ss3.png</image>
+      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.2.1/assets/screenshots/ss3.png</image>
       <caption>SSH Key Management</caption>
     </screenshot>
   </screenshots>
@@ -49,7 +49,7 @@
   </releases>
   <url type="homepage">https://github.com/BuddySirJava/SSH-Studio</url>
   <url type="bugtracker">https://github.com/BuddySirJava/SSH-Studio/issues</url>
-  <developer id="io.github.BuddySirJava">
+  <developer id="io.github.buddysirjava">
     <name>Buddy</name>
   </developer>
 </component>
