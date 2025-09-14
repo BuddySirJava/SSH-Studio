@@ -590,7 +590,7 @@ class MainWindow(Adw.ApplicationWindow):
             transient_for=self,
             application_name=_("SSH-Studio"),
             application_icon="io.github.BuddySirJava.SSH-Studio",
-            version="1.2.1",
+            version="1.2.2",
             developer_name=_("Made with ❤️ by Mahyar Darvishi"),
             website="https://github.com/BuddySirJava/ssh-studio",
             issue_url="https://github.com/BuddySirJava/ssh-studio/issues",
