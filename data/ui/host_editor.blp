@@ -4,67 +4,72 @@ using Adw 1;
 template $HostEditor: Box {
   orientation: vertical;
   spacing: 16;
-
+  vexpand: true;
+  hexpand: true;
+  margin-start: 40;
+  margin-end: 40;
   styles [
     "editor-pane",
     "host-editor",
   ]
 
-  Adw.Clamp {
-    maximum-size: 920;
-    tightening-threshold: 640;
+  Box {
+    orientation: vertical;
+    spacing: 6;
+    margin-top: 12;
 
-    child: Box {
-      orientation: vertical;
-      spacing: 6;
-      margin-top: 12;
+    Box {
+      orientation: horizontal;
+      hexpand: true;
+      spacing: 12;
+
+      Adw.ViewSwitcher {
+        stack: viewstack;
+        policy: wide;
+        halign: start;
+        hexpand: false;
+
+        styles [
+          "view-switcher",
+        ]
+      }
 
       Box {
         orientation: horizontal;
+        spacing: 6;
+        halign: end;
         hexpand: true;
-        spacing: 12;
 
-        Adw.ViewSwitcher {
-          stack: viewstack;
-          policy: wide;
-          halign: start;
-          hexpand: false;
-
+        Button revert_button {
+          label: _("Revert");
+          sensitive: false;
           styles [
-            "view-switcher",
+            "destructive-action",
           ]
         }
 
-        Box {
-          orientation: horizontal;
-          spacing: 6;
-          halign: end;
-          hexpand: true;
+        Button save_button {
+          label: _("Save");
+          sensitive: false;
 
-          Button revert_button {
-            label: _("Revert");
-            sensitive: false;
-            styles [
-              "destructive-action",
-            ]
-          }
-
-          Button save_button {
-            label: _("Save");
-            sensitive: false;
-
-            styles [
-              "suggested-action",
-            ]
-          }
+          styles [
+            "suggested-action",
+          ]
         }
       }
+    }
 
-      Separator {
-        orientation: horizontal;
-        margin-top: 6;
-      }
-    };
+    Separator {
+      orientation: horizontal;
+      margin-top: 6;
+    }
+
+    SearchEntry search_entry {
+      placeholder-text: _("Search settings…");
+      hexpand: true;
+      margin-top: 12;
+      margin-bottom: 6;
+    }
   }
 
   Adw.ViewStack viewstack {
@@ -76,96 +81,92 @@ template $HostEditor: Box {
       icon-name: "preferences-system-symbolic";
       name: "settings";
 
-      child: Adw.Clamp {
-        maximum-size: 920;
-        tightening-threshold: 640;
-        child: Adw.PreferencesPage {
-          Adw.PreferencesGroup {
-            title: _("Connection");
+      child: Adw.PreferencesPage {
+        Adw.PreferencesGroup {
+          title: _("Connection");
 
-            Adw.EntryRow patterns_entry {
-              title: _("Host pattern");
+          Adw.EntryRow patterns_entry {
+            title: _("Host pattern");
+          }
+
+          Label patterns_error_label {
+            xalign: 0;
+            visible: false;
+
+            styles [
+              "error-label",
+              "status-error",
+            ]
+          }
+
+          Adw.EntryRow hostname_entry {
+            title: _("Host name");
+          }
+
+          Adw.EntryRow user_entry {
+            title: _("Username");
+          }
+
+          Adw.EntryRow port_entry {
+            title: _("Port");
+          }
+
+          Label port_error_label {
+            xalign: 0;
+            visible: false;
+
+            styles [
+              "error-label",
+              "status-error",
+            ]
+          }
+        }
+
+        Adw.PreferencesGroup {
+          title: _("Authentication");
+
+          Adw.EntryRow identity_entry {
+            title: _("Identity file");
+
+            [suffix]
+            Button identity_button {
+              icon-name: "document-open-symbolic";
+              tooltip-text: _("Choose Identity File");
             }
 
-            Label patterns_error_label {
-              xalign: 0;
-              visible: false;
-
-              styles [
-                "error-label",
-                "status-error",
-              ]
-            }
-
-            Adw.EntryRow hostname_entry {
-              title: _("Host name");
-            }
-
-            Adw.EntryRow user_entry {
-              title: _("Username");
-            }
-
-            Adw.EntryRow port_entry {
-              title: _("Port");
-            }
-
-            Label port_error_label {
-              xalign: 0;
-              visible: false;
-
-              styles [
-                "error-label",
-                "status-error",
-              ]
+            [suffix]
+            Button identity_pick_button {
+              icon-name: "dialog-password-symbolic";
+              tooltip-text: _("Pick from existing SSH keys");
             }
           }
 
-          Adw.PreferencesGroup {
-            title: _("Authentication");
+          Adw.ActionRow {
+            title: _("Forward agent");
+            activatable-widget: forward_agent_switch;
 
-            Adw.EntryRow identity_entry {
-              title: _("Identity file");
-
-              [suffix]
-              Button identity_button {
-                icon-name: "document-open-symbolic";
-                tooltip-text: _("Choose Identity File");
-              }
-
-              [suffix]
-              Button identity_pick_button {
-                icon-name: "dialog-password-symbolic";
-                tooltip-text: _("Pick from existing SSH keys");
-              }
-            }
-
-            Adw.ActionRow {
-              title: _("Forward agent");
-              activatable-widget: forward_agent_switch;
-
-              [suffix]
-              Switch forward_agent_switch {
-                valign: center;
-              }
+            [suffix]
+            Switch forward_agent_switch {
+              valign: center;
             }
           }
+        }
 
-          Adw.PreferencesGroup {
-            title: _("Actions");
+        Adw.PreferencesGroup {
+          title: _("Actions");
 
-            Adw.ActionRow copy_row {
-              title: _("Copy SSH command");
-              activatable: true;
-              subtitle: _("Copies the resolved SSH command to the clipboard");
-            }
-
-            Adw.ActionRow test_row {
-              title: _("Test connection");
-              activatable: true;
-              subtitle: _("Runs a quick non-interactive SSH check");
-            }
+          Adw.ActionRow copy_row {
+            title: _("Copy SSH command");
+            activatable: true;
+            subtitle: _("Copies the resolved SSH command to the clipboard");
           }
-        };
+
+          Adw.ActionRow test_row {
+            title: _("Test connection");
+            activatable: true;
+            subtitle: _("Runs a quick non-interactive SSH check");
+          }
+        }
       };
     }
 
@@ -174,30 +175,26 @@ template $HostEditor: Box {
       icon-name: "network-wired-symbolic";
       name: "networking";
 
-      child: Adw.Clamp {
-        maximum-size: 920;
-        tightening-threshold: 640;
-        child: Adw.PreferencesPage {
-          Adw.PreferencesGroup {
-            title: _("Networking");
+      child: Adw.PreferencesPage {
+        Adw.PreferencesGroup {
+          title: _("Networking");
 
-            Adw.EntryRow proxy_jump_entry {
-              title: _("ProxyJump");
-            }
-
-            Adw.EntryRow proxy_cmd_entry {
-              title: _("ProxyCommand");
-            }
-
-            Adw.EntryRow local_forward_entry {
-              title: _("Local Forward");
-            }
-
-            Adw.EntryRow remote_forward_entry {
-              title: _("Remote Forward");
-            }
+          Adw.EntryRow proxy_jump_entry {
+            title: _("ProxyJump");
           }
-        };
+
+          Adw.EntryRow proxy_cmd_entry {
+            title: _("ProxyCommand");
+          }
+
+          Adw.EntryRow local_forward_entry {
+            title: _("Local Forward");
+          }
+
+          Adw.EntryRow remote_forward_entry {
+            title: _("Remote Forward");
+          }
+        }
       };
     }
 
@@ -206,220 +203,216 @@ template $HostEditor: Box {
       icon-name: "applications-system-symbolic";
       name: "advanced";
 
-      child: Adw.Clamp {
-        maximum-size: 920;
-        tightening-threshold: 640;
-        child: Adw.PreferencesPage {
-          Adw.PreferencesGroup {
-            title: _("Custom SSH Options");
-            description: _("Add custom SSH configuration options not available in the standard fields");
-            visible: false;
-            sensitive: false;
+      child: Adw.PreferencesPage {
+        Adw.PreferencesGroup {
+          title: _("Custom SSH Options");
+          description: _("Add custom SSH configuration options not available in the standard fields");
+          visible: false;
+          sensitive: false;
 
-            Adw.ActionRow {
-              title: _("Add Custom Option");
-              subtitle: _("Add SSH options like Compression, ServerAliveInterval, etc.");
-              activatable: true;
-              activatable-widget: add_custom_button;
+          Adw.ActionRow {
+            title: _("Add Custom Option");
+            subtitle: _("Add SSH options like Compression, ServerAliveInterval, etc.");
+            activatable: true;
+            activatable-widget: add_custom_button;
 
-              [suffix]
-              Button add_custom_button {
-                icon-name: "list-add-symbolic";
-                tooltip-text: _("Add a new custom SSH option");
-                css-classes: ["circular", "suggested-action"];
-              }
+            [suffix]
+            Button add_custom_button {
+              icon-name: "list-add-symbolic";
+              tooltip-text: _("Add a new custom SSH option");
+              css-classes: ["circular", "suggested-action"];
             }
+          }
 
-            Adw.ExpanderRow custom_options_expander {
-              title: _("Custom Options");
-              subtitle: _("Manage your custom SSH configuration options");
-              show-enable-switch: false;
+          Adw.ExpanderRow custom_options_expander {
+            title: _("Custom Options");
+            subtitle: _("Manage your custom SSH configuration options");
+            show-enable-switch: false;
+            vexpand: true;
+
+            child: ScrolledWindow {
+              hexpand: true;
               vexpand: true;
+              vscrollbar-policy: never;
+              hscrollbar-policy: never;
 
-              child: ScrolledWindow {
-                hexpand: true;
-                vexpand: true;
-                vscrollbar-policy: never;
-                hscrollbar-policy: never;
+              ListBox custom_options_list {
+                selection-mode: none;
+                css-classes: ["boxed-list"];
 
-                ListBox custom_options_list {
-                  selection-mode: none;
-                  css-classes: ["boxed-list"];
-
-                  styles [
-                    "custom-options-list",
-                  ]
-                }
-              };
-            }
-          }
-
-          Adw.PreferencesGroup {
-            title: _("Advanced Options");
-            description: _("Common SSH options not covered in other tabs");
-
-            Adw.ActionRow {
-              title: _("Compression");
-              subtitle: _("Enable compression for slow connections");
-              activatable-widget: compression_switch;
-
-              [suffix]
-              Switch compression_switch {
-                valign: center;
+                styles [
+                  "custom-options-list",
+                ]
               }
-            }
+            };
+          }
+        }
 
-            Adw.EntryRow serveralive_interval_entry {
-              title: _("ServerAliveInterval (s)");
-              show-apply-button: false;
-              input-purpose: number;
-            }
+        Adw.PreferencesGroup {
+          title: _("Advanced Options");
+          description: _("Common SSH options not covered in other tabs");
 
-            Adw.EntryRow serveralive_count_entry {
-              title: _("ServerAliveCountMax");
-              show-apply-button: false;
-              input-purpose: number;
-            }
+          Adw.ActionRow {
+            title: _("Compression");
+            subtitle: _("Enable compression for slow connections");
+            activatable-widget: compression_switch;
 
-            Adw.ActionRow {
-              title: _("TCPKeepAlive");
-              subtitle: _("Enable TCP keepalive messages");
-              activatable-widget: tcp_keepalive_switch;
-
-              [suffix]
-              Switch tcp_keepalive_switch {
-                valign: center;
-              }
-            }
-
-            Adw.ComboRow strict_host_key_row {
-              title: _("StrictHostKeyChecking");
-              subtitle: _("How to handle unknown host keys");
-              model: Gtk.StringList {
-                strings: ["ask", "yes", "no"];
-              };
-              selected: 0;
+            [suffix]
+            Switch compression_switch {
+              valign: center;
             }
           }
 
-          Adw.PreferencesGroup {
-            title: _("Authentication and Keys");
-            description: _("Tune authentication behavior");
+          Adw.EntryRow serveralive_interval_entry {
+            title: _("ServerAliveInterval (s)");
+            show-apply-button: false;
+            input-purpose: number;
+          }
 
-            Adw.ActionRow {
-              title: _("PubkeyAuthentication");
-              subtitle: _("Use public key authentication");
-              activatable-widget: pubkey_auth_switch;
+          Adw.EntryRow serveralive_count_entry {
+            title: _("ServerAliveCountMax");
+            show-apply-button: false;
+            input-purpose: number;
+          }
 
-              [suffix]
-              Switch pubkey_auth_switch { valign: center; }
-            }
+          Adw.ActionRow {
+            title: _("TCPKeepAlive");
+            subtitle: _("Enable TCP keepalive messages");
+            activatable-widget: tcp_keepalive_switch;
 
-            Adw.ActionRow {
-              title: _("PasswordAuthentication");
-              subtitle: _("Allow password authentication");
-              activatable-widget: password_auth_switch;
-
-              [suffix]
-              Switch password_auth_switch { valign: center; }
-            }
-
-            Adw.ActionRow {
-              title: _("KbdInteractiveAuthentication");
-              subtitle: _("Allow keyboard-interactive auth");
-              activatable-widget: kbd_interactive_auth_switch;
-
-              [suffix]
-              Switch kbd_interactive_auth_switch { valign: center; }
-            }
-
-            Adw.ActionRow {
-              title: _("GSSAPIAuthentication");
-              subtitle: _("Enable Kerberos/GSSAPI auth");
-              activatable-widget: gssapi_auth_switch;
-
-              [suffix]
-              Switch gssapi_auth_switch { valign: center; }
-            }
-
-            Adw.ComboRow add_keys_to_agent_row {
-              title: _("AddKeysToAgent");
-              subtitle: _("Add identities to ssh-agent");
-              model: Gtk.StringList { strings: ["no", "yes", "ask", "confirm"]; };
-              selected: 0;
-            }
-
-            Adw.EntryRow preferred_authentications_entry {
-              title: _("PreferredAuthentications");
-            }
-
-            Adw.EntryRow identity_agent_entry {
-              title: _("IdentityAgent");
+            [suffix]
+            Switch tcp_keepalive_switch {
+              valign: center;
             }
           }
 
-          Adw.PreferencesGroup {
-            title: _("Connection Behavior");
-            description: _("Connection timeouts, logging, host key verification");
+          Adw.ComboRow strict_host_key_row {
+            title: _("StrictHostKeyChecking");
+            subtitle: _("How to handle unknown host keys");
+            model: Gtk.StringList {
+              strings: ["ask", "yes", "no"];
+            };
+            selected: 0;
+          }
+        }
 
-            Adw.EntryRow connect_timeout_entry {
-              title: _("ConnectTimeout (s)");
-              show-apply-button: false;
-              input-purpose: number;
-            }
+        Adw.PreferencesGroup {
+          title: _("Authentication and Keys");
+          description: _("Tune authentication behavior");
 
-            Adw.ComboRow request_tty_row {
-              title: _("RequestTTY");
-              subtitle: _("Request a TTY when connecting");
-              model: Gtk.StringList { strings: ["auto", "no", "yes", "force"]; };
-              selected: 0;
-            }
+          Adw.ActionRow {
+            title: _("PubkeyAuthentication");
+            subtitle: _("Use public key authentication");
+            activatable-widget: pubkey_auth_switch;
 
-            Adw.ComboRow log_level_row {
-              title: _("LogLevel");
-              model: Gtk.StringList { strings: ["QUIET", "FATAL", "ERROR", "INFO", "VERBOSE", "DEBUG", "DEBUG1", "DEBUG2", "DEBUG3"]; };
-              selected: 3;
-            }
-
-            Adw.ActionRow {
-              title: _("VerifyHostKeyDNS");
-              subtitle: _("Use SSHFP DNS records");
-              activatable-widget: verify_host_key_dns_switch;
-
-              [suffix]
-              Switch verify_host_key_dns_switch { valign: center; }
-            }
-
-            Adw.ComboRow canonicalize_hostname_row {
-              title: _("CanonicalizeHostname");
-              model: Gtk.StringList { strings: ["no", "yes", "always"]; };
-              selected: 0;
-            }
-
-            Adw.EntryRow canonical_domains_entry {
-              title: _("CanonicalDomains");
-            }
+            [suffix]
+            Switch pubkey_auth_switch { valign: center; }
           }
 
-          Adw.PreferencesGroup {
-            title: _("Connection Multiplexing");
-            description: _("ControlMaster/ControlPersist options");
+          Adw.ActionRow {
+            title: _("PasswordAuthentication");
+            subtitle: _("Allow password authentication");
+            activatable-widget: password_auth_switch;
 
-            Adw.ComboRow control_master_row {
-              title: _("ControlMaster");
-              model: Gtk.StringList { strings: ["no", "yes", "ask", "auto", "autoask"]; };
-              selected: 0;
-            }
-
-            Adw.EntryRow control_persist_entry {
-              title: _("ControlPersist");
-            }
-
-            Adw.EntryRow control_path_entry {
-              title: _("ControlPath");
-            }
+            [suffix]
+            Switch password_auth_switch { valign: center; }
           }
-        };
+
+          Adw.ActionRow {
+            title: _("KbdInteractiveAuthentication");
+            subtitle: _("Allow keyboard-interactive auth");
+            activatable-widget: kbd_interactive_auth_switch;
+
+            [suffix]
+            Switch kbd_interactive_auth_switch { valign: center; }
+          }
+
+          Adw.ActionRow {
+            title: _("GSSAPIAuthentication");
+            subtitle: _("Enable Kerberos/GSSAPI auth");
+            activatable-widget: gssapi_auth_switch;
+
+            [suffix]
+            Switch gssapi_auth_switch { valign: center; }
+          }
+
+          Adw.ComboRow add_keys_to_agent_row {
+            title: _("AddKeysToAgent");
+            subtitle: _("Add identities to ssh-agent");
+            model: Gtk.StringList { strings: ["no", "yes", "ask", "confirm"]; };
+            selected: 0;
+          }
+
+          Adw.EntryRow preferred_authentications_entry {
+            title: _("PreferredAuthentications");
+          }
+
+          Adw.EntryRow identity_agent_entry {
+            title: _("IdentityAgent");
+          }
+        }
+
+        Adw.PreferencesGroup {
+          title: _("Connection Behavior");
+          description: _("Connection timeouts, logging, host key verification");
+
+          Adw.EntryRow connect_timeout_entry {
+            title: _("ConnectTimeout (s)");
+            show-apply-button: false;
+            input-purpose: number;
+          }
+
+          Adw.ComboRow request_tty_row {
+            title: _("RequestTTY");
+            subtitle: _("Request a TTY when connecting");
+            model: Gtk.StringList { strings: ["auto", "no", "yes", "force"]; };
+            selected: 0;
+          }
+
+          Adw.ComboRow log_level_row {
+            title: _("LogLevel");
+            model: Gtk.StringList { strings: ["QUIET", "FATAL", "ERROR", "INFO", "VERBOSE", "DEBUG", "DEBUG1", "DEBUG2", "DEBUG3"]; };
+            selected: 3;
+          }
+
+          Adw.ActionRow {
+            title: _("VerifyHostKeyDNS");
+            subtitle: _("Use SSHFP DNS records");
+            activatable-widget: verify_host_key_dns_switch;
+
+            [suffix]
+            Switch verify_host_key_dns_switch { valign: center; }
+          }
+
+          Adw.ComboRow canonicalize_hostname_row {
+            title: _("CanonicalizeHostname");
+            model: Gtk.StringList { strings: ["no", "yes", "always"]; };
+            selected: 0;
+          }
+
+          Adw.EntryRow canonical_domains_entry {
+            title: _("CanonicalDomains");
+          }
+        }
+
+        Adw.PreferencesGroup {
+          title: _("Connection Multiplexing");
+          description: _("ControlMaster/ControlPersist options");
+
+          Adw.ComboRow control_master_row {
+            title: _("ControlMaster");
+            model: Gtk.StringList { strings: ["no", "yes", "ask", "auto", "autoask"]; };
+            selected: 0;
+          }
+
+          Adw.EntryRow control_persist_entry {
+            title: _("ControlPersist");
+          }
+
+          Adw.EntryRow control_path_entry {
+            title: _("ControlPath");
+          }
+        }
       };
     }
 
@@ -428,36 +421,32 @@ template $HostEditor: Box {
       icon-name: "text-x-generic-symbolic";
       name: "raw";
 
-      child: Adw.Clamp {
-        maximum-size: 920;
-        tightening-threshold: 640;
-        child: Adw.PreferencesPage {
-          Adw.PreferencesGroup {
-            title: _("Raw Configuration");
-            description: _("Edit the raw SSH configuration and see changes highlighted");
+      child: Adw.PreferencesPage {
+        Adw.PreferencesGroup {
+          title: _("Raw Configuration");
+          description: _("Edit the raw SSH configuration and see changes highlighted");
 
-            ScrolledWindow {
+          ScrolledWindow {
+            hexpand: true;
+            vexpand: true;
+
+            TextView raw_text_view {
+              monospace: true;
+              wrap-mode: none;
+              editable: true;
               hexpand: true;
               vexpand: true;
+              left-margin: 8;
+              right-margin: 8;
+              top-margin: 6;
+              bottom-margin: 6;
 
-              TextView raw_text_view {
-                monospace: true;
-                wrap-mode: none;
-                editable: true;
-                hexpand: true;
-                vexpand: true;
-                left-margin: 8;
-                right-margin: 8;
-                top-margin: 6;
-                bottom-margin: 6;
-
-                styles [
-                  "raw-editor",
-                ]
-              }
+              styles [
+                "raw-editor",
+              ]
             }
           }
-        };
+        }
       };
     }
   }

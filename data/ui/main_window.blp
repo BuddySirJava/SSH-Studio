@@ -8,6 +8,9 @@ template $MainWindow: Adw.ApplicationWindow {
 
   Adw.ToastOverlay toast_overlay {
     Adw.ToolbarView main_box {
+      hexpand: true;
+      vexpand: true;
+
       [top]
       HeaderBar {
         show-title-buttons: true;
@@ -72,11 +75,9 @@ template $MainWindow: Adw.ApplicationWindow {
         }
       }
 
-      
-
+          
       Adw.NavigationSplitView split_view {
         collapsed: true;
-
         sidebar: Adw.NavigationPage {
           title: _("SSH Hosts");
 
@@ -84,19 +85,16 @@ template $MainWindow: Adw.ApplicationWindow {
             Adw.NavigationPage {
               title: _("SSH Hosts");
 
-              child: Adw.Clamp {
-                maximum-size: 680;
-                tightening-threshold: 480;
+              child: Box {
+                orientation: vertical;
+                spacing: 12;
+                margin-start: 20;
+                margin-end: 20;
 
-                child: Box {
-                  orientation: vertical;
-                  spacing: 12;
-
-                  $SearchBar search_bar {}
-                  $HostList host_list {}
-                };
-              };
-            }
+                $SearchBar search_bar {}
+                $HostList host_list {}
+              }
+            ;}
           };
         };
 

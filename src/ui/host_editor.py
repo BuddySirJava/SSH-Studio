@@ -23,6 +23,7 @@ class HostEditor(Gtk.Box):
 
     __gtype_name__ = "HostEditor"
 
+    search_entry = Gtk.Template.Child()
     viewstack = Gtk.Template.Child()
     patterns_entry = Gtk.Template.Child()
     patterns_error_label = Gtk.Template.Child()
@@ -97,9 +98,10 @@ class HostEditor(Gtk.Box):
             )
         except Exception:
             pass
-        self._connect_signals()
 
         self.buffer = self.raw_text_view.get_buffer()
+        self._connect_signals()
+
         self.tag_add = self.buffer.create_tag(
             "added", background="#aaffaa", foreground="black"
         )
@@ -115,6 +117,137 @@ class HostEditor(Gtk.Box):
 
     def set_app(self, app):
         self.app = app
+
+    def _on_search_entry_changed(self, entry):
+        try:
+            text = entry.get_text() if entry else ""
+        except Exception:
+            text = ""
+        self._on_search_changed(None, text)
+
+    def _on_search_entry_activate(self, entry):
+        self._on_search_entry_changed(entry)
+
+    def _find_search_entry(self, widget):
+        try:
+            from gi.repository import Gtk as _Gtk
+        except Exception:
+            return None
+        if isinstance(widget, _Gtk.SearchEntry):
+            return widget
+        try:
+            child = widget.get_first_child()
+        except Exception:
+            child = None
+        while child:
+            found = self._find_search_entry(child)
+            if found:
+                return found
+            try:
+                child = child.get_next_sibling()
+            except Exception:
+                break
+        return None
+
+    def _on_search_changed(self, search_bar, query: str):
+        query = (query or "").lower().strip()
+
+        def walk(widget, on_row):
+            try:
+                if isinstance(widget, (Adw.ActionRow, Adw.EntryRow, Adw.ComboRow, Adw.ExpanderRow)):
+                    on_row(widget)
+            except Exception:
+                pass
+            try:
+                child = widget.get_first_child()
+            except Exception:
+                child = None
+            while child:
+                walk(child, on_row)
+                try:
+                    child = child.get_next_sibling()
+                except Exception:
+                    break
+
+        # Capture current page to restore/switch later
+        try:
+            current_child = self.viewstack.get_visible_child()
+        except Exception:
+            current_child = None
+        try:
+            current_name = self.viewstack.get_visible_child_name()
+        except Exception:
+            current_name = None
+
+        pages = []
+        try:
+            for page in self.viewstack.get_pages():
+                try:
+                    name = page.get_name() if hasattr(page, "get_name") else None
+                except Exception:
+                    name = None
+                pages.append((name, page))
+        except Exception:
+            pass
+
+        first_match_name = None
+        first_match_child = None
+
+        for name, page in pages:
+            child = page.get_child()
+            if not isinstance(child, Adw.Clamp):
+                continue
+
+            prefs_root = child
+            any_visible_in_page = False
+            group_to_visible = {}
+
+            def on_row(row):
+                nonlocal any_visible_in_page
+                title = (row.get_title() or "").lower()
+                subtitle = (getattr(row, 'get_subtitle', lambda: "")() or "").lower()
+                match = not query or (query in title or query in subtitle)
+                try:
+                    row.set_visible(match)
+                except Exception:
+                    pass
+                if match:
+                    any_visible_in_page = True
+                try:
+                    parent = row.get_parent()
+                    while parent is not None and not isinstance(parent, Adw.PreferencesGroup):
+                        parent = parent.get_parent()
+                    if parent:
+                        group_to_visible[parent] = group_to_visible.get(parent, False) or match
+                except Exception:
+                    pass
+
+            walk(prefs_root, on_row)
+
+            for group, vis in group_to_visible.items():
+                try:
+                    group.set_visible(vis or not query)
+                except Exception:
+                    pass
+
+            if any_visible_in_page and not first_match_name and not first_match_child:
+                first_match_name = name
+                first_match_child = child
+
+        # Restore/switch page (switch only once, after filtering)
+        try:
+            if query:
+                if first_match_name and hasattr(self.viewstack, "set_visible_child_name"):
+                    self.viewstack.set_visible_child_name(first_match_name)
+                elif first_match_child and hasattr(self.viewstack, "set_visible_child"):
+                    self.viewstack.set_visible_child(first_match_child)
+            else:
+                if current_name and hasattr(self.viewstack, "set_visible_child_name"):
+                    self.viewstack.set_visible_child_name(current_name)
+                elif current_child and hasattr(self.viewstack, "set_visible_child"):
+                    self.viewstack.set_visible_child(current_child)
+        except Exception:
+            pass
 
     def _show_message(self, message: str):
         """Show a message using toast by emitting a signal."""
@@ -134,6 +267,15 @@ class HostEditor(Gtk.Box):
                 self._on_field_changed(widget)
 
             widget.connect(signal_name, handler)
+
+        # Connect search entry signals
+        if self.search_entry:
+            try:
+                self.search_entry.connect("search-changed", self._on_search_entry_changed)
+            except Exception:
+                pass
+            self.search_entry.connect("changed", self._on_search_entry_changed)
+            self.search_entry.connect("activate", self._on_search_entry_activate)
 
         # Helper for Adw.EntryRow text changes (uses notify::text)
         def connect_entry_row_text(widget, option_key: str):

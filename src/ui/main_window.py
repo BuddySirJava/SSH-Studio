@@ -642,3 +642,5 @@ Python {sys.version}
             secondary_text=message,
         )
         dialog.present()
+
+

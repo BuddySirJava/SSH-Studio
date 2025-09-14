@@ -2,24 +2,19 @@
 <component type="desktop-application">
   <id>io.github.BuddySirJava.SSH-Studio</id>
   <name>SSH Studio</name>
-  <summary>Edit and validate your SSH config with a simple GTK 4 desktop app</summary>
+  <summary>Edit SSH configuration files</summary>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>GPL-3.0-only</project_license>
+  <project_license>GPL-3.0-or-later</project_license>
   <description>
-    <p>SSH Studio is a native GTK 4 desktop app for managing your SSH config. It provides a friendly interface to create, edit, and validate SSH hosts without diving into terminal editors.</p>
-    <p>Features include:</p>
-    <ul>
-      <li>Visual host editor – Fill in common fields like Host, HostName, User, Port, and IdentityFile with ease.</li>
-      <li>Inline validation – Duplicate aliases, invalid ports, and syntax errors are caught instantly.</li>
-      <li>Search and filter – Quickly locate hosts by alias, hostname, user, or identity.</li>
-      <li>Raw and Diff view – Edit the raw ssh_config text with live diff highlighting.</li>
-      <li>Quick actions – Copy a SSH command, test a connection, or revert changes in one click.</li>
-      <li>SSH key management – Import, generate, and manage your keys directly in the app.</li>
-      <li>Safe saves – Configurable automatic backups and atomic writes to protect your configuration.</li>
-      <li>Designed for GNOME – Smooth GTK 4 interface with dark style preference, keyboard and mouse friendly.</li>
-    </ul>
+    <p>SSH Studio is a native desktop application for managing SSH configuration files. It provides a user-friendly interface to create, edit, and validate SSH hosts without needing to use terminal editors.</p>
+    <p>The application offers both visual and text-based editing modes. The visual editor lets you fill in common SSH fields like Host, HostName, User, Port, and IdentityFile with form-based inputs. For advanced users, the raw text editor provides direct access to the configuration with live syntax validation and diff highlighting.</p>
+    <p>Key features include inline validation to catch duplicate aliases and syntax errors, search and filtering capabilities, SSH key management tools, and safe saving with automatic backups. The interface is designed for GNOME with support for both light and dark themes.</p>
   </description>
-
+  <icon type="stock">io.github.BuddySirJava.SSH-Studio</icon>
+  <branding>
+  <color type="primary" scheme_preference="light">#ffa348</color>
+  <color type="primary" scheme_preference="dark">#57e389</color>
+  </branding>
   <launchable type="desktop-id">io.github.BuddySirJava.SSH-Studio.desktop</launchable>
   <categories>
     <category>System</category>
@@ -45,11 +40,15 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release version="1.2.1" date="2025-09-01"/>
+    <release version="1.2.1" date="2025-09-01">
+      <description>
+        <p>This release introduces improved icon design and enhanced visual consistency. The application now features updated branding colors and better integration with GNOME's design language.</p>
+      </description>
+    </release>
   </releases>
   <url type="homepage">https://github.com/BuddySirJava/SSH-Studio</url>
   <url type="bugtracker">https://github.com/BuddySirJava/SSH-Studio/issues</url>
   <developer id="io.github.buddysirjava">
-    <name>Buddy</name>
+    <name>Mahyar Darvishi</name>
   </developer>
 </component>

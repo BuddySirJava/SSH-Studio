@@ -3,14 +3,17 @@ using Gtk 4.0;
 template $SearchBar: Box {
   orientation: horizontal;
   spacing: 0;
+  hexpand: true;
 
   SearchEntry search_entry {
     placeholder-text: _("Search hosts, hostnames, users, keys...");
     tooltip-text: _("Search across all SSH host configurations");
     hexpand: true;
     halign: center;
-    margin-top: 8;
+    margin-top: 12;
     margin-bottom: 8;
+    margin-start: 20;
+    margin-end: 20;
 
     styles [
       "pill",
