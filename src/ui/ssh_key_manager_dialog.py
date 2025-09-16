@@ -8,7 +8,9 @@ from pathlib import Path
 import subprocess
 
 
-@Gtk.Template(resource_path="/io/github/BuddySirJava/SSH-Studio/ui/ssh_key_manager_dialog.ui")
+@Gtk.Template(
+    resource_path="/io/github/BuddySirJava/SSH-Studio/ui/ssh_key_manager_dialog.ui"
+)
 class SSHKeyManagerDialog(Adw.Dialog):
     __gtype_name__ = "SSHKeyManagerDialog"
 

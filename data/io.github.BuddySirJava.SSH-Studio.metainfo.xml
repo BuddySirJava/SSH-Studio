@@ -27,20 +27,20 @@
   <content_rating type="oars-1.1"/>
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.2.2/assets/screenshots/ss1.png</image>
+      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.2.3/assets/screenshots/ss1.png</image>
       <caption>Main window with host list and details</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.2.2/assets/screenshots/ss2.png</image>
+      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.2.3/assets/screenshots/ss2.png</image>
       <caption>Synchronizing Raw/Diff View</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.2.2/assets/screenshots/ss3.png</image>
+      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.2.3/assets/screenshots/ss3.png</image>
       <caption>SSH Key Management</caption>
     </screenshot>
   </screenshots>
   <releases>
-    <release version="1.2.2" date="2025-09-01">
+    <release version="1.2.1" date="2025-09-01">
       <description>
         <p>This release introduces improved icon design and enhanced visual consistency. The application now features updated branding colors and better integration with GNOME's design language.</p>
       </description>
@@ -48,6 +48,12 @@
     <release version="1.2.2" date="2025-09-14">
       <description>
         <p>This release introduces improved icon design and enhanced visual consistency.</p>
+      </description>
+    </release>
+    <release version="1.2.3" date="2025-09-17">
+      <description>
+        <p>Host Editor searchbar fixed.</p>
+        <p>Unusual behavior of host list fixed.</p>
       </description>
     </release>
   </releases>

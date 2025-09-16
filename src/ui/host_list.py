@@ -250,7 +250,6 @@ class HostList(Gtk.Box):
     def _rebuild_listbox_rows(self):
         if not hasattr(self, "list_box") or self.list_box is None:
             return
-        # Clear existing rows
         while (child := self.list_box.get_first_child()) is not None:
             self.list_box.remove(child)
 

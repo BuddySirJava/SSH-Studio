@@ -38,6 +38,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.parser = app.parser
         self.is_dirty = False
         self._raw_wrap_lines = False
+        self._original_width = -1
+        self._original_height = -1
 
         try:
             if hasattr(self, "host_editor") and self.host_editor is not None:
@@ -57,6 +59,18 @@ class MainWindow(Adw.ApplicationWindow):
             self.add_controller(key_controller)
         except Exception:
             pass
+
+    def _set_host_editor_visible(self, visible):
+        if visible:
+            if self._original_width == -1:
+                self._original_width = self.get_width()
+                self._original_height = self.get_height()
+            self.set_default_size(1200, self._original_height)
+        elif self._original_width != -1:
+            self.set_default_size(self._original_width, self._original_height)
+            self._original_width = -1
+            self._original_height = -1
+        self.host_editor.set_visible(visible)
 
     def _load_preferences(self):
         """Load preferences from the saved file and apply them to the window."""
@@ -375,7 +389,7 @@ class MainWindow(Adw.ApplicationWindow):
     def _on_host_selected(self, host_list, host):
         """Handle host selection from the list."""
         self.host_editor.load_host(host)
-        self.host_editor.set_visible(True)
+        self._set_host_editor_visible(True)
         try:
             if self.split_view.get_collapsed():
                 self.split_view.set_collapsed(False)
@@ -411,14 +425,14 @@ class MainWindow(Adw.ApplicationWindow):
                     self.host_list.load_hosts(self.parser.config.hosts)
                     try:
                         if not self.parser.config.hosts:
-                            self.host_editor.set_visible(False)
+                            self._set_host_editor_visible(False)
                     except Exception:
                         pass
                 except Exception:
                     pass
 
             self._show_undo_toast(_("Host added"), undo_add)
-            self.host_editor.set_visible(True)
+            self._set_host_editor_visible(True)
             self.host_editor.load_host(host)
 
     def _on_host_deleted(self, host_list, host):
@@ -440,7 +454,7 @@ class MainWindow(Adw.ApplicationWindow):
                     self._write_and_reload(show_status=False)
                     try:
                         self.host_list.select_host(host)
-                        self.host_editor.set_visible(True)
+                        self._set_host_editor_visible(True)
                         self.host_editor.load_host(host)
                     except Exception:
                         pass
@@ -452,7 +466,7 @@ class MainWindow(Adw.ApplicationWindow):
             if not self.parser.config.hosts:
                 self.host_editor.current_host = None
                 self.host_editor._clear_all_fields()
-                self.host_editor.set_visible(False)
+                self._set_host_editor_visible(False)
                 if self.save_button is not None:
                     self.save_button.set_sensitive(False)
                 self.is_dirty = False
@@ -590,7 +604,7 @@ class MainWindow(Adw.ApplicationWindow):
             transient_for=self,
             application_name=_("SSH-Studio"),
             application_icon="io.github.BuddySirJava.SSH-Studio",
-            version="1.2.2",
+            version="1.2.3",
             developer_name=_("Made with ❤️ by Mahyar Darvishi"),
             website="https://github.com/BuddySirJava/ssh-studio",
             issue_url="https://github.com/BuddySirJava/ssh-studio/issues",
@@ -642,5 +656,3 @@ Python {sys.version}
             secondary_text=message,
         )
         dialog.present()
-
-

@@ -60,9 +60,6 @@ class HostEditor(Gtk.Box):
     control_master_row = Gtk.Template.Child()
     control_persist_entry = Gtk.Template.Child()
     control_path_entry = Gtk.Template.Child()
-    custom_options_list = Gtk.Template.Child()
-    custom_options_expander = Gtk.Template.Child()
-    add_custom_button = Gtk.Template.Child()
     raw_text_view = Gtk.Template.Child()
     copy_row = Gtk.Template.Child()
     test_row = Gtk.Template.Child()
@@ -154,7 +151,9 @@ class HostEditor(Gtk.Box):
 
         def walk(widget, on_row):
             try:
-                if isinstance(widget, (Adw.ActionRow, Adw.EntryRow, Adw.ComboRow, Adw.ExpanderRow)):
+                if isinstance(
+                    widget, (Adw.ActionRow, Adw.EntryRow, Adw.ComboRow, Adw.ExpanderRow)
+                ):
                     on_row(widget)
             except Exception:
                 pass
@@ -194,8 +193,12 @@ class HostEditor(Gtk.Box):
         first_match_child = None
 
         for name, page in pages:
-            child = page.get_child()
-            if not isinstance(child, Adw.Clamp):
+            child = None
+            try:
+                child = page.get_child()
+            except Exception:
+                child = None
+            if not child:
                 continue
 
             prefs_root = child
@@ -205,7 +208,7 @@ class HostEditor(Gtk.Box):
             def on_row(row):
                 nonlocal any_visible_in_page
                 title = (row.get_title() or "").lower()
-                subtitle = (getattr(row, 'get_subtitle', lambda: "")() or "").lower()
+                subtitle = (getattr(row, "get_subtitle", lambda: "")() or "").lower()
                 match = not query or (query in title or query in subtitle)
                 try:
                     row.set_visible(match)
@@ -215,10 +218,14 @@ class HostEditor(Gtk.Box):
                     any_visible_in_page = True
                 try:
                     parent = row.get_parent()
-                    while parent is not None and not isinstance(parent, Adw.PreferencesGroup):
+                    while parent is not None and not isinstance(
+                        parent, Adw.PreferencesGroup
+                    ):
                         parent = parent.get_parent()
                     if parent:
-                        group_to_visible[parent] = group_to_visible.get(parent, False) or match
+                        group_to_visible[parent] = (
+                            group_to_visible.get(parent, False) or match
+                        )
                 except Exception:
                     pass
 
@@ -237,7 +244,9 @@ class HostEditor(Gtk.Box):
         # Restore/switch page (switch only once, after filtering)
         try:
             if query:
-                if first_match_name and hasattr(self.viewstack, "set_visible_child_name"):
+                if first_match_name and hasattr(
+                    self.viewstack, "set_visible_child_name"
+                ):
                     self.viewstack.set_visible_child_name(first_match_name)
                 elif first_match_child and hasattr(self.viewstack, "set_visible_child"):
                     self.viewstack.set_visible_child(first_match_child)
@@ -271,7 +280,9 @@ class HostEditor(Gtk.Box):
         # Connect search entry signals
         if self.search_entry:
             try:
-                self.search_entry.connect("search-changed", self._on_search_entry_changed)
+                self.search_entry.connect(
+                    "search-changed", self._on_search_entry_changed
+                )
             except Exception:
                 pass
             self.search_entry.connect("changed", self._on_search_entry_changed)
@@ -437,7 +448,6 @@ class HostEditor(Gtk.Box):
         self.identity_button.connect("clicked", self._on_identity_file_clicked)
         if hasattr(self, "identity_pick_button") and self.identity_pick_button:
             self.identity_pick_button.connect("clicked", self._on_identity_pick_clicked)
-        self.add_custom_button.connect("clicked", self._on_add_custom_option)
         self.copy_row.connect("activated", lambda r: self._on_copy_ssh_command(None))
         self.test_row.connect("activated", lambda r: self._on_test_connection(None))
         self.save_button.connect("clicked", self._on_save_clicked)
@@ -445,7 +455,6 @@ class HostEditor(Gtk.Box):
 
     def load_host(self, host: SSHHost):
         self.is_loading = True
-        # Reset touched state for a fresh load
         self._touched_options.clear()
         self.current_host = host
         self.original_host_state = copy.deepcopy(host)
@@ -555,7 +564,7 @@ class HostEditor(Gtk.Box):
         self.control_persist_entry.set_text(host.get_option("ControlPersist") or "")
         self.control_path_entry.set_text(host.get_option("ControlPath") or "")
 
-        self._load_custom_options(host)
+        # Custom options UI removed
 
         self.raw_text_view.get_buffer().set_text("\n".join(host.raw_lines))
         self.original_raw_content = "\n".join(host.raw_lines)
@@ -591,7 +600,7 @@ class HostEditor(Gtk.Box):
             self.tcp_keepalive_switch.set_active(True)
         if hasattr(self, "strict_host_key_row"):
             self.strict_host_key_row.set_selected(0)
-        self._clear_custom_options()
+        # Custom options UI removed
 
     def _load_custom_options(self, host: SSHHost):
         """Loads custom SSH options into the custom options list."""
@@ -674,7 +683,7 @@ class HostEditor(Gtk.Box):
         entry_container.append(key_box)
         entry_container.append(value_box)
 
-        # Remove button with modern styling
+        # Remove button (not used; custom options UI removed)
         remove_button = Gtk.Button()
         remove_button.set_icon_name("user-trash-symbolic")
         remove_button.add_css_class("flat")
@@ -692,14 +701,16 @@ class HostEditor(Gtk.Box):
         action_row.value_entry = value_entry
 
         # Add to the list
-        self.custom_options_list.append(action_row)
+        if hasattr(self, "custom_options_list") and self.custom_options_list:
+            self.custom_options_list.append(action_row)
 
         # Connect change handlers
         key_entry.connect("changed", self._on_custom_option_changed)
         value_entry.connect("changed", self._on_custom_option_changed)
 
-        if not self.custom_options_expander.get_expanded():
-            self.custom_options_expander.set_expanded(True)
+        if hasattr(self, "custom_options_expander") and self.custom_options_expander:
+            if not self.custom_options_expander.get_expanded():
+                self.custom_options_expander.set_expanded(True)
 
     def _on_field_changed(self, widget, *args):
         """Handle changes in basic and networking fields to update host and dirty state."""
@@ -1089,7 +1100,7 @@ class HostEditor(Gtk.Box):
             ),
         )
 
-        self._update_custom_options()
+        # Custom options UI removed
 
     def _update_host_option(self, key: str, value: str):
         """Helper to update or remove a single SSH option on the current host."""
@@ -1137,18 +1148,18 @@ class HostEditor(Gtk.Box):
             opt for opt in self.current_host.options if opt.key in common_options
         ]
 
-        for action_row in self.custom_options_list:
-            # Access the stored entry references
-            if hasattr(action_row, "key_entry") and hasattr(action_row, "value_entry"):
-                key_entry = action_row.key_entry
-                value_entry = action_row.value_entry
-
-                if key_entry and value_entry:
-                    key = key_entry.get_text().strip()
-                    value = value_entry.get_text().strip()
-
-                    if key and value:
-                        self.current_host.set_option(key, value)
+        if hasattr(self, "custom_options_list") and self.custom_options_list:
+            for action_row in self.custom_options_list:
+                if hasattr(action_row, "key_entry") and hasattr(
+                    action_row, "value_entry"
+                ):
+                    key_entry = action_row.key_entry
+                    value_entry = action_row.value_entry
+                    if key_entry and value_entry:
+                        key = key_entry.get_text().strip()
+                        value = value_entry.get_text().strip()
+                        if key and value:
+                            self.current_host.set_option(key, value)
 
     def _on_identity_file_clicked(self, button):
         dialog = Gtk.FileChooserDialog(
@@ -1272,7 +1283,8 @@ class HostEditor(Gtk.Box):
 
     def _on_remove_custom_option(self, button, action_row):
         """Handle remove custom option button click."""
-        self.custom_options_list.remove(action_row)
+        if hasattr(self, "custom_options_list") and self.custom_options_list:
+            self.custom_options_list.remove(action_row)
         self._update_host_from_fields()
         self.emit("host-changed", self.current_host)
         self._show_message(_("Custom option removed"))
@@ -1406,18 +1418,7 @@ class HostEditor(Gtk.Box):
             except ValueError:
                 errors["port"] = _("Port must be numeric.")
 
-        # Mark invalid custom option keys with red border and tooltip
-        for action_row in self.custom_options_list:
-            if hasattr(action_row, "key_entry"):
-                key_entry = action_row.key_entry
-                if key_entry and isinstance(key_entry, Gtk.Entry):
-                    key = key_entry.get_text().strip()
-                    key_entry.remove_css_class("entry-error")
-                    if not key:
-                        key_entry.add_css_class("entry-error")
-                        key_entry.set_tooltip_text(
-                            _("Custom option key cannot be empty.")
-                        )
+        # Custom options UI removed
 
         # Apply inline error texts
         if "patterns" in errors:
@@ -1500,11 +1501,7 @@ class HostEditor(Gtk.Box):
             self.patterns_entry.remove_css_class("entry-error")
         if hasattr(self, "port_entry"):
             self.port_entry.remove_css_class("entry-error")
-        for action_row in self.custom_options_list:
-            if hasattr(action_row, "key_entry"):
-                key_entry = action_row.key_entry
-                if key_entry and isinstance(key_entry, Gtk.Entry):
-                    key_entry.remove_css_class("entry-error")
+        # Custom options UI removed
         if (
             hasattr(self, "serveralive_interval_entry")
             and self.serveralive_interval_entry

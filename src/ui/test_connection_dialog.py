@@ -8,7 +8,9 @@ from gettext import gettext as _
 import os
 
 
-@Gtk.Template(resource_path="/io/github/BuddySirJava/SSH-Studio/ui/test_connection_dialog.ui")
+@Gtk.Template(
+    resource_path="/io/github/BuddySirJava/SSH-Studio/ui/test_connection_dialog.ui"
+)
 class TestConnectionDialog(Adw.Window):
     __gtype_name__ = "TestConnectionDialog"
 

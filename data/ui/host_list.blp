@@ -3,6 +3,7 @@ using Gtk 4.0;
 template $HostList: Box {
   orientation: vertical;
   spacing: 0;
+  vexpand: true;
 
   styles [
     "host-list",
@@ -42,12 +43,8 @@ template $HostList: Box {
 
     ScrolledWindow {
       hexpand: true;
-      vexpand: false;
+      vexpand: true;
       min-content-width: 350;
-      margin-start: 12;
-      margin-end: 20;
-      height-request: 650;
-      valign: start;
 
       styles [
         "host-list-scroll",

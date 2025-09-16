@@ -204,49 +204,7 @@ template $HostEditor: Box {
       name: "advanced";
 
       child: Adw.PreferencesPage {
-        Adw.PreferencesGroup {
-          title: _("Custom SSH Options");
-          description: _("Add custom SSH configuration options not available in the standard fields");
-          visible: false;
-          sensitive: false;
-
-          Adw.ActionRow {
-            title: _("Add Custom Option");
-            subtitle: _("Add SSH options like Compression, ServerAliveInterval, etc.");
-            activatable: true;
-            activatable-widget: add_custom_button;
-
-            [suffix]
-            Button add_custom_button {
-              icon-name: "list-add-symbolic";
-              tooltip-text: _("Add a new custom SSH option");
-              css-classes: ["circular", "suggested-action"];
-            }
-          }
-
-          Adw.ExpanderRow custom_options_expander {
-            title: _("Custom Options");
-            subtitle: _("Manage your custom SSH configuration options");
-            show-enable-switch: false;
-            vexpand: true;
-
-            child: ScrolledWindow {
-              hexpand: true;
-              vexpand: true;
-              vscrollbar-policy: never;
-              hscrollbar-policy: never;
-
-              ListBox custom_options_list {
-                selection-mode: none;
-                css-classes: ["boxed-list"];
-
-                styles [
-                  "custom-options-list",
-                ]
-              }
-            };
-          }
-        }
+        
 
         Adw.PreferencesGroup {
           title: _("Advanced Options");

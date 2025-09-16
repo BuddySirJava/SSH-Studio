@@ -28,7 +28,8 @@ if os.getenv("FLATPAK_ID"):
 class SSHConfigStudioApp(Adw.Application):
     def __init__(self):
         super().__init__(
-            application_id="io.github.BuddySirJava.SSH-Studio", flags=Gio.ApplicationFlags.FLAGS_NONE
+            application_id="io.github.BuddySirJava.SSH-Studio",
+            flags=Gio.ApplicationFlags.FLAGS_NONE,
         )
 
         self.parser = None
@@ -166,9 +167,11 @@ class SSHConfigStudioApp(Adw.Application):
 
     def _load_css_styles(self):
         try:
-            if os.getenv("FLATPAK_ID"):  
+            if os.getenv("FLATPAK_ID"):
                 css_provider = Gtk.CssProvider()
-                css_provider.load_from_resource("/io/github/BuddySirJava/SSH-Studio/ssh-studio.css")
+                css_provider.load_from_resource(
+                    "/io/github/BuddySirJava/SSH-Studio/ssh-studio.css"
+                )
                 Gtk.StyleContext.add_provider_for_display(
                     Gdk.Display.get_default(),
                     css_provider,
@@ -176,10 +179,12 @@ class SSHConfigStudioApp(Adw.Application):
                 )
                 logging.info("Loaded CSS styles from GResource bundle (Flatpak)")
                 return
-            else: 
+            else:
                 try:
                     css_provider = Gtk.CssProvider()
-                    css_provider.load_from_resource("/io/github/BuddySirJava/SSH-Studio/ssh-studio.css")
+                    css_provider.load_from_resource(
+                        "/io/github/BuddySirJava/SSH-Studio/ssh-studio.css"
+                    )
                     Gtk.StyleContext.add_provider_for_display(
                         Gdk.Display.get_default(),
                         css_provider,
@@ -192,7 +197,9 @@ class SSHConfigStudioApp(Adw.Application):
 
                 css_candidates = [
                     os.path.join(
-                        GLib.get_user_data_dir(), "io.github.BuddySirJava.SSH-Studio", "ssh-studio.css"
+                        GLib.get_user_data_dir(),
+                        "io.github.BuddySirJava.SSH-Studio",
+                        "ssh-studio.css",
                     ),
                     os.path.join(GLib.get_user_data_dir(), "ssh-studio.css"),
                     "/app/share/io.github.BuddySirJava.SSH-Studio/ssh-studio.css",
