@@ -8,7 +8,7 @@ Exec=ssh-studio
 TryExec=ssh-studio
 Icon=io.github.BuddySirJava.SSH-Studio
 Terminal=false
-Categories=System;Network;Development;
+Categories=Utility;
 Keywords=SSH;config;network;administration;
 StartupNotify=true
 
