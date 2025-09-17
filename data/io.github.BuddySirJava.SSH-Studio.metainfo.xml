@@ -40,9 +40,10 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release version="1.2.1" date="2025-09-01">
+    <release version="1.2.3" date="2025-09-17">
       <description>
-        <p>This release introduces improved icon design and enhanced visual consistency. The application now features updated branding colors and better integration with GNOME's design language.</p>
+        <p>Host Editor searchbar fixed.</p>
+        <p>Unusual behavior of host list fixed.</p>
       </description>
     </release>
     <release version="1.2.2" date="2025-09-14">
@@ -50,10 +51,9 @@
         <p>This release introduces improved icon design and enhanced visual consistency.</p>
       </description>
     </release>
-    <release version="1.2.3" date="2025-09-17">
+    <release version="1.2.1" date="2025-09-01">
       <description>
-        <p>Host Editor searchbar fixed.</p>
-        <p>Unusual behavior of host list fixed.</p>
+        <p>This release introduces improved icon design and enhanced visual consistency. The application now features updated branding colors and better integration with GNOME's design language.</p>
       </description>
     </release>
   </releases>
