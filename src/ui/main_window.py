@@ -2,14 +2,13 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk, Gio, GLib, Pango, GdkPixbuf, Gdk, Adw
+from gi.repository import Gtk, Gio, Gdk, Adw
 from pathlib import Path
 from gettext import gettext as _
 import sys
-
+from .search_bar import SearchBar
 from .host_list import HostList
 from .host_editor import HostEditor
-from .search_bar import SearchBar
 
 
 @Gtk.Template(resource_path="/io/github/BuddySirJava/SSH-Studio/ui/main_window.ui")
@@ -21,6 +20,8 @@ class MainWindow(Adw.ApplicationWindow):
     main_box = Gtk.Template.Child()
     toast_overlay = Gtk.Template.Child()
     toggle_sidebar_button = Gtk.Template.Child()
+    global_actionbar = Gtk.Template.Child()
+    unsaved_label = Gtk.Template.Child()
     add_button = Gtk.Template.Child()
     duplicate_button = Gtk.Template.Child()
     delete_button = Gtk.Template.Child()
@@ -28,6 +29,8 @@ class MainWindow(Adw.ApplicationWindow):
     split_view = Gtk.Template.Child()
     host_list = Gtk.Template.Child()
     host_editor = Gtk.Template.Child()
+    save_button = Gtk.Template.Child()
+    revert_button = Gtk.Template.Child()
 
     def __init__(self, app):
         super().__init__(
@@ -204,14 +207,42 @@ class MainWindow(Adw.ApplicationWindow):
     def _setup_actions(self):
         actions = Gio.SimpleActionGroup()
 
+        # File operations
         open_action = Gio.SimpleAction.new("open-config", None)
         open_action.connect("activate", self._on_open_config)
         actions.add_action(open_action)
+
+        save_action = Gio.SimpleAction.new("save", None)
+        save_action.connect("activate", self._on_save_clicked)
+        actions.add_action(save_action)
 
         reload_action = Gio.SimpleAction.new("reload", None)
         reload_action.connect("activate", self._on_reload)
         actions.add_action(reload_action)
 
+        # Host operations
+        add_host_action = Gio.SimpleAction.new("add-host", None)
+        add_host_action.connect("activate", self._on_add_clicked)
+        actions.add_action(add_host_action)
+
+        duplicate_host_action = Gio.SimpleAction.new("duplicate-host", None)
+        duplicate_host_action.connect("activate", self._on_duplicate_clicked)
+        actions.add_action(duplicate_host_action)
+
+        delete_host_action = Gio.SimpleAction.new("delete-host", None)
+        delete_host_action.connect("activate", self._on_delete_clicked)
+        actions.add_action(delete_host_action)
+
+        # Navigation
+        search_action = Gio.SimpleAction.new("search", None)
+        search_action.connect("activate", self._on_search_action)
+        actions.add_action(search_action)
+
+        toggle_sidebar_action = Gio.SimpleAction.new("toggle-sidebar", None)
+        toggle_sidebar_action.connect("activate", self._on_toggle_sidebar_action)
+        actions.add_action(toggle_sidebar_action)
+
+        # Preferences and tools
         prefs_action = Gio.SimpleAction.new("preferences", None)
         prefs_action.connect("activate", self._on_preferences)
         actions.add_action(prefs_action)
@@ -224,7 +255,19 @@ class MainWindow(Adw.ApplicationWindow):
         about_action.connect("activate", self._on_about)
         actions.add_action(about_action)
 
+        keyboard_shortcuts_action = Gio.SimpleAction.new("keyboard-shortcuts", None)
+        keyboard_shortcuts_action.connect("activate", self._on_keyboard_shortcuts)
+        actions.add_action(keyboard_shortcuts_action)
+
         self.insert_action_group("app", actions)
+
+    def _on_toggle_sidebar_action(self, action, param):
+        """Handle toggle sidebar action."""
+        self._on_toggle_sidebar_clicked(None)
+
+    def _on_search_action(self, action, param):
+        """Handle search action."""
+        self._toggle_search()
 
     def _on_toggle_sidebar_clicked(self, button):
         """Toggle visibility of the host list (sidebar) in the split view."""
@@ -250,36 +293,105 @@ class MainWindow(Adw.ApplicationWindow):
             pass
 
     def _on_key_pressed(self, controller, keyval, keycode, state):
-        if keyval == Gdk.KEY_Escape and self.search_bar.get_visible():
-            try:
-                focus_widget = None
-                try:
-                    focus_widget = self.get_focus()
-                except Exception:
-                    focus_widget = None
+        ctrl_pressed = bool(state & Gdk.ModifierType.CONTROL_MASK)
 
-                def _is_descendant(widget, ancestor):
-                    try:
-                        while widget is not None:
-                            if widget == ancestor:
-                                return True
-                            widget = widget.get_parent()
-                    except Exception:
-                        pass
-                    return False
+        if ctrl_pressed:
+            if keyval == Gdk.KEY_o:
+                self._on_open_config(None, None)
+                return True
+            elif keyval == Gdk.KEY_s:
+                self._on_save_clicked(None)
+                return True
+            elif keyval == Gdk.KEY_r:
+                self._on_reload(None, None)
+                return True
+            elif keyval == Gdk.KEY_n:
+                self._on_add_clicked(None)
+                return True
+            elif keyval == Gdk.KEY_d:
+                self._on_duplicate_clicked(None)
+                return True
+            elif keyval == Gdk.KEY_f:
+                self._toggle_search()
+                return True
+            elif keyval == Gdk.KEY_comma:
+                self._on_preferences(None, None)
+                return True
+            elif keyval == Gdk.KEY_k:
+                self._on_manage_keys(None, None)
+                return True
 
-                if not _is_descendant(focus_widget, self.search_bar):
-                    return False
-
-                if hasattr(self.search_bar, "set_search_mode"):
-                    self.search_bar.set_search_mode(False)
-                else:
-                    self.search_bar.set_visible(False)
-            except Exception:
-                self.search_bar.set_visible(False)
-            self.search_bar.clear_search()
-            self.host_list.filter_hosts("")
+        if ctrl_pressed and keyval == Gdk.KEY_Delete:
+            self._on_delete_clicked(None)
             return True
+
+        if keyval == Gdk.KEY_Escape:
+            if self.search_bar.get_visible():
+                try:
+                    focus_widget = None
+                    try:
+                        focus_widget = self.get_focus()
+                    except Exception:
+                        focus_widget = None
+
+                    def _is_descendant(widget, ancestor):
+                        try:
+                            while widget is not None:
+                                if widget == ancestor:
+                                    return True
+                                widget = widget.get_parent()
+                        except Exception:
+                            pass
+                        return False
+
+                    if not _is_descendant(focus_widget, self.search_bar):
+                        return False
+
+                    if hasattr(self.search_bar, "set_search_mode"):
+                        self.search_bar.set_search_mode(False)
+                    else:
+                        self.search_bar.set_visible(False)
+                except Exception:
+                    self.search_bar.set_visible(False)
+                self.search_bar.clear_search()
+                self.host_list.filter_hosts("")
+                return True
+            return False
+
+        if keyval == Gdk.KEY_F9:
+            self._on_toggle_sidebar_clicked(None)
+            return True
+
+        if keyval == Gdk.KEY_Return or keyval == Gdk.KEY_KP_Enter:
+            if hasattr(self.host_list, "get_selected_host"):
+                selected_host = self.host_list.get_selected_host()
+                if selected_host:
+                    self.host_editor.load_host(selected_host)
+                    self._set_host_editor_visible(True)
+                    return True
+            return False
+
+        if keyval == Gdk.KEY_F2:
+            if hasattr(self.host_list, "get_selected_host"):
+                selected_host = self.host_list.get_selected_host()
+                if selected_host:
+                    self.host_editor.load_host(selected_host)
+                    self._set_host_editor_visible(True)
+                    return True
+            return False
+
+        if keyval in [
+            Gdk.KEY_Up,
+            Gdk.KEY_Down,
+            Gdk.KEY_Home,
+            Gdk.KEY_End,
+            Gdk.KEY_Page_Up,
+            Gdk.KEY_Page_Down,
+        ]:
+            if hasattr(self.host_list, "navigate_with_key"):
+                return self.host_list.navigate_with_key(keyval, state)
+            return False
+
         return False
 
     def _on_escape_pressed(self, shortcut):
@@ -595,7 +707,14 @@ class MainWindow(Adw.ApplicationWindow):
             self._update_status(_("Preferences saved"))
             return False
 
-        dialog.connect("close-request", on_close_request)
+        dialog.connect("close-attempt", on_close_request)
+        dialog.present(self)
+
+    def _on_keyboard_shortcuts(self, action, param):
+        """Open the keyboard shortcuts dialog."""
+        from .keyboard_shortcuts_dialog import KeyboardShortcutsDialog
+
+        dialog = KeyboardShortcutsDialog(self)
         dialog.present()
 
     def _on_about(self, action, param):

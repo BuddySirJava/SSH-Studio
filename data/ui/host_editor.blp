@@ -1,85 +1,46 @@
 using Gtk 4.0;
 using Adw 1;
 
-template $HostEditor: Box {
+template $HostEditor: Gtk.Box {
   orientation: vertical;
-  spacing: 16;
   vexpand: true;
   hexpand: true;
-  margin-start: 40;
-  margin-end: 40;
+  margin-start: 20;
+  margin-end: 20;
   styles [
     "editor-pane",
-    "host-editor",
+    "host-editor-pane",
   ]
-
-  Box {
-    orientation: vertical;
-    spacing: 6;
-    margin-top: 12;
-
-    Box {
-      orientation: horizontal;
-      hexpand: true;
-      spacing: 12;
-
-      Adw.ViewSwitcher {
+  Adw.Clamp {
+      Adw.ViewSwitcher viewswitcher {
         stack: viewstack;
         policy: wide;
-        halign: start;
-        hexpand: false;
+        valign: center;
+        halign: center;
+        hexpand: true;
+        margin-top: 16;
+        margin-bottom: 16;
 
         styles [
           "view-switcher",
         ]
-      }
 
-      Box {
-        orientation: horizontal;
-        spacing: 6;
-        halign: end;
-        hexpand: true;
-
-        Button revert_button {
-          label: _("Revert");
-          sensitive: false;
-          styles [
-            "destructive-action",
-          ]
-        }
-
-        Button save_button {
-          label: _("Save");
-          sensitive: false;
-
-          styles [
-            "suggested-action",
-          ]
-        }
-      }
+      }  
     }
-
-    Separator {
-      orientation: horizontal;
-      margin-top: 6;
-    }
-
-    SearchEntry search_entry {
-      placeholder-text: _("Search settings…");
-      hexpand: true;
-      margin-top: 12;
-      margin-bottom: 6;
-    }
-  }
 
   Adw.ViewStack viewstack {
     vexpand: true;
-    notify::visible-child-name => $on_stack_changed();
-
+    margin-start: 4;
+    margin-end: 4;
+    styles [
+      "host-editor",
+    ]
+   
     Adw.ViewStackPage {
       title: _("Settings");
       icon-name: "preferences-system-symbolic";
       name: "settings";
+      
 
       child: Adw.PreferencesPage {
         Adw.PreferencesGroup {
@@ -96,6 +57,7 @@ template $HostEditor: Box {
             styles [
               "error-label",
               "status-error",
+              "dim-label",
             ]
           }
 
@@ -118,6 +80,7 @@ template $HostEditor: Box {
             styles [
               "error-label",
               "status-error",
+              "dim-label",
             ]
           }
         }
@@ -407,5 +370,15 @@ template $HostEditor: Box {
         }
       };
     }
+  }
+
+  /* Local banner moved to main window ActionBar for consistency */
+  Revealer banner_revealer { visible: false; }
+
+  /* Hidden placeholders to satisfy template children in code */
+  Box {
+    visible: false;
+    Button save_button {}
+    Button revert_button {}
   }
 }

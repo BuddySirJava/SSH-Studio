@@ -1,11 +1,10 @@
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, GObject, GLib, Adw
+from gi.repository import Gtk, GLib, Adw, Gdk
 import subprocess
 import threading
 from gettext import gettext as _
-import os
 
 
 @Gtk.Template(
@@ -23,6 +22,20 @@ class TestConnectionDialog(Adw.Window):
     def __init__(self, parent=None, **kwargs):
         super().__init__(**kwargs)
         self.set_transient_for(parent)
+        self._setup_keyboard_shortcuts()
+
+    def _setup_keyboard_shortcuts(self):
+        """Setup keyboard shortcuts for the test connection dialog."""
+        key_controller = Gtk.EventControllerKey.new()
+        key_controller.connect("key-pressed", self._on_key_pressed)
+        self.add_controller(key_controller)
+
+    def _on_key_pressed(self, controller, keyval, keycode, state):
+        """Handle key presses in the test connection dialog."""
+        if keyval == Gdk.KEY_Escape:
+            self.close()
+            return True
+        return False
 
     def start_test(self, command, hostname):
         """Start the SSH connection test with the given command and hostname."""

@@ -2,7 +2,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk, Gio, GLib, GObject, Adw
+from gi.repository import Gtk, Gio, Adw, Gdk
 from gettext import gettext as _
 from pathlib import Path
 import subprocess
@@ -37,6 +37,30 @@ class SSHKeyManagerDialog(Adw.Dialog):
         self.delete_button.connect("clicked", self._on_delete_clicked)
         self.private_list.connect("row-selected", self._on_row_selected)
         self.public_list.connect("row-selected", self._on_row_selected)
+
+        self._setup_keyboard_shortcuts()
+
+    def _setup_keyboard_shortcuts(self):
+        """Setup keyboard shortcuts for the SSH key manager dialog."""
+        key_controller = Gtk.EventControllerKey.new()
+        key_controller.connect("key-pressed", self._on_key_pressed)
+        self.add_controller(key_controller)
+
+    def _on_key_pressed(self, controller, keyval, keycode, state):
+        """Handle key presses in the SSH key manager dialog."""
+        if keyval == Gdk.KEY_Escape:
+            self.close()
+            return True
+        elif keyval == Gdk.KEY_n and (state & Gdk.ModifierType.CONTROL_MASK):
+            self._on_generate_clicked(None)
+            return True
+        elif keyval == Gdk.KEY_i and (state & Gdk.ModifierType.CONTROL_MASK):
+            self._on_import_clicked(None)
+            return True
+        elif keyval == Gdk.KEY_Delete:
+            self._on_delete_clicked(None)
+            return True
+        return False
 
     def _load_keys(self):
         for lst in (self.private_list, self.public_list):

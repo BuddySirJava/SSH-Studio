@@ -1,0 +1,159 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $KeyboardShortcutsDialog: Adw.Dialog {
+    Adw.ToastOverlay toast_overlay {
+      Adw.ToolbarView {
+        width-request: 680;
+        height-request: 250;
+        vexpand: false;
+        valign: start;
+    
+      [top]
+      Adw.HeaderBar {
+        [title]
+        Adw.WindowTitle { title: _("Keyboard Shortcuts"); }
+      }
+
+        content: Adw.Clamp {
+        margin-top: 24;
+        margin-bottom: 24;
+        margin-start: 24;
+        margin-end: 24;
+          vexpand: false;
+          valign: start;
+
+        Adw.PreferencesPage {
+          Adw.PreferencesGroup {
+            title: _("Global Shortcuts");
+            description: _("Application-wide keyboard shortcuts");
+
+            Adw.ActionRow {
+              title: _("Open SSH Config File");
+              subtitle: _("Open a different SSH configuration file");
+              [suffix] Label { label: "Ctrl+O"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Save Configuration");
+              subtitle: _("Save current changes to SSH config");
+              [suffix] Label { label: "Ctrl+S"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Reload Configuration");
+              subtitle: _("Reload SSH config from disk");
+              [suffix] Label { label: "Ctrl+R"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Search");
+              subtitle: _("Focus the search bar");
+              [suffix] Label { label: "Ctrl+F"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Toggle Sidebar");
+              subtitle: _("Show or hide the host editor panel");
+              [suffix] Label { label: "F9"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Preferences");
+              subtitle: _("Open application preferences");
+              [suffix] Label { label: "Ctrl+,"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("SSH Key Manager");
+              subtitle: _("Open SSH key management dialog");
+              [suffix] Label { label: "Ctrl+K"; css-classes: ["keyboard-shortcut"]; }
+            }
+          }
+
+          Adw.PreferencesGroup {
+            title: _("Host Management");
+            description: _("Shortcuts for managing SSH hosts");
+
+            Adw.ActionRow {
+              title: _("Add New Host");
+              subtitle: _("Create a new SSH host configuration");
+              [suffix] Label { label: "Ctrl+N"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Duplicate Host");
+              subtitle: _("Create a copy of the selected host");
+              [suffix] Label { label: "Ctrl+D"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Delete Host");
+              subtitle: _("Remove the selected host");
+              [suffix] Label { label: "Ctrl+Delete"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Edit Host");
+              subtitle: _("Edit the selected host configuration");
+              [suffix] Label { label: "Enter, F2"; css-classes: ["keyboard-shortcut"]; }
+            }
+          }
+
+          Adw.PreferencesGroup {
+            title: _("Navigation");
+            description: _("Shortcuts for navigating the interface");
+
+            Adw.ActionRow {
+              title: _("Navigate Host List");
+              subtitle: _("Move up and down through hosts");
+              [suffix] Label { label: "↑, ↓"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Jump to First Host");
+              subtitle: _("Select the first host in the list");
+              [suffix] Label { label: "Home"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Jump to Last Host");
+              subtitle: _("Select the last host in the list");
+              [suffix] Label { label: "End"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Page Navigation");
+              subtitle: _("Navigate by 10 hosts at a time");
+              [suffix] Label { label: "Page Up, Page Down"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Form Navigation");
+              subtitle: _("Move between form fields");
+              [suffix] Label { label: "Tab, Shift+Tab"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Clear Focus");
+              subtitle: _("Remove focus from current field");
+              [suffix] Label { label: "Escape"; css-classes: ["keyboard-shortcut"]; }
+            }
+          }
+
+          Adw.PreferencesGroup {
+            title: _("Dialog Shortcuts");
+            description: _("Shortcuts available in dialogs");
+
+            Adw.ActionRow {
+              title: _("Close Dialog");
+              subtitle: _("Close any open dialog");
+              [suffix] Label { label: "Escape"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Generate Key");
+              subtitle: _("Create new SSH key (in Key Manager)");
+              [suffix] Label { label: "Ctrl+N"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Import Key");
+              subtitle: _("Import existing SSH key (in Key Manager)");
+              [suffix] Label { label: "Ctrl+I"; css-classes: ["keyboard-shortcut"]; }
+            }
+            Adw.ActionRow {
+              title: _("Delete Key");
+              subtitle: _("Delete selected key (in Key Manager)");
+              [suffix] Label { label: "Delete"; css-classes: ["keyboard-shortcut"]; }
+            }
+          }
+        }
+      };
+    }
+  }
+}

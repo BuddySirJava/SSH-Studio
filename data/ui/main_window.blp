@@ -12,22 +12,16 @@ template $MainWindow: Adw.ApplicationWindow {
       vexpand: true;
 
       [top]
-      HeaderBar {
-        show-title-buttons: true;
+      Adw.HeaderBar {
 
         [title]
-        Label {
-          label: _("SSH-Studio");
-
-          styles [
-            "title",
-          ]
+        Adw.WindowTitle {
+          title: _("SSH-Studio");
         }
         [start]
         Button toggle_sidebar_button {
           icon-name: "sidebar-show-symbolic";
           tooltip-text: _("Show Host Editor");
-
           styles [
             "flat",
           ]
@@ -38,6 +32,7 @@ template $MainWindow: Adw.ApplicationWindow {
         Button add_button {
           icon-name: "list-add-symbolic";
           tooltip-text: _("Add Host");
+          visible: false;
 
           styles [
             "suggested-action",
@@ -48,6 +43,7 @@ template $MainWindow: Adw.ApplicationWindow {
         Button duplicate_button {
           icon-name: "edit-copy-symbolic";
           tooltip-text: _("Duplicate Host");
+          visible: false;
 
           styles [
             "flat",
@@ -58,6 +54,7 @@ template $MainWindow: Adw.ApplicationWindow {
         Button delete_button {
           icon-name: "edit-delete-symbolic";
           tooltip-text: _("Delete Host");
+          visible: false;
 
           styles [
             "destructive-action",
@@ -87,9 +84,8 @@ template $MainWindow: Adw.ApplicationWindow {
 
               child: Box {
                 orientation: vertical;
-                spacing: 12;
-                margin-start: 20;
-                margin-end: 20;
+                margin-start: 15;
+                margin-end: 15;
 
                 $SearchBar search_bar {}
                 $HostList host_list {}
@@ -109,6 +105,29 @@ template $MainWindow: Adw.ApplicationWindow {
             }
           };
         };
+      }
+
+      [bottom]
+      ActionBar global_actionbar {
+        visible: true;
+        [start]
+        Label unsaved_label { label: _("You have unsaved changes."); visible: false; }
+        [end]
+        Button save_button {
+          label: _("Save");
+          styles [
+            "suggested-action",
+          ]
+          visible: false;
+        }
+        [end]
+        Button revert_button {
+          label: _("Revert");
+          styles [
+            "destructive-action",
+          ]
+          visible: false;
+        }
       }
     }
   }
@@ -130,6 +149,11 @@ menu main_menu {
     item {
       label: _("Preferences");
       action: "app.preferences";
+    }
+
+    item {
+      label: _("Keyboard Shortcuts");
+      action: "app.keyboard-shortcuts";
     }
     
   }

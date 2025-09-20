@@ -1,21 +1,19 @@
-.navigation-sidebar,
-.sidebar,
-.sidebar-pane {
-  background-color: transparent;
-  box-shadow: none;
-}
-
-.search-bar entry.pill {
-  margin-top: 6px;
-  margin-bottom: 6px;
-}
-
-/* Test connection dialog styling */
-textview.code {
-  background-color: rgba(0, 0, 0, 0.2);
-  color: #ffffff;
-  font-family: 'Monospace', monospace;
-  font-size: 11px;
-  padding: 12px;
-  border-radius: 6px;
-}
+.keyboard-shortcut {
+    font-family: monospace;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: @theme_fg_color;
+    background-color: @theme_bg_color;
+    border: 1px solid @borders;
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin: 2px;
+    min-width: 60px;
+  }
+  
+  .keyboard-shortcut:focus {
+    color: @theme_unfocused_fg_color;
+    background-color: @theme_unfocused_bg_color;
+    border-color: @unfocused_borders;
+  }
+  

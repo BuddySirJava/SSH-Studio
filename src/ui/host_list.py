@@ -2,7 +2,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk, GObject, Pango, Adw
+from gi.repository import Gtk, GObject, Adw, Gdk
 from gettext import gettext as _
 
 try:
@@ -18,6 +18,7 @@ class HostList(Gtk.Box):
 
     list_box = Gtk.Template.Child()
     count_label = Gtk.Template.Child()
+    add_bottom_button = Gtk.Template.Child()
 
     __gsignals__ = {
         "host-selected": (GObject.SignalFlags.RUN_LAST, None, (object,)),
@@ -40,6 +41,8 @@ class HostList(Gtk.Box):
             self.tree_view.set_model(self.list_store)
             self._setup_columns()
         self._rebuild_listbox_rows()
+
+        self._update_bottom_toolbar_sensitivity()
 
     def _setup_columns(self):
         def add_text_column(
@@ -70,6 +73,12 @@ class HostList(Gtk.Box):
             selection.connect("changed", self._on_selection_changed)
         if hasattr(self, "list_box") and self.list_box is not None:
             self.list_box.connect("row-selected", self._on_row_selected)
+
+        try:
+            if self.add_bottom_button:
+                self.add_bottom_button.connect("clicked", lambda b: self.add_host())
+        except Exception:
+            pass
 
     def load_hosts(self, hosts: list):
         self.hosts = hosts
@@ -144,6 +153,7 @@ class HostList(Gtk.Box):
         if tree_iter:
             host = model.get_value(tree_iter, 5)
             self.emit("host-selected", host)
+        self._update_bottom_toolbar_sensitivity()
 
     def _on_duplicate_host_clicked(self, button, host):
         """Handle duplicate host button click from an ActionRow."""
@@ -247,6 +257,63 @@ class HostList(Gtk.Box):
                             pass
                 break
 
+    def get_selected_host(self) -> SSHHost | None:
+        """Get the currently selected host."""
+        if hasattr(self, "tree_view") and self.tree_view is not None:
+            selection = self.tree_view.get_selection()
+            model, tree_iter = selection.get_selected()
+            if tree_iter is not None:
+                return model[tree_iter][5]
+        elif hasattr(self, "list_box") and self.list_box is not None:
+            selected_row = self.list_box.get_selected_row()
+            if selected_row is not None and hasattr(selected_row, "_host_ref"):
+                return selected_row._host_ref
+        return None
+
+    def navigate_with_key(self, keyval, state):
+        """Handle keyboard navigation in the host list."""
+        if not self.filtered_hosts:
+            return False
+
+        current_index = self._get_current_selection_index()
+        if current_index is None:
+            current_index = 0
+
+        new_index = current_index
+
+        if keyval == Gdk.KEY_Up:
+            new_index = max(0, current_index - 1)
+        elif keyval == Gdk.KEY_Down:
+            new_index = min(len(self.filtered_hosts) - 1, current_index + 1)
+        elif keyval == Gdk.KEY_Home:
+            new_index = 0
+        elif keyval == Gdk.KEY_End:
+            new_index = len(self.filtered_hosts) - 1
+        elif keyval == Gdk.KEY_Page_Up:
+            new_index = max(0, current_index - 10)
+        elif keyval == Gdk.KEY_Page_Down:
+            new_index = min(len(self.filtered_hosts) - 1, current_index + 10)
+        else:
+            return False
+
+        if new_index != current_index and new_index < len(self.filtered_hosts):
+            host = self.filtered_hosts[new_index]
+            self.select_host(host)
+            return True
+
+        return False
+
+    def _get_current_selection_index(self) -> int | None:
+        """Get the index of the currently selected host in filtered_hosts."""
+        selected_host = self.get_selected_host()
+        if selected_host is None:
+            return None
+
+        try:
+            return self.filtered_hosts.index(selected_host)
+        except ValueError:
+            return None
+
     def _rebuild_listbox_rows(self):
         if not hasattr(self, "list_box") or self.list_box is None:
             return
@@ -268,15 +335,62 @@ class HostList(Gtk.Box):
             action_row.set_selectable(True)
             action_row.set_activatable(True)
             action_row._host_ref = host
+
+            button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+
+            duplicate_button = Gtk.Button()
+            duplicate_button.set_icon_name("edit-copy-symbolic")
+            duplicate_button.set_tooltip_text(_("Duplicate Host"))
+            duplicate_button.add_css_class("flat")
+            duplicate_button.set_visible(False)  # Initially hidden
+            duplicate_button.connect("clicked", self._on_duplicate_host_clicked, host)
+
+            delete_button = Gtk.Button()
+            delete_button.set_icon_name("edit-delete-symbolic")
+            delete_button.set_tooltip_text(_("Delete Host"))
+            delete_button.add_css_class("flat")
+            delete_button.add_css_class("destructive-action")
+            delete_button.set_visible(False)  # Initially hidden
+            delete_button.connect("clicked", self._on_delete_host_clicked, host)
+
+            button_box.append(duplicate_button)
+            button_box.append(delete_button)
+
+            action_row._duplicate_button = duplicate_button
+            action_row._delete_button = delete_button
+
+            action_row.add_suffix(button_box)
             self.list_box.append(action_row)
 
     def _on_row_selected(self, listbox, row):
+        self._hide_all_row_buttons()
+
         if row is None:
+            self._update_bottom_toolbar_sensitivity()
             return
         host = getattr(row, "_host_ref", None)
         if host is not None:
             self._selected_host = host
             self.emit("host-selected", host)
+            self._show_row_buttons(row)
+        self._update_bottom_toolbar_sensitivity()
+
+    def _hide_all_row_buttons(self):
+        """Hide buttons on all ActionRows."""
+        if not hasattr(self, "list_box") or self.list_box is None:
+            return
+        child = self.list_box.get_first_child()
+        while child is not None:
+            if hasattr(child, "_duplicate_button") and hasattr(child, "_delete_button"):
+                child._duplicate_button.set_visible(False)
+                child._delete_button.set_visible(False)
+            child = child.get_next_sibling()
+
+    def _show_row_buttons(self, row):
+        """Show buttons on the specified ActionRow."""
+        if hasattr(row, "_duplicate_button") and hasattr(row, "_delete_button"):
+            row._duplicate_button.set_visible(True)
+            row._delete_button.set_visible(True)
 
     def _get_selected_host(self):
         if hasattr(self, "list_box") and self.list_box is not None:
@@ -294,3 +408,6 @@ class HostList(Gtk.Box):
             if tree_iter:
                 return model.get_value(tree_iter, 5)
         return self._selected_host
+
+    def _update_bottom_toolbar_sensitivity(self):
+        pass

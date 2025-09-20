@@ -11,6 +11,8 @@ python_installation = python.find_installation()
 
 gnome = import('gnome')
 
+gtksource_dep = dependency('gtksourceview-5', version: '>= 5.0.0')
+
 application_id = 'io.github.BuddySirJava.SSH-Studio'
 
 i18n = import('i18n')

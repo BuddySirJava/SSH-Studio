@@ -7,7 +7,7 @@ template $HostList: Box {
 
   styles [
     "host-list",
-    "background",
+    "navigation-sidebar",
   ]
 
   Box {
@@ -17,12 +17,13 @@ template $HostList: Box {
     Box {
       orientation: horizontal;
       spacing: 12;
-      margin-start: 12;
+      margin-start: 16;
       margin-end: 20;
       margin-top: 8;
       margin-bottom: 8;
 
       Label {
+        margin-start: 14;
         label: _("SSH Hosts");
         halign: start;
 
@@ -31,13 +32,12 @@ template $HostList: Box {
         ]
       }
 
-      Label count_label {
-        label: _("0 hosts");
-        halign: end;
+      Box { hexpand: true; }
 
-        styles [
-          "dim-label",
-        ]
+      Button add_bottom_button {
+        icon-name: "list-add-symbolic";
+        tooltip-text: _("Add Host");
+        styles [ "flat", ]
       }
     }
 
@@ -63,5 +63,14 @@ template $HostList: Box {
         ]
       }
     }
+
+    Label count_label {
+      label: _("0 hosts");
+      halign: end;
+      styles [
+        "dim-label",
+      ]
+    }
+
   }
 }

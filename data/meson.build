@@ -10,6 +10,7 @@ blueprint_files = files(
   'ui/ssh_key_manager_dialog.blp',
   'ui/generate_key_dialog.blp',
   'ui/key_picker_dialog.blp',
+  'ui/keyboard_shortcuts_dialog.blp',
 )
 
 bp_gen = generator(blueprint_compiler,

@@ -10,6 +10,7 @@
     <file alias="ui/ssh_key_manager_dialog.ui" preprocess="xml-stripblanks">ssh_key_manager_dialog.ui</file>
     <file alias="ui/generate_key_dialog.ui" preprocess="xml-stripblanks">generate_key_dialog.ui</file>
     <file alias="ui/key_picker_dialog.ui" preprocess="xml-stripblanks">key_picker_dialog.ui</file>
+    <file alias="ui/keyboard_shortcuts_dialog.ui" preprocess="xml-stripblanks">keyboard_shortcuts_dialog.ui</file>
     <file>ssh-studio.css</file>
     <file alias="media/icon_256.png">icon_256.png</file>
     <file alias="icons/256x256/apps/io.github.BuddySirJava.SSH-Studio.png">icon_256.png</file>

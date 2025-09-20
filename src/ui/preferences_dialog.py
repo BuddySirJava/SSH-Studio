@@ -1,17 +1,16 @@
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, Gio, GObject, Adw, GLib
+from gi.repository import Gtk, Adw, GLib, Gdk
 from gettext import gettext as _
 import os
 import json
-from pathlib import Path
 
 
 @Gtk.Template(
     resource_path="/io/github/BuddySirJava/SSH-Studio/ui/preferences_dialog.ui"
 )
-class PreferencesDialog(Adw.PreferencesWindow):
+class PreferencesDialog(Adw.PreferencesDialog):
     """Application preferences dialog using Adwaita components."""
 
     __gtype_name__ = "SSHStudioPreferencesDialog"
@@ -26,7 +25,8 @@ class PreferencesDialog(Adw.PreferencesWindow):
     raw_wrap_switch = Gtk.Template.Child()
 
     def __init__(self, parent):
-        super().__init__(transient_for=parent, modal=True)
+        super().__init__()
+        self._parent = parent
         try:
             self.set_title(_("Preferences"))
         except Exception:
@@ -35,13 +35,13 @@ class PreferencesDialog(Adw.PreferencesWindow):
             self.set_default_size(600, 500)
         except Exception:
             pass
-        self._load_preferences_safely()
         GLib.idle_add(self._connect_signals)
+        GLib.idle_add(self._load_preferences_safely)
 
     def _connect_signals(self):
         self.config_path_button.connect("clicked", self._on_config_path_clicked)
         self.backup_dir_button.connect("clicked", self._on_backup_dir_clicked)
-        self.connect("close-request", self._on_close_request)
+        self.connect("close-attempt", self._on_close_attempt)
         self.config_path_entry.connect("changed", self._on_entry_changed)
         self.backup_dir_entry.connect("changed", self._on_entry_changed)
         self.auto_backup_switch.connect("notify::active", self._on_switch_toggled)
@@ -53,12 +53,27 @@ class PreferencesDialog(Adw.PreferencesWindow):
             "value-changed", self._on_spin_changed
         )
 
+        self._setup_keyboard_shortcuts()
+
+    def _setup_keyboard_shortcuts(self):
+        """Setup keyboard shortcuts for the preferences dialog."""
+        key_controller = Gtk.EventControllerKey.new()
+        key_controller.connect("key-pressed", self._on_key_pressed)
+        self.add_controller(key_controller)
+
+    def _on_key_pressed(self, controller, keyval, keycode, state):
+        """Handle key presses in the preferences dialog."""
+        if keyval == Gdk.KEY_Escape:
+            self.close()
+            return True
+        return False
+
     def _on_config_path_clicked(self, button):
         dialog = Gtk.FileChooserDialog(
             title=_("Choose SSH Config File"),
-            transient_for=self,
             action=Gtk.FileChooserAction.OPEN,
         )
+        dialog.set_transient_for(self)
         dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
         dialog.add_button(_("Open"), Gtk.ResponseType.OK)
         dialog.connect("response", self._on_file_chooser_response)
@@ -73,9 +88,9 @@ class PreferencesDialog(Adw.PreferencesWindow):
     def _on_backup_dir_clicked(self, button):
         dialog = Gtk.FileChooserDialog(
             title=_("Choose Backup Directory"),
-            transient_for=self,
             action=Gtk.FileChooserAction.SELECT_FOLDER,
         )
+        dialog.set_transient_for(self)
         dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
         dialog.add_button(_("Select"), Gtk.ResponseType.OK)
         dialog.connect("response", self._on_backup_dir_response)
@@ -102,6 +117,9 @@ class PreferencesDialog(Adw.PreferencesWindow):
         """Set default preference values."""
         import os
 
+        if not hasattr(self, "config_path_entry") or self.config_path_entry is None:
+            return
+
         default_ssh_config = os.path.join(self._get_config_dir(), "ssh_config")
         self.config_path_entry.set_text(default_ssh_config)
 
@@ -115,6 +133,10 @@ class PreferencesDialog(Adw.PreferencesWindow):
         self.editor_font_spin.set_value(12.0)
 
     def _load_preferences_safely(self) -> None:
+        if not hasattr(self, "config_path_entry") or self.config_path_entry is None:
+            GLib.idle_add(self._load_preferences_safely)
+            return
+
         try:
             path = self._get_prefs_path()
             if os.path.exists(path) and os.path.isfile(path):
@@ -152,11 +174,14 @@ class PreferencesDialog(Adw.PreferencesWindow):
     def _on_spin_changed(self, spin, pspec=None):
         self._save_preferences_safely()
 
-    def _on_close_request(self, window):
+    def _on_close_attempt(self, dialog):
         self._save_preferences_safely()
         return False
 
     def get_preferences(self) -> dict:
+        if not hasattr(self, "config_path_entry") or self.config_path_entry is None:
+            return {}
+
         return {
             "config_path": self.config_path_entry.get_text(),
             "backup_dir": self.backup_dir_entry.get_text(),
@@ -167,6 +192,9 @@ class PreferencesDialog(Adw.PreferencesWindow):
         }
 
     def set_preferences(self, prefs: dict):
+        if not hasattr(self, "config_path_entry") or self.config_path_entry is None:
+            return
+
         if "config_path" in prefs:
             self.config_path_entry.set_text(prefs["config_path"])
         if "backup_dir" in prefs:

@@ -51,5 +51,4 @@ class SshStudioSearchBar(Gtk.Box):
         self.search_entry.grab_focus()
 
 
-# Backward-compatibility alias for older imports/templates
 SearchBar = SshStudioSearchBar

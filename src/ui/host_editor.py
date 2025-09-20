@@ -1,10 +1,8 @@
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, GObject, Gio, Gdk, GLib, Adw
-import shlex
-import subprocess
-import threading
+gi.require_version("GtkSource", "5")
+from gi.repository import Gtk, GObject, Gdk, GLib, Adw, GtkSource
 
 try:
     from ssh_studio.ssh_config_parser import SSHHost, SSHOption
@@ -23,7 +21,6 @@ class HostEditor(Gtk.Box):
 
     __gtype_name__ = "HostEditor"
 
-    search_entry = Gtk.Template.Child()
     viewstack = Gtk.Template.Child()
     patterns_entry = Gtk.Template.Child()
     patterns_error_label = Gtk.Template.Child()
@@ -65,6 +62,7 @@ class HostEditor(Gtk.Box):
     test_row = Gtk.Template.Child()
     save_button = Gtk.Template.Child()
     revert_button = Gtk.Template.Child()
+    banner_revealer = Gtk.Template.Child()
 
     __gsignals__ = {
         "host-changed": (GObject.SignalFlags.RUN_LAST, None, (object,)),
@@ -82,6 +80,7 @@ class HostEditor(Gtk.Box):
         self._programmatic_raw_update = False
         self._editor_valid = True
         self._touched_options: set[str] = set()
+        self._wired_global_buttons = False
         try:
             css = Gtk.CssProvider()
             css.load_from_data(
@@ -96,180 +95,178 @@ class HostEditor(Gtk.Box):
         except Exception:
             pass
 
-        self.buffer = self.raw_text_view.get_buffer()
+        self.buffer = None
+        self._replace_textview_with_sourceview()
+        self._setup_syntax_highlighting()
+
         self._connect_signals()
 
-        self.tag_add = self.buffer.create_tag(
-            "added", background="#aaffaa", foreground="black"
-        )
-        self.tag_removed = self.buffer.create_tag(
-            "removed", background="#ffaaaa", foreground="black"
-        )
-        self.tag_changed = self.buffer.create_tag(
-            "changed", background="#ffffaa", foreground="black"
-        )
+        self._ensure_buffer_initialized()
+        if self.buffer is not None:
+            self._create_diff_tags()
+            self._show_helpful_placeholder()
 
-        self.save_button.set_sensitive(False)
-        self.revert_button.set_sensitive(False)
+        try:
+            if getattr(self, "save_button", None):
+                self.save_button.set_sensitive(False)
+            if getattr(self, "revert_button", None):
+                self.revert_button.set_sensitive(False)
+            if getattr(self, "banner_revealer", None):
+                self.banner_revealer.set_reveal_child(False)
+        except Exception:
+            pass
+        try:
+            main_window = self.get_root()
+            if (
+                hasattr(main_window, "global_actionbar")
+                and main_window.global_actionbar is not None
+            ):
+                self.banner_revealer.set_visible(False)
+        except Exception:
+            pass
+
+        GLib.idle_add(self._wire_global_buttons)
+
+        try:
+            key_ctrl = Gtk.EventControllerKey.new()
+            key_ctrl.connect("key-pressed", self._on_key_pressed)
+            self.add_controller(key_ctrl)
+        except Exception:
+            pass
 
     def set_app(self, app):
         self.app = app
 
-    def _on_search_entry_changed(self, entry):
+    def _wire_global_buttons(self):
         try:
-            text = entry.get_text() if entry else ""
+            main_window = self.get_root()
         except Exception:
-            text = ""
-        self._on_search_changed(None, text)
+            main_window = None
+        if not main_window:
+            return True
+        if self._wired_global_buttons:
+            return False
+        try:
+            if hasattr(main_window, "save_button") and main_window.save_button:
+                self.save_button = main_window.save_button
+                self.save_button.connect("clicked", self._on_save_clicked)
+            if hasattr(main_window, "revert_button") and main_window.revert_button:
+                self.revert_button = main_window.revert_button
+                self.revert_button.connect("clicked", self._on_revert_clicked)
+            if hasattr(main_window, "unsaved_label"):
+                self._unsaved_label = main_window.unsaved_label
+        except Exception:
+            pass
+        self._wired_global_buttons = True
+        return False
 
-    def _on_search_entry_activate(self, entry):
-        self._on_search_entry_changed(entry)
+    def _on_key_pressed(self, controller, keyval, keycode, state):
+        if keyval == Gdk.KEY_s and (state & Gdk.ModifierType.CONTROL_MASK):
+            if (
+                hasattr(self, "save_button")
+                and self.save_button
+                and self.save_button.get_sensitive()
+            ):
+                self.save_button.activate()
+                return True
+            return False
 
-    def _find_search_entry(self, widget):
-        try:
-            from gi.repository import Gtk as _Gtk
-        except Exception:
-            return None
-        if isinstance(widget, _Gtk.SearchEntry):
-            return widget
-        try:
-            child = widget.get_first_child()
-        except Exception:
-            child = None
-        while child:
-            found = self._find_search_entry(child)
-            if found:
-                return found
+        if keyval == Gdk.KEY_z and (state & Gdk.ModifierType.CONTROL_MASK):
+            # TODO: Implement undo functionality (Im bored)
+            return False
+
+        if keyval == Gdk.KEY_Escape:
             try:
-                child = child.get_next_sibling()
-            except Exception:
-                break
-        return None
-
-    def _on_search_changed(self, search_bar, query: str):
-        query = (query or "").lower().strip()
-
-        def walk(widget, on_row):
-            try:
-                if isinstance(
-                    widget, (Adw.ActionRow, Adw.EntryRow, Adw.ComboRow, Adw.ExpanderRow)
-                ):
-                    on_row(widget)
+                root = self.get_root()
+                if root and hasattr(root, "get_focus"):
+                    focused_widget = root.get_focus()
+                    if focused_widget:
+                        root.set_focus(None)
+                        return True
             except Exception:
                 pass
-            try:
-                child = widget.get_first_child()
-            except Exception:
-                child = None
-            while child:
-                walk(child, on_row)
-                try:
-                    child = child.get_next_sibling()
-                except Exception:
+            return False
+
+        if keyval == Gdk.KEY_Tab:
+            return self._handle_tab_navigation(state & Gdk.ModifierType.SHIFT_MASK)
+
+        return False
+
+    def _handle_tab_navigation(self, shift_pressed: bool):
+        """Handle Tab/Shift+Tab navigation between form fields."""
+        focusable_widgets = [
+            self.patterns_entry,
+            self.hostname_entry,
+            self.user_entry,
+            self.port_entry,
+            self.identity_entry,
+            self.identity_button,
+            self.identity_pick_button,
+            self.forward_agent_switch,
+            self.proxy_jump_entry,
+            self.proxy_cmd_entry,
+            self.local_forward_entry,
+            self.remote_forward_entry,
+            self.compression_switch,
+            self.serveralive_interval_entry,
+            self.serveralive_count_entry,
+            self.tcp_keepalive_switch,
+            self.pubkey_auth_switch,
+            self.password_auth_switch,
+            self.kbd_interactive_auth_switch,
+            self.gssapi_auth_switch,
+            self.preferred_authentications_entry,
+            self.identity_agent_entry,
+            self.connect_timeout_entry,
+        ]
+
+        focusable_widgets = [w for w in focusable_widgets if w is not None]
+
+        if not focusable_widgets:
+            return False
+
+        current_focus = None
+        try:
+            root = self.get_root()
+            if root and hasattr(root, "get_focus"):
+                current_focus = root.get_focus()
+        except Exception:
+            pass
+
+        current_index = -1
+
+        for i, widget in enumerate(focusable_widgets):
+            if widget == current_focus:
+                current_index = i
+                break
+
+        if current_index == -1:
+            for i, widget in enumerate(focusable_widgets):
+                if widget.has_focus():
+                    current_index = i
                     break
 
-        # Capture current page to restore/switch later
-        try:
-            current_child = self.viewstack.get_visible_child()
-        except Exception:
-            current_child = None
-        try:
-            current_name = self.viewstack.get_visible_child_name()
-        except Exception:
-            current_name = None
+            if current_index == -1:
+                return False
 
-        pages = []
-        try:
-            for page in self.viewstack.get_pages():
-                try:
-                    name = page.get_name() if hasattr(page, "get_name") else None
-                except Exception:
-                    name = None
-                pages.append((name, page))
-        except Exception:
-            pass
+        if shift_pressed:
+            next_index = (current_index - 1) % len(focusable_widgets)
+        else:
+            next_index = (current_index + 1) % len(focusable_widgets)
 
-        first_match_name = None
-        first_match_child = None
-
-        for name, page in pages:
-            child = None
-            try:
-                child = page.get_child()
-            except Exception:
-                child = None
-            if not child:
-                continue
-
-            prefs_root = child
-            any_visible_in_page = False
-            group_to_visible = {}
-
-            def on_row(row):
-                nonlocal any_visible_in_page
-                title = (row.get_title() or "").lower()
-                subtitle = (getattr(row, "get_subtitle", lambda: "")() or "").lower()
-                match = not query or (query in title or query in subtitle)
-                try:
-                    row.set_visible(match)
-                except Exception:
-                    pass
-                if match:
-                    any_visible_in_page = True
-                try:
-                    parent = row.get_parent()
-                    while parent is not None and not isinstance(
-                        parent, Adw.PreferencesGroup
-                    ):
-                        parent = parent.get_parent()
-                    if parent:
-                        group_to_visible[parent] = (
-                            group_to_visible.get(parent, False) or match
-                        )
-                except Exception:
-                    pass
-
-            walk(prefs_root, on_row)
-
-            for group, vis in group_to_visible.items():
-                try:
-                    group.set_visible(vis or not query)
-                except Exception:
-                    pass
-
-            if any_visible_in_page and not first_match_name and not first_match_child:
-                first_match_name = name
-                first_match_child = child
-
-        # Restore/switch page (switch only once, after filtering)
-        try:
-            if query:
-                if first_match_name and hasattr(
-                    self.viewstack, "set_visible_child_name"
-                ):
-                    self.viewstack.set_visible_child_name(first_match_name)
-                elif first_match_child and hasattr(self.viewstack, "set_visible_child"):
-                    self.viewstack.set_visible_child(first_match_child)
-            else:
-                if current_name and hasattr(self.viewstack, "set_visible_child_name"):
-                    self.viewstack.set_visible_child_name(current_name)
-                elif current_child and hasattr(self.viewstack, "set_visible_child"):
-                    self.viewstack.set_visible_child(current_child)
-        except Exception:
-            pass
+        focusable_widgets[next_index].grab_focus()
+        return True
 
     def _show_message(self, message: str):
         """Show a message using toast by emitting a signal."""
         self.emit("show-toast", message)
 
     def _connect_signals(self):
-        # Helper to mark an option as touched and forward to generic handler
         def connect_touch(widget, signal_name: str, option_key: str):
             if not widget:
                 return
 
             def handler(*args):
-                # Ignore programmatic changes during load
                 if self.is_loading:
                     return
                 self._touched_options.add(option_key)
@@ -277,18 +274,6 @@ class HostEditor(Gtk.Box):
 
             widget.connect(signal_name, handler)
 
-        # Connect search entry signals
-        if self.search_entry:
-            try:
-                self.search_entry.connect(
-                    "search-changed", self._on_search_entry_changed
-                )
-            except Exception:
-                pass
-            self.search_entry.connect("changed", self._on_search_entry_changed)
-            self.search_entry.connect("activate", self._on_search_entry_activate)
-
-        # Helper for Adw.EntryRow text changes (uses notify::text)
         def connect_entry_row_text(widget, option_key: str):
             if not widget:
                 return
@@ -301,7 +286,6 @@ class HostEditor(Gtk.Box):
 
             widget.connect("notify::text", on_notify_text)
 
-        # Basics (Adw.EntryRow listen to notify::text)
         connect_entry_row_text(self.patterns_entry, "__patterns__")
         connect_entry_row_text(self.hostname_entry, "HostName")
         connect_entry_row_text(self.user_entry, "User")
@@ -309,7 +293,6 @@ class HostEditor(Gtk.Box):
         connect_entry_row_text(self.identity_entry, "IdentityFile")
         connect_touch(self.forward_agent_switch, "state-set", "ForwardAgent")
 
-        # Networking (Adw.EntryRow)
         connect_entry_row_text(self.proxy_jump_entry, "ProxyJump")
         connect_entry_row_text(self.proxy_cmd_entry, "ProxyCommand")
         connect_entry_row_text(self.local_forward_entry, "LocalForward")
@@ -438,20 +421,42 @@ class HostEditor(Gtk.Box):
         )
         connect_entry_row_text(getattr(self, "control_path_entry", None), "ControlPath")
 
-        self._raw_changed_handler_id = self.raw_text_view.get_buffer().connect(
-            "changed", self._on_raw_text_changed
-        )
+        if self.buffer:
+            self._raw_changed_handler_id = self.buffer.connect(
+                "changed", self._on_raw_text_changed
+            )
 
         self._connect_buttons()
 
     def _connect_buttons(self):
-        self.identity_button.connect("clicked", self._on_identity_file_clicked)
+        if hasattr(self, "identity_button") and self.identity_button:
+            self.identity_button.connect("clicked", self._on_identity_file_clicked)
         if hasattr(self, "identity_pick_button") and self.identity_pick_button:
             self.identity_pick_button.connect("clicked", self._on_identity_pick_clicked)
-        self.copy_row.connect("activated", lambda r: self._on_copy_ssh_command(None))
-        self.test_row.connect("activated", lambda r: self._on_test_connection(None))
-        self.save_button.connect("clicked", self._on_save_clicked)
-        self.revert_button.connect("clicked", self._on_revert_clicked)
+        if hasattr(self, "copy_row") and self.copy_row:
+            self.copy_row.connect(
+                "activated", lambda r: self._on_copy_ssh_command(None)
+            )
+        if hasattr(self, "test_row") and self.test_row:
+            self.test_row.connect("activated", lambda r: self._on_test_connection(None))
+        try:
+            if getattr(self, "save_button", None) is not None:
+                self.save_button.connect("clicked", self._on_save_clicked)
+        except Exception:
+            pass
+        try:
+            if getattr(self, "revert_button", None) is not None:
+                self.revert_button.connect("clicked", self._on_revert_clicked)
+        except Exception:
+            pass
+        try:
+            main_window = self.get_root()
+            if getattr(main_window, "save_button", None) is not None:
+                main_window.save_button.connect("clicked", self._on_save_clicked)
+            if getattr(main_window, "revert_button", None) is not None:
+                main_window.revert_button.connect("clicked", self._on_revert_clicked)
+        except Exception:
+            pass
 
     def load_host(self, host: SSHHost):
         self.is_loading = True
@@ -464,40 +469,71 @@ class HostEditor(Gtk.Box):
             self.is_loading = False
             return
 
-        self.patterns_entry.set_text(" ".join(host.patterns))
-        self.hostname_entry.set_text(host.get_option("HostName") or "")
-        self.user_entry.set_text(host.get_option("User") or "")
-        self.port_entry.set_text(host.get_option("Port") or "")
-        self.identity_entry.set_text(host.get_option("IdentityFile") or "")
+        def _safe_set_entry_text(row, text):
+            try:
+                if row is not None:
+                    row.set_text(text)
+            except Exception:
+                pass
+
+        _safe_set_entry_text(
+            getattr(self, "patterns_entry", None), " ".join(host.patterns)
+        )
+        _safe_set_entry_text(
+            getattr(self, "hostname_entry", None), host.get_option("HostName") or ""
+        )
+        _safe_set_entry_text(
+            getattr(self, "user_entry", None), host.get_option("User") or ""
+        )
+        _safe_set_entry_text(
+            getattr(self, "port_entry", None), host.get_option("Port") or ""
+        )
+        _safe_set_entry_text(
+            getattr(self, "identity_entry", None), host.get_option("IdentityFile") or ""
+        )
 
         forward_agent = host.get_option("ForwardAgent")
-        self.forward_agent_switch.set_active(forward_agent == "yes")
+        try:
+            if getattr(self, "forward_agent_switch", None) is not None:
+                self.forward_agent_switch.set_active(forward_agent == "yes")
+        except Exception:
+            pass
 
-        self.proxy_jump_entry.set_text(host.get_option("ProxyJump") or "")
-        self.proxy_cmd_entry.set_text(host.get_option("ProxyCommand") or "")
-        self.local_forward_entry.set_text(host.get_option("LocalForward") or "")
-        self.remote_forward_entry.set_text(host.get_option("RemoteForward") or "")
+        _safe_set_entry_text(
+            getattr(self, "proxy_jump_entry", None), host.get_option("ProxyJump") or ""
+        )
+        _safe_set_entry_text(
+            getattr(self, "proxy_cmd_entry", None),
+            host.get_option("ProxyCommand") or "",
+        )
+        _safe_set_entry_text(
+            getattr(self, "local_forward_entry", None),
+            host.get_option("LocalForward") or "",
+        )
+        _safe_set_entry_text(
+            getattr(self, "remote_forward_entry", None),
+            host.get_option("RemoteForward") or "",
+        )
 
         compression = (host.get_option("Compression") or "no").lower() == "yes"
-        self.compression_switch.set_active(compression)
+        try:
+            if getattr(self, "compression_switch", None) is not None:
+                self.compression_switch.set_active(compression)
+        except Exception:
+            pass
 
-        # ServerAliveInterval default 0 (disabled)
         self.serveralive_interval_entry.set_text(
             host.get_option("ServerAliveInterval") or "0"
         )
 
-        # ServerAliveCountMax default 3
         self.serveralive_count_entry.set_text(
             host.get_option("ServerAliveCountMax") or "3"
         )
 
-        # TCPKeepAlive default yes
         tcp_keepalive = (host.get_option("TCPKeepAlive") or "yes").lower() == "yes"
         self.tcp_keepalive_switch.set_active(tcp_keepalive)
 
-        # StrictHostKeyChecking default ask
         shk = (host.get_option("StrictHostKeyChecking") or "ask").lower()
-        # Map to index in ["ask", "yes", "no"]
         mapping = {"ask": 0, "yes": 1, "no": 2}
         self.strict_host_key_row.set_selected(mapping.get(shk, 0))
 
@@ -564,13 +600,23 @@ class HostEditor(Gtk.Box):
         self.control_persist_entry.set_text(host.get_option("ControlPersist") or "")
         self.control_path_entry.set_text(host.get_option("ControlPath") or "")
 
-        # Custom options UI removed
-
         self.raw_text_view.get_buffer().set_text("\n".join(host.raw_lines))
         self.original_raw_content = "\n".join(host.raw_lines)
 
         self.is_loading = False
         self.revert_button.set_sensitive(False)
+        self.banner_revealer.set_reveal_child(False)
+        try:
+            main_window = self.get_root()
+            if (
+                hasattr(main_window, "global_actionbar")
+                and main_window.global_actionbar
+            ):
+                main_window.unsaved_label.set_visible(False)
+                main_window.save_button.set_visible(False)
+                main_window.revert_button.set_visible(False)
+        except Exception:
+            pass
 
         self._programmatic_raw_update = True
         try:
@@ -600,10 +646,12 @@ class HostEditor(Gtk.Box):
             self.tcp_keepalive_switch.set_active(True)
         if hasattr(self, "strict_host_key_row"):
             self.strict_host_key_row.set_selected(0)
-        # Custom options UI removed
 
     def _load_custom_options(self, host: SSHHost):
         """Loads custom SSH options into the custom options list."""
+        if not hasattr(self, "custom_options_list") or not self.custom_options_list:
+            return
+
         self._clear_custom_options()
 
         common_options = {
@@ -624,26 +672,27 @@ class HostEditor(Gtk.Box):
 
     def _clear_custom_options(self):
         """Clears all custom option rows from the list."""
-        while self.custom_options_list.get_first_child():
-            self.custom_options_list.remove(self.custom_options_list.get_first_child())
+        if not hasattr(self, "custom_options_list") or not self.custom_options_list:
+            return
+        child = self.custom_options_list.get_first_child()
+        while child:
+            self.custom_options_list.remove(child)
+            child = self.custom_options_list.get_first_child()
 
     def _add_custom_option_row(self, key: str = "", value: str = ""):
         """Adds a new row for a custom option to the list."""
-        # Create a modern Adw.ActionRow for the custom option
         action_row = Adw.ActionRow()
         action_row.set_title(key if key else _("New Custom Option"))
         action_row.set_subtitle(value if value else _("Enter option name and value"))
         action_row.set_activatable(False)
         action_row.add_css_class("custom-option-row")
 
-        # Create entry container with proper spacing
         entry_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         entry_container.set_spacing(12)
         entry_container.set_hexpand(True)
         entry_container.set_margin_start(12)
         entry_container.set_margin_end(12)
 
-        # Key entry with label
         key_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         key_box.set_spacing(4)
 
@@ -661,7 +710,6 @@ class HostEditor(Gtk.Box):
         key_entry.connect("changed", self._on_custom_option_key_changed, action_row)
         key_box.append(key_entry)
 
-        # Value entry with label
         value_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         value_box.set_spacing(4)
         value_box.set_hexpand(True)
@@ -683,7 +731,6 @@ class HostEditor(Gtk.Box):
         entry_container.append(key_box)
         entry_container.append(value_box)
 
-        # Remove button (not used; custom options UI removed)
         remove_button = Gtk.Button()
         remove_button.set_icon_name("user-trash-symbolic")
         remove_button.add_css_class("flat")
@@ -692,19 +739,15 @@ class HostEditor(Gtk.Box):
         remove_button.set_valign(Gtk.Align.CENTER)
         remove_button.connect("clicked", self._on_remove_custom_option, action_row)
 
-        # Add everything to the action row
         action_row.add_suffix(entry_container)
         action_row.add_suffix(remove_button)
 
-        # Store references for easy access
         action_row.key_entry = key_entry
         action_row.value_entry = value_entry
 
-        # Add to the list
         if hasattr(self, "custom_options_list") and self.custom_options_list:
             self.custom_options_list.append(action_row)
 
-        # Connect change handlers
         key_entry.connect("changed", self._on_custom_option_changed)
         value_entry.connect("changed", self._on_custom_option_changed)
 
@@ -793,42 +836,17 @@ class HostEditor(Gtk.Box):
         current_lines = current_text.splitlines()
         original_lines = self.original_raw_content.splitlines()
 
+        self._ensure_buffer_initialized()
         if self.buffer is None:
-            try:
-                self.buffer = self.raw_text_view.get_buffer()
-            except Exception:
-                return
-        self.buffer.remove_all_tags(
-            self.buffer.get_start_iter(), self.buffer.get_end_iter()
-        )
+            return
 
-        s = difflib.SequenceMatcher(None, original_lines, current_lines)
-
-        for opcode, i1, i2, j1, j2 in s.get_opcodes():
-            if opcode == "equal":
-                pass
-            elif opcode == "insert":
-                for line_idx in range(j1, j2):
-                    if line_idx >= len(current_lines):
-                        continue
-                    success, start_iter = self.buffer.get_iter_at_line(line_idx)
-                    if not success:
-                        continue
-                    end_iter = start_iter.copy()
-                    end_iter.forward_to_line_end()
-                    self.buffer.apply_tag(self.tag_add, start_iter, end_iter)
-            elif opcode == "delete":
-                pass
-            elif opcode == "replace":
-                for line_idx in range(j1, j2):
-                    if line_idx >= len(current_lines):
-                        continue
-                    success, start_iter = self.buffer.get_iter_at_line(line_idx)
-                    if not success:
-                        continue
-                    end_iter = start_iter.copy()
-                    end_iter.forward_to_line_end()
-                    self.buffer.apply_tag(self.tag_changed, start_iter, end_iter)
+        if self._is_source_view():
+            self._apply_subtle_diff_highlighting(current_lines, original_lines)
+        else:
+            self.buffer.remove_all_tags(
+                self.buffer.get_start_iter(), self.buffer.get_end_iter()
+            )
+            self._apply_full_diff_highlighting(current_lines, original_lines)
 
         if not self._programmatic_raw_update:
             self._parse_and_validate_raw_text(current_lines)
@@ -845,7 +863,17 @@ class HostEditor(Gtk.Box):
             self._sync_fields_from_host()
             self._update_button_sensitivity()
         except ValueError as e:
-            self.app._show_error(f"Invalid raw host configuration: {e}")
+            error_msg = str(e)
+            if "No Host declaration found" in error_msg:
+                if any(
+                    line.strip() and not line.strip().startswith("#")
+                    for line in current_lines
+                ):
+                    self.app._show_error(
+                        "SSH host configuration must start with 'Host' declaration"
+                    )
+            else:
+                self.app._show_error(f"Invalid raw host configuration: {e}")
         except Exception as e:
             self.app._show_error(f"Error parsing raw host config: {e}")
 
@@ -856,7 +884,6 @@ class HostEditor(Gtk.Box):
         if not self.current_host:
             return
 
-        # Patterns are special
         if "__patterns__" in self._touched_options:
             patterns_text = self.patterns_entry.get_text().strip()
             self.current_host.patterns = (
@@ -878,7 +905,6 @@ class HostEditor(Gtk.Box):
             else:
                 self.current_host.set_option(key, v)
 
-        # Basics
         update_if_touched("HostName", self.hostname_entry.get_text())
         update_if_touched("User", self.user_entry.get_text())
         update_if_touched("Port", self.port_entry.get_text())
@@ -892,7 +918,6 @@ class HostEditor(Gtk.Box):
         update_if_touched("LocalForward", self.local_forward_entry.get_text())
         update_if_touched("RemoteForward", self.remote_forward_entry.get_text())
 
-        # Advanced
         if "Compression" in self._touched_options:
             comp = (
                 "yes"
@@ -906,7 +931,6 @@ class HostEditor(Gtk.Box):
                 if self.serveralive_interval_entry
                 else ""
             )
-            # default 0 => omit
             update_if_touched(
                 "ServerAliveInterval", interval, default_absent_values=["0"]
             )
@@ -916,7 +940,6 @@ class HostEditor(Gtk.Box):
                 if self.serveralive_count_entry
                 else ""
             )
-            # default 3 => omit
             update_if_touched(
                 "ServerAliveCountMax", countmax, default_absent_values=["3"]
             )
@@ -928,7 +951,6 @@ class HostEditor(Gtk.Box):
                 )
                 else "no"
             )
-            # default yes => omit when yes
             update_if_touched("TCPKeepAlive", tka, default_absent_values=["yes"])
         if (
             "StrictHostKeyChecking" in self._touched_options
@@ -941,7 +963,6 @@ class HostEditor(Gtk.Box):
                 "StrictHostKeyChecking", val, default_absent_values=["ask"]
             )
 
-        # Authentication and keys
         if "PubkeyAuthentication" in self._touched_options:
             update_if_touched(
                 "PubkeyAuthentication",
@@ -955,7 +976,6 @@ class HostEditor(Gtk.Box):
                 default_absent_values=["yes"],
             )
         if "PasswordAuthentication" in self._touched_options:
-            # default yes -> omit when yes
             update_if_touched(
                 "PasswordAuthentication",
                 (
@@ -969,7 +989,6 @@ class HostEditor(Gtk.Box):
                 default_absent_values=["yes"],
             )
         if "KbdInteractiveAuthentication" in self._touched_options:
-            # default yes -> omit when yes
             update_if_touched(
                 "KbdInteractiveAuthentication",
                 (
@@ -983,7 +1002,6 @@ class HostEditor(Gtk.Box):
                 default_absent_values=["yes"],
             )
         if "GSSAPIAuthentication" in self._touched_options:
-            # default no -> omit when no
             update_if_touched(
                 "GSSAPIAuthentication",
                 (
@@ -1018,14 +1036,12 @@ class HostEditor(Gtk.Box):
             val = aka_map[aka_idx] if 0 <= aka_idx < len(aka_map) else "no"
             update_if_touched("AddKeysToAgent", val, default_absent_values=["no"])
 
-        # Connection behavior
         if "ConnectTimeout" in self._touched_options:
             ct = (
                 self.connect_timeout_entry.get_text().strip()
                 if self.connect_timeout_entry
                 else ""
             )
-            # omit when empty or 0
             if ct == "0":
                 ct = ""
             update_if_touched("ConnectTimeout", ct)
@@ -1077,7 +1093,6 @@ class HostEditor(Gtk.Box):
             ),
         )
 
-        # Multiplexing
         if "ControlMaster" in self._touched_options and self.control_master_row:
             idx = self.control_master_row.get_selected()
             cm_map = ["no", "yes", "ask", "auto", "autoask"]
@@ -1099,8 +1114,6 @@ class HostEditor(Gtk.Box):
                 else ""
             ),
         )
-
-        # Custom options UI removed
 
     def _update_host_option(self, key: str, value: str):
         """Helper to update or remove a single SSH option on the current host."""
@@ -1418,9 +1431,6 @@ class HostEditor(Gtk.Box):
             except ValueError:
                 errors["port"] = _("Port must be numeric.")
 
-        # Custom options UI removed
-
-        # Apply inline error texts
         if "patterns" in errors:
             self.patterns_error_label.set_text(errors["patterns"])
             self.patterns_error_label.set_visible(True)
@@ -1434,7 +1444,6 @@ class HostEditor(Gtk.Box):
         else:
             self.port_entry.remove_css_class("entry-error")
 
-        # Validate numbers for ServerAliveInterval and ServerAliveCountMax
         try:
             if (
                 hasattr(self, "serveralive_interval_entry")
@@ -1461,7 +1470,6 @@ class HostEditor(Gtk.Box):
         except ValueError:
             errors["sacm"] = _("ServerAliveCountMax must be numeric.")
 
-        # Apply error styles to advanced fields
         if "sai" in errors and self.serveralive_interval_entry:
             self.serveralive_interval_entry.add_css_class("entry-error")
         else:
@@ -1474,7 +1482,6 @@ class HostEditor(Gtk.Box):
             if self.serveralive_count_entry:
                 self.serveralive_count_entry.remove_css_class("entry-error")
 
-        # ConnectTimeout numeric validation
         try:
             if self.connect_timeout_entry:
                 ct_text = self.connect_timeout_entry.get_text().strip()
@@ -1501,7 +1508,7 @@ class HostEditor(Gtk.Box):
             self.patterns_entry.remove_css_class("entry-error")
         if hasattr(self, "port_entry"):
             self.port_entry.remove_css_class("entry-error")
-        # Custom options UI removed
+
         if (
             hasattr(self, "serveralive_interval_entry")
             and self.serveralive_interval_entry
@@ -1672,6 +1679,7 @@ class HostEditor(Gtk.Box):
                     pass
                 self.original_host_state = copy.deepcopy(self.current_host)
                 self.original_raw_content = "\n".join(self.current_host.raw_lines)
+                self._ensure_buffer_initialized()
                 if self.buffer is not None:
                     try:
                         self.buffer.remove_all_tags(
@@ -1726,6 +1734,7 @@ class HostEditor(Gtk.Box):
         self.original_raw_content = "\n".join(self.current_host.raw_lines)
         self.is_loading = False
 
+        self._ensure_buffer_initialized()
         if self.buffer is not None:
             self.buffer.remove_all_tags(
                 self.buffer.get_start_iter(), self.buffer.get_end_iter()
@@ -1734,16 +1743,47 @@ class HostEditor(Gtk.Box):
         self.revert_button.set_sensitive(False)
         if hasattr(self, "save_button"):
             self.save_button.set_sensitive(False)
+        self.banner_revealer.set_reveal_child(False)
         self._show_message(_(f"Reverted changes for {self.current_host.patterns[0]}"))
         self._touched_options.clear()
+        self._update_button_sensitivity()
 
     def _update_button_sensitivity(self):
         """Updates the sensitivity of save and revert buttons based on dirty state and validity."""
         is_dirty = self.is_host_dirty()
-        field_errors = self._collect_field_errors()  # This also applies error styling
+        field_errors = self._collect_field_errors()
         is_valid = not bool(field_errors)
-        self.save_button.set_sensitive(is_dirty and is_valid)
-        self.revert_button.set_sensitive(is_dirty)
+        try:
+            if getattr(self, "save_button", None):
+                self.save_button.set_sensitive(is_dirty and is_valid)
+            if getattr(self, "revert_button", None):
+                self.revert_button.set_sensitive(is_dirty)
+            if getattr(self, "banner_revealer", None) and hasattr(
+                self.banner_revealer, "set_reveal_child"
+            ):
+                self.banner_revealer.set_reveal_child(is_dirty)
+            mw = self.get_root()
+            if hasattr(mw, "unsaved_label") and mw.unsaved_label:
+                mw.unsaved_label.set_visible(is_dirty)
+            if hasattr(mw, "save_button") and mw.save_button:
+                mw.save_button.set_visible(is_dirty)
+                mw.save_button.set_sensitive(is_dirty and is_valid)
+            if hasattr(mw, "revert_button") and mw.revert_button:
+                mw.revert_button.set_visible(is_dirty)
+                mw.revert_button.set_sensitive(is_dirty)
+        except Exception:
+            pass
+        try:
+            main_window = self.get_root()
+            if (
+                hasattr(main_window, "global_actionbar")
+                and main_window.global_actionbar
+            ):
+                main_window.unsaved_label.set_visible(is_dirty)
+                main_window.save_button.set_visible(is_dirty and is_valid)
+                main_window.revert_button.set_visible(is_dirty)
+        except Exception:
+            pass
 
     def _on_test_connection(self, button):
         if not self.current_host:
@@ -1855,3 +1895,226 @@ class HostEditor(Gtk.Box):
         self.strict_host_key_row.set_selected(mapping2.get(shk2, 0))
         self._load_custom_options(self.current_host)
         self.is_loading = False
+
+    def _replace_textview_with_sourceview(self):
+        """Replace the regular TextView with GtkSourceView for syntax highlighting."""
+        if not self.raw_text_view:
+            return
+
+        try:
+            parent = self.raw_text_view.get_parent()
+            if not parent:
+                return
+
+            source_view = GtkSource.View()
+
+            source_view.set_monospace(True)
+            source_view.set_wrap_mode(Gtk.WrapMode.NONE)
+            source_view.set_editable(True)
+            source_view.set_hexpand(True)
+            source_view.set_vexpand(True)
+            source_view.set_left_margin(8)
+            source_view.set_right_margin(8)
+            source_view.set_top_margin(6)
+            source_view.set_bottom_margin(6)
+
+            source_view.get_style_context().add_class("raw-editor")
+
+            source_view.set_show_line_numbers(True)
+            source_view.set_highlight_current_line(True)
+            source_view.set_auto_indent(True)
+            source_view.set_indent_on_tab(True)
+            source_view.set_tab_width(4)
+            source_view.set_insert_spaces_instead_of_tabs(True)
+
+            parent.set_child(None)
+            parent.set_child(source_view)
+
+            self.raw_text_view = source_view
+
+        except Exception as e:
+            print(f"Warning: Could not replace TextView with GtkSourceView: {e}")
+            pass
+
+    def _show_helpful_placeholder(self):
+        """Show helpful placeholder text when the raw editor is empty or invalid."""
+        if not self.raw_text_view or not self.buffer:
+            return
+
+        current_text = self.buffer.get_text(
+            self.buffer.get_start_iter(), self.buffer.get_end_iter(), False
+        ).strip()
+
+        if not current_text or not current_text.lower().startswith("host "):
+            placeholder_text = """# SSH Host Configuration
+# Start with a Host declaration, for example:
+Host myserver
+    HostName example.com
+    User myuser
+    Port 22
+    IdentityFile ~/.ssh/id_rsa
+
+# Add any other SSH options as needed"""
+
+            if not current_text:
+                self.buffer.set_text(placeholder_text)
+                start = self.buffer.get_start_iter()
+                end = self.buffer.get_end_iter()
+                self.buffer.select_range(start, end)
+
+    def _ensure_buffer_initialized(self):
+        """Ensure the text buffer is initialized."""
+        if not self.buffer and self.raw_text_view:
+            try:
+                self.buffer = self.raw_text_view.get_buffer()
+                if self.buffer and not hasattr(self, "_raw_changed_handler_id"):
+                    self._raw_changed_handler_id = self.buffer.connect(
+                        "changed", self._on_raw_text_changed
+                    )
+            except Exception:
+                pass
+
+    def _is_source_view(self):
+        """Check if we're using GtkSourceView."""
+        return (
+            self.raw_text_view
+            and hasattr(self.raw_text_view, "get_buffer")
+            and isinstance(self.raw_text_view.get_buffer(), GtkSource.Buffer)
+        )
+
+    def _create_diff_tags(self):
+        """Create diff highlighting tags with appropriate colors based on editor type."""
+        if self._is_source_view():
+            self.tag_add = self.buffer.create_tag(
+                "added", background_rgba=Gdk.RGBA(0.2, 0.4, 0.2, 0.3)
+            )
+            self.tag_removed = self.buffer.create_tag(
+                "removed", background_rgba=Gdk.RGBA(0.4, 0.2, 0.2, 0.3)
+            )
+            self.tag_changed = self.buffer.create_tag(
+                "changed", background_rgba=Gdk.RGBA(0.4, 0.4, 0.2, 0.3)
+            )
+        else:
+            self.tag_add = self.buffer.create_tag(
+                "added", background="#aaffaa", foreground="black"
+            )
+            self.tag_removed = self.buffer.create_tag(
+                "removed", background="#ffaaaa", foreground="black"
+            )
+            self.tag_changed = self.buffer.create_tag(
+                "changed", background="#ffffaa", foreground="black"
+            )
+
+    def _apply_full_diff_highlighting(self, current_lines, original_lines):
+        """Apply full diff highlighting for regular TextView."""
+        s = difflib.SequenceMatcher(None, original_lines, current_lines)
+
+        for opcode, i1, i2, j1, j2 in s.get_opcodes():
+            if opcode == "equal":
+                pass
+            elif opcode == "insert":
+                for line_idx in range(j1, j2):
+                    if line_idx >= len(current_lines):
+                        continue
+                    success, start_iter = self.buffer.get_iter_at_line(line_idx)
+                    if not success:
+                        continue
+                    end_iter = start_iter.copy()
+                    end_iter.forward_to_line_end()
+                    self.buffer.apply_tag(self.tag_add, start_iter, end_iter)
+            elif opcode == "delete":
+                pass
+            elif opcode == "replace":
+                for line_idx in range(j1, j2):
+                    if line_idx >= len(current_lines):
+                        continue
+                    success, start_iter = self.buffer.get_iter_at_line(line_idx)
+                    if not success:
+                        continue
+                    end_iter = start_iter.copy()
+                    end_iter.forward_to_line_end()
+                    self.buffer.apply_tag(self.tag_changed, start_iter, end_iter)
+
+    def _apply_subtle_diff_highlighting(self, current_lines, original_lines):
+        """Apply subtle diff highlighting for GtkSourceView that doesn't conflict with syntax highlighting."""
+        s = difflib.SequenceMatcher(None, original_lines, current_lines)
+
+        for opcode, i1, i2, j1, j2 in s.get_opcodes():
+            if opcode == "equal":
+                pass
+            elif opcode == "insert":
+                for line_idx in range(j1, j2):
+                    if line_idx >= len(current_lines):
+                        continue
+                    success, start_iter = self.buffer.get_iter_at_line(line_idx)
+                    if not success:
+                        continue
+                    end_iter = start_iter.copy()
+                    end_iter.forward_to_line_end()
+                    self.buffer.apply_tag(self.tag_add, start_iter, end_iter)
+            elif opcode == "delete":
+                pass
+            elif opcode == "replace":
+                for line_idx in range(j1, j2):
+                    if line_idx >= len(current_lines):
+                        continue
+                    success, start_iter = self.buffer.get_iter_at_line(line_idx)
+                    if not success:
+                        continue
+                    end_iter = start_iter.copy()
+                    end_iter.forward_to_line_end()
+                    self.buffer.apply_tag(self.tag_changed, start_iter, end_iter)
+
+    def _setup_syntax_highlighting(self):
+        """Setup syntax highlighting for the raw text editor."""
+        if not self.raw_text_view:
+            return
+
+        try:
+            source_buffer = self.raw_text_view.get_buffer()
+            if not source_buffer:
+                return
+
+            self.buffer = source_buffer
+
+            if not isinstance(source_buffer, GtkSource.Buffer):
+                return
+
+            language_manager = GtkSource.LanguageManager.get_default()
+
+            ssh_language_ids = [
+                "ssh-config",
+                "ssh_config",
+                "sshconfig",
+                "ssh",
+                "config",
+                "ini",
+            ]
+
+            language = None
+            for lang_id in ssh_language_ids:
+                language = language_manager.get_language(lang_id)
+                if language:
+                    break
+
+            if not language:
+                language = language_manager.get_language(
+                    "ini"
+                ) or language_manager.get_language("config")
+
+            if language:
+                source_buffer.set_language(language)
+
+            style_manager = GtkSource.StyleSchemeManager.get_default()
+            style_scheme = (
+                style_manager.get_scheme("dark")
+                or style_manager.get_scheme("Adwaita-dark")
+                or style_manager.get_scheme("default")
+            )
+
+            if style_scheme:
+                source_buffer.set_style_scheme(style_scheme)
+
+        except Exception as e:
+            print(f"Warning: Could not setup syntax highlighting: {e}")
+            pass

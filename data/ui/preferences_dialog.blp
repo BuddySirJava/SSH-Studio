@@ -9,12 +9,8 @@ Adjustment editor_font_adjustment {
   value: 12;
 }
 
-template $SSHStudioPreferencesDialog: Adw.PreferencesWindow {
+template $SSHStudioPreferencesDialog: Adw.PreferencesDialog {
   title: _("Preferences");
-  modal: true;
-  resizable: false;
-  default-width: 600;
-  default-height: 500;
 
   Adw.PreferencesPage {
     title: _("General");
