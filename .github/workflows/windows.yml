@@ -104,9 +104,13 @@ jobs:
           $stage = 'C:\_stage\ssh-studio'
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
 
-          # Download Python embeddable 3.12
-          $pyUrl = 'https://www.python.org/ftp/python/3.12.11/python-3.12.11-embed-amd64.zip'
+          # Download latest Python 3.12 embeddable (resolve dynamically)
           $pyZip = "$env:RUNNER_TEMP\python-embed.zip"
+          $idx = Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/' -UseBasicParsing
+          $vers = ($idx.Links | Where-Object { $_.href -match '^3\.12\.(\d+)/$' } | ForEach-Object { $_.href.TrimEnd('/') }) | Sort-Object {[version]$_} -Descending
+          if (-not $vers -or -not $vers[0]) { throw 'Could not determine latest Python 3.12 version from python.org index.' }
+          $pyVer = $vers[0]
+          $pyUrl = "https://www.python.org/ftp/python/$pyVer/python-$pyVer-embed-amd64.zip"
           Invoke-WebRequest -Uri $pyUrl -OutFile $pyZip
           Expand-Archive -LiteralPath $pyZip -DestinationPath "$stage\python" -Force
           $pth = Join-Path "$stage\python" 'python312._pth'
