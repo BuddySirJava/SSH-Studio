@@ -32,7 +32,7 @@ jobs:
 
       - name: Audit formula
         run: |
-          brew audit --new-formula --strict ./Formula/ssh-studio.rb
+          brew audit --new --strict ./Formula/ssh-studio.rb
 
       - name: Build and install
         run: |
@@ -40,7 +40,7 @@ jobs:
 
       - name: Test formula
         run: |
-          ssh-studio --help
+          ssh-studio
           brew test ssh-studio
 
       - name: Test app bundle
