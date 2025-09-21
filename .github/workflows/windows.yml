@@ -18,27 +18,37 @@ jobs:
           msystem: UCRT64
           update: true
 
-      - name: Install dependencies
+      - name: Install UCRT64 dependencies
         shell: msys2 {0}
         run: |
-          pacman --noconfirm -S --needed \
-            mingw-w64-ucrt-x86_64-toolchain \
-            mingw-w64-ucrt-x86_64-meson \
-            mingw-w64-ucrt-x86_64-ninja \
-            mingw-w64-ucrt-x86_64-pkg-config \
-            mingw-w64-ucrt-x86_64-python \
-            mingw-w64-ucrt-x86_64-python-pip \
-            mingw-w64-ucrt-x86_64-python-gobject \
-            mingw-w64-ucrt-x86_64-gtk4 \
-            mingw-w64-ucrt-x86_64-libadwaita \
-            mingw-w64-ucrt-x86_64-glib2 \
-            mingw-w64-ucrt-x86_64-gobject-introspection \
-            mingw-w64-ucrt-x86_64-gsettings-desktop-schemas \
-            mingw-w64-ucrt-x86_64-gtk-update-icon-cache
+            pacman -Sy --noconfirm
+            pacman --noconfirm -S --needed \
+              mingw-w64-ucrt-x86_64-toolchain \
+              mingw-w64-ucrt-x86_64-meson \
+              mingw-w64-ucrt-x86_64-ninja \
+              mingw-w64-ucrt-x86_64-pkg-config \
+              mingw-w64-ucrt-x86_64-python \
+              mingw-w64-ucrt-x86_64-python-pip \
+              mingw-w64-ucrt-x86_64-python-gobject \
+              mingw-w64-ucrt-x86_64-gtk4 \
+              mingw-w64-ucrt-x86_64-libadwaita \
+              mingw-w64-ucrt-x86_64-glib2 \
+              mingw-w64-ucrt-x86_64-gobject-introspection \
+              mingw-w64-ucrt-x86_64-gsettings-desktop-schemas \
+              mingw-w64-ucrt-x86_64-gtk-update-icon-cache
+        
+      - name: Install MSYS packaging tools
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MSYS
+          update: true
 
-          pacman --noconfirm -S --needed \
-            msys/p7zip \
-            msys/nsis
+      - name: Install packaging tools
+        shell: msys2 {0}
+        run: |
+          pacman -Sy --noconfirm
+          pacman --noconfirm -S --needed p7zip nsis
+        
       - name: Show tool versions
         shell: msys2 {0}
         run: |
