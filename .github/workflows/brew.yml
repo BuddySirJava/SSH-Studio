@@ -1,0 +1,58 @@
+name: Homebrew Formula
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'Formula/ssh-studio.rb'
+      - '.github/workflows/brew.yml'
+  push:
+    branches: [ master ]
+
+jobs:
+  test-formula:
+    strategy:
+      matrix:
+        os: [macos-13, macos-14]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Homebrew environment
+        run: |
+          brew update-reset
+          brew --version
+          brew config
+
+      - name: Style check
+        run: |
+          brew style ./Formula/ssh-studio.rb
+
+      - name: Audit formula
+        run: |
+          brew audit --new-formula --strict ./Formula/ssh-studio.rb
+
+      - name: Build and install
+        run: |
+          brew install --build-from-source ./Formula/ssh-studio.rb
+
+      - name: Test formula
+        run: |
+          ssh-studio --help
+          brew test ssh-studio
+
+      - name: Test app bundle
+        run: |
+          # Test the .app bundle was created
+          ls -la "$(brew --prefix ssh-studio)/Applications/SSH Studio.app"
+          # Test the launcher script
+          "$(brew --prefix ssh-studio)/Applications/SSH Studio.app/Contents/MacOS/ssh-studio" --help
+
+      - name: Create bottle (optional)
+        run: |
+          brew uninstall --force ssh-studio || true
+          brew install --build-bottle ./Formula/ssh-studio.rb
+          brew bottle --json ssh-studio
+        continue-on-error: true
