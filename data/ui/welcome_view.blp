@@ -1,0 +1,222 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $WelcomeView: Gtk.Box {
+  orientation: vertical;
+  vexpand: true;
+  hexpand: true;
+
+  styles [
+    "welcome-view",
+  ]
+
+  Adw.HeaderBar {
+    show-title: false;
+    
+    [end]
+    Gtk.WindowControls window_controls {}
+  }
+
+  Box {
+    orientation: vertical;
+    vexpand: true;
+    hexpand: true;
+    valign: center;
+    halign: center;
+    spacing: 24;
+    margin-start: 40;
+    margin-end: 40;
+    margin-top: 40;
+    margin-bottom: 40;
+
+    Box {
+    orientation: vertical;
+    spacing: 16;
+    valign: center;
+    halign: center;
+
+    Image {
+      icon-name: "io.github.BuddySirJava.SSH-Studio";
+      pixel-size: 256;
+    }
+
+    Label {
+      label: _("Welcome to SSH Studio");
+      halign: center;
+      styles [
+        "title-1",
+      ]
+    }
+
+    Label {
+      label: _("Select a host from the host list to start editing, or create a new one to get started.");
+      halign: center;
+      wrap: true;
+      max-width-chars: 50;
+      styles [
+        "dim-label",
+      ]
+    }
+  }
+
+  Box {
+    orientation: vertical;
+    spacing: 12;
+    valign: center;
+    halign: center;
+
+    Label {
+      label: _("Keyboard Shortcuts");
+      halign: center;
+      styles [
+        "title-3",
+      ]
+    }
+
+    Box {
+      orientation: vertical;
+      spacing: 8;
+      valign: center;
+      halign: center;
+
+      Box {
+        orientation: horizontal;
+        spacing: 12;
+        valign: center;
+
+        Label {
+          label: _("Ctrl+N");
+          halign: start;
+          width-chars: 8;
+          styles [
+            "monospace",
+            "dim-label",
+          ]
+        }
+        Label {
+          label: _("Create new host");
+          halign: start;
+          styles [
+            "dim-label",
+          ]
+        }
+      }
+
+      Box {
+        orientation: horizontal;
+        spacing: 12;
+        valign: center;
+
+        Label {
+          label: _("Ctrl+D");
+          halign: start;
+          width-chars: 8;
+          styles [
+            "monospace",
+            "dim-label",
+          ]
+        }
+        Label {
+          label: _("Duplicate selected host");
+          halign: start;
+          styles [
+            "dim-label",
+          ]
+        }
+      }
+
+      Box {
+        orientation: horizontal;
+        spacing: 12;
+        valign: center;
+
+        Label {
+          label: _("Delete");
+          halign: start;
+          width-chars: 8;
+          styles [
+            "monospace",
+            "dim-label",
+          ]
+        }
+        Label {
+          label: _("Delete selected host");
+          halign: start;
+          styles [
+            "dim-label",
+          ]
+        }
+      }
+
+      Box {
+        orientation: horizontal;
+        spacing: 12;
+        valign: center;
+
+        Label {
+          label: _("Ctrl+F");
+          halign: start;
+          width-chars: 8;
+          styles [
+            "monospace",
+            "dim-label",
+          ]
+        }
+        Label {
+          label: _("Search hosts");
+          halign: start;
+          styles [
+            "dim-label",
+          ]
+        }
+      }
+
+      Box {
+        orientation: horizontal;
+        spacing: 12;
+        valign: center;
+
+        Label {
+          label: _("Ctrl+S");
+          halign: start;
+          width-chars: 8;
+          styles [
+            "monospace",
+            "dim-label",
+          ]
+        }
+        Label {
+          label: _("Save configuration");
+          halign: start;
+          styles [
+            "dim-label",
+          ]
+        }
+      }
+
+      Box {
+        orientation: horizontal;
+        spacing: 12;
+        valign: center;
+
+        Label {
+          label: _("Ctrl+Z");
+          halign: start;
+          width-chars: 8;
+          styles [
+            "monospace",
+            "dim-label",
+          ]
+        }
+        Label {
+          label: _("Revert changes");
+          halign: start;
+          styles [
+            "dim-label",
+          ]
+        }
+      }
+    }
+  }
+  }
+}

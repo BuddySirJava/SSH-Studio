@@ -5,29 +5,72 @@ template $HostEditor: Gtk.Box {
   orientation: vertical;
   vexpand: true;
   hexpand: true;
-  margin-start: 20;
-  margin-end: 20;
   styles [
     "editor-pane",
     "host-editor-pane",
   ]
-  Adw.Clamp {
+
+
+    [start]
+    Button add_button {
+      icon-name: "list-add-symbolic";
+      tooltip-text: _("Add Host");
+      visible: false;
+
+      styles [
+        "suggested-action",
+      ]
+    }
+
+    [start]
+    Button duplicate_button {
+      icon-name: "edit-copy-symbolic";
+      tooltip-text: _("Duplicate Host");
+      visible: false;
+
+      styles [
+        "flat",
+      ]
+    }
+
+    [start]
+    Button delete_button {
+      icon-name: "edit-delete-symbolic";
+      tooltip-text: _("Delete Host");
+      visible: false;
+
+      styles [
+        "destructive-action",
+      ]
+    }
+
+
+  Box {
+    
+    orientation: vertical;
+    vexpand: true;
+    hexpand: true;
+
+    Adw.HeaderBar {
+      show-title: false;
+      [center]
       Adw.ViewSwitcher viewswitcher {
         stack: viewstack;
+        margin-end: 20;
         policy: wide;
         valign: center;
         halign: center;
         hexpand: true;
-        margin-top: 16;
-        margin-bottom: 16;
 
         styles [
           "view-switcher",
         ]
-
-      }  
+      }
+      
+      [end]
+      Gtk.WindowControls window_controls {}
     }
-
+  
   Adw.ViewStack viewstack {
     vexpand: true;
     margin-start: 4;
@@ -35,7 +78,7 @@ template $HostEditor: Gtk.Box {
     styles [
       "host-editor",
     ]
-   
+
     Adw.ViewStackPage {
       title: _("Settings");
       icon-name: "preferences-system-symbolic";
@@ -375,10 +418,12 @@ template $HostEditor: Gtk.Box {
   /* Local banner moved to main window ActionBar for consistency */
   Revealer banner_revealer { visible: false; }
 
-  /* Hidden placeholders to satisfy template children in code */
-  Box {
-    visible: false;
-    Button save_button {}
-    Button revert_button {}
+    /* Hidden placeholders to satisfy template children in code */
+    Box {
+      visible: false;
+      Button save_button {}
+      Button revert_button {}
+    }
   }
 }
+

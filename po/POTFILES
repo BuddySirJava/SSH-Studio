@@ -4,9 +4,7 @@ src/ui/host_editor.py
 src/ui/host_list.py
 src/ui/main_window.py
 src/ui/preferences_dialog.py
-src/ui/search_bar.py
 data/ui/host_editor.blp
 data/ui/host_list.blp
 data/ui/main_window.blp
 data/ui/preferences_dialog.blp
-data/ui/search_bar.blp

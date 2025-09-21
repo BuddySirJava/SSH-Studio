@@ -2,79 +2,13 @@ using Gtk 4.0;
 using Adw 1;
 
 template $MainWindow: Adw.ApplicationWindow {
-  title: _("SSH-Studio");
-  default-width: 900;
+  default-width: 1200;
   default-height: 720;
-
   Adw.ToastOverlay toast_overlay {
-    Adw.ToolbarView main_box {
-      hexpand: true;
-      vexpand: true;
-
-      [top]
-      Adw.HeaderBar {
-
-        [title]
-        Adw.WindowTitle {
-          title: _("SSH-Studio");
-        }
-        [start]
-        Button toggle_sidebar_button {
-          icon-name: "sidebar-show-symbolic";
-          tooltip-text: _("Show Host Editor");
-          styles [
-            "flat",
-          ]
-        }
-
-
-        [start]
-        Button add_button {
-          icon-name: "list-add-symbolic";
-          tooltip-text: _("Add Host");
-          visible: false;
-
-          styles [
-            "suggested-action",
-          ]
-        }
-
-        [start]
-        Button duplicate_button {
-          icon-name: "edit-copy-symbolic";
-          tooltip-text: _("Duplicate Host");
-          visible: false;
-
-          styles [
-            "flat",
-          ]
-        }
-
-        [start]
-        Button delete_button {
-          icon-name: "edit-delete-symbolic";
-          tooltip-text: _("Delete Host");
-          visible: false;
-
-          styles [
-            "destructive-action",
-          ]
-        }
-
-        [end]
-        MenuButton {
-          icon-name: "open-menu-symbolic";
-          menu-model: main_menu;
-
-          styles [
-            "flat",
-          ]
-        }
-      }
-
-          
-      Adw.NavigationSplitView split_view {
-        collapsed: true;
+  Adw.ToolbarView main_box {
+    hexpand: true;
+    vexpand: true;
+    Adw.NavigationSplitView split_view {
         sidebar: Adw.NavigationPage {
           title: _("SSH Hosts");
 
@@ -87,7 +21,6 @@ template $MainWindow: Adw.ApplicationWindow {
                 margin-start: 15;
                 margin-end: 15;
 
-                $SearchBar search_bar {}
                 $HostList host_list {}
               }
             ;}
@@ -99,7 +32,14 @@ template $MainWindow: Adw.ApplicationWindow {
 
           child: Adw.NavigationView content_nav {
             Adw.NavigationPage {
+              title: _("Welcome");
+              tag: "welcome";
+
+              child: $WelcomeView welcome_view {};
+            }
+            Adw.NavigationPage {
               title: _("Host Editor");
+              tag: "host-editor";
 
               child: $HostEditor host_editor {};
             }
@@ -109,7 +49,7 @@ template $MainWindow: Adw.ApplicationWindow {
 
       [bottom]
       ActionBar global_actionbar {
-        visible: true;
+        visible: false;
         [start]
         Label unsaved_label { label: _("You have unsaved changes."); visible: false; }
         [end]
@@ -129,45 +69,6 @@ template $MainWindow: Adw.ApplicationWindow {
           visible: false;
         }
       }
-    }
-  }
-}
-
-menu main_menu {
-  section {
-
-    item {
-      label: _("Open Config");
-      action: "app.open-config";
-    }
-
-    item {
-      label: _("Reload");
-      action: "app.reload";
-    }
-
-    item {
-      label: _("Preferences");
-      action: "app.preferences";
-    }
-
-    item {
-      label: _("Keyboard Shortcuts");
-      action: "app.keyboard-shortcuts";
-    }
-    
-  }
-
-  section {
-    item {
-      label: _("Manage SSH Keys…");
-      action: "app.manage-keys";
-    }
-  }
-  section {
-    item {
-      label: _("About");
-      action: "app.about";
     }
   }
 }

@@ -4,13 +4,13 @@
     <file alias="ui/main_window.ui" preprocess="xml-stripblanks">main_window.ui</file>
     <file alias="ui/host_editor.ui" preprocess="xml-stripblanks">host_editor.ui</file>
     <file alias="ui/host_list.ui" preprocess="xml-stripblanks">host_list.ui</file>
-    <file alias="ui/search_bar.ui" preprocess="xml-stripblanks">search_bar.ui</file>
     <file alias="ui/preferences_dialog.ui" preprocess="xml-stripblanks">preferences_dialog.ui</file>
     <file alias="ui/test_connection_dialog.ui" preprocess="xml-stripblanks">test_connection_dialog.ui</file>
     <file alias="ui/ssh_key_manager_dialog.ui" preprocess="xml-stripblanks">ssh_key_manager_dialog.ui</file>
     <file alias="ui/generate_key_dialog.ui" preprocess="xml-stripblanks">generate_key_dialog.ui</file>
     <file alias="ui/key_picker_dialog.ui" preprocess="xml-stripblanks">key_picker_dialog.ui</file>
     <file alias="ui/keyboard_shortcuts_dialog.ui" preprocess="xml-stripblanks">keyboard_shortcuts_dialog.ui</file>
+    <file alias="ui/welcome_view.ui" preprocess="xml-stripblanks">welcome_view.ui</file>
     <file>ssh-studio.css</file>
     <file alias="media/icon_256.png">icon_256.png</file>
     <file alias="icons/256x256/apps/io.github.BuddySirJava.SSH-Studio.png">icon_256.png</file>

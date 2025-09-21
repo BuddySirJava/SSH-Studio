@@ -21,6 +21,9 @@ class HostEditor(Gtk.Box):
 
     __gtype_name__ = "HostEditor"
 
+    add_button = Gtk.Template.Child()
+    duplicate_button = Gtk.Template.Child()
+    delete_button = Gtk.Template.Child()
     viewstack = Gtk.Template.Child()
     patterns_entry = Gtk.Template.Child()
     patterns_error_label = Gtk.Template.Child()
@@ -427,6 +430,7 @@ class HostEditor(Gtk.Box):
             )
 
         self._connect_buttons()
+        self._connect_header_buttons()
 
     def _connect_buttons(self):
         if hasattr(self, "identity_button") and self.identity_button:
@@ -455,6 +459,52 @@ class HostEditor(Gtk.Box):
                 main_window.save_button.connect("clicked", self._on_save_clicked)
             if getattr(main_window, "revert_button", None) is not None:
                 main_window.revert_button.connect("clicked", self._on_revert_clicked)
+        except Exception:
+            pass
+
+    def _connect_header_buttons(self):
+        """Connect header bar button signals."""
+        try:
+            if hasattr(self, "add_button") and self.add_button:
+                self.add_button.connect("clicked", self._on_add_clicked)
+        except Exception:
+            pass
+        try:
+            if hasattr(self, "duplicate_button") and self.duplicate_button:
+                self.duplicate_button.connect("clicked", self._on_duplicate_clicked)
+        except Exception:
+            pass
+        try:
+            if hasattr(self, "delete_button") and self.delete_button:
+                self.delete_button.connect("clicked", self._on_delete_clicked)
+        except Exception:
+            pass
+
+
+    def _on_add_clicked(self, button):
+        """Handle add host button click."""
+        try:
+            main_window = self.get_root()
+            if hasattr(main_window, "host_list") and main_window.host_list:
+                main_window.host_list.add_host()
+        except Exception:
+            pass
+
+    def _on_duplicate_clicked(self, button):
+        """Handle duplicate host button click."""
+        try:
+            main_window = self.get_root()
+            if hasattr(main_window, "host_list") and main_window.host_list:
+                main_window.host_list.duplicate_host()
+        except Exception:
+            pass
+
+    def _on_delete_clicked(self, button):
+        """Handle delete host button click."""
+        try:
+            main_window = self.get_root()
+            if hasattr(main_window, "host_list") and main_window.host_list:
+                main_window.host_list.delete_host()
         except Exception:
             pass
 
@@ -618,11 +668,16 @@ class HostEditor(Gtk.Box):
         except Exception:
             pass
 
-        self._programmatic_raw_update = True
-        try:
-            self._on_raw_text_changed(self.raw_text_view.get_buffer())
-        finally:
-            self._programmatic_raw_update = False
+        # Avoid triggering heavy diff/parse immediately on first load; defer to idle
+        def deferred_update():
+            self._programmatic_raw_update = True
+            try:
+                self._on_raw_text_changed(self.raw_text_view.get_buffer())
+            finally:
+                self._programmatic_raw_update = False
+            return False
+
+        GLib.idle_add(deferred_update)
 
     def _clear_all_fields(self):
         """Clears all input fields and custom options."""
@@ -1779,6 +1834,7 @@ class HostEditor(Gtk.Box):
                 hasattr(main_window, "global_actionbar")
                 and main_window.global_actionbar
             ):
+                main_window.global_actionbar.set_visible(is_dirty)
                 main_window.unsaved_label.set_visible(is_dirty)
                 main_window.save_button.set_visible(is_dirty and is_valid)
                 main_window.revert_button.set_visible(is_dirty)

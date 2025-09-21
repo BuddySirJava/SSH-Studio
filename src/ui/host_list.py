@@ -19,6 +19,9 @@ class HostList(Gtk.Box):
     list_box = Gtk.Template.Child()
     count_label = Gtk.Template.Child()
     add_bottom_button = Gtk.Template.Child()
+    search_button = Gtk.Template.Child()
+    search_bar = Gtk.Template.Child()
+    search_entry = Gtk.Template.Child()
 
     __gsignals__ = {
         "host-selected": (GObject.SignalFlags.RUN_LAST, None, (object,)),
@@ -77,6 +80,18 @@ class HostList(Gtk.Box):
         try:
             if self.add_bottom_button:
                 self.add_bottom_button.connect("clicked", lambda b: self.add_host())
+        except Exception:
+            pass
+
+        try:
+            if self.search_button:
+                self.search_button.connect("clicked", self._on_search_button_clicked)
+        except Exception:
+            pass
+
+        try:
+            if self.search_entry:
+                self.search_entry.connect("search-changed", self._on_search_changed)
         except Exception:
             pass
 
@@ -342,7 +357,7 @@ class HostList(Gtk.Box):
             duplicate_button.set_icon_name("edit-copy-symbolic")
             duplicate_button.set_tooltip_text(_("Duplicate Host"))
             duplicate_button.add_css_class("flat")
-            duplicate_button.set_visible(False)  # Initially hidden
+            duplicate_button.set_visible(False)
             duplicate_button.connect("clicked", self._on_duplicate_host_clicked, host)
 
             delete_button = Gtk.Button()
@@ -350,7 +365,7 @@ class HostList(Gtk.Box):
             delete_button.set_tooltip_text(_("Delete Host"))
             delete_button.add_css_class("flat")
             delete_button.add_css_class("destructive-action")
-            delete_button.set_visible(False)  # Initially hidden
+            delete_button.set_visible(False)
             delete_button.connect("clicked", self._on_delete_host_clicked, host)
 
             button_box.append(duplicate_button)
@@ -411,3 +426,21 @@ class HostList(Gtk.Box):
 
     def _update_bottom_toolbar_sensitivity(self):
         pass
+
+    def _on_search_button_clicked(self, button):
+        """Toggle search bar visibility when search button is clicked."""
+        if self.search_bar:
+            is_visible = self.search_bar.get_visible()
+            self.search_bar.set_visible(not is_visible)
+            
+            if not is_visible:
+                if self.search_entry:
+                    self.search_entry.grab_focus()
+            else:
+                if self.search_entry:
+                    self.search_entry.set_text("")
+                    self.filter_hosts("")
+
+    def _on_search_changed(self, search_bar, query):
+        """Handle search query changes."""
+        self.filter_hosts(query)

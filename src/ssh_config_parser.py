@@ -66,7 +66,6 @@ class SSHHost:
                 )
                 host.raw_lines.append(line)
             else:
-                # Preserve unknown lines that are not comments or options
                 host.raw_lines.append(line)
 
         if not found_host_line:
@@ -122,10 +121,8 @@ class SSHConfig:
         for inc in self.include_directives:
             current_content_lines.append(f"Include {inc}")
 
-        # Compare with original_lines, ignoring trailing newlines from original file reading
         original_clean_lines = [line.rstrip("\n") for line in self.original_lines]
 
-        # Remove empty lines from the end of both lists for robust comparison
         while original_clean_lines and original_clean_lines[-1] == "":
             original_clean_lines.pop()
 
@@ -281,14 +278,22 @@ class SSHConfigParser:
             expanded = os.path.expanduser(pattern)
             if not os.path.isabs(expanded):
                 expanded = str(base_dir / expanded)
-            for path_str in glob.glob(expanded, recursive=True):
+
+            try:
+                matches = glob.glob(expanded, recursive=False)
+                if not matches and "**" in expanded:
+                    matches = glob.glob(expanded, recursive=True)
+            except Exception:
+                matches = []
+
+            for path_str in matches:
                 p = Path(path_str)
                 try:
                     with p.open("r", encoding="utf-8") as f:
                         resolved[p] = f.readlines()
                 except Exception:
-                    # Failed to read include, gracefully ignore
                     continue
+
         self.config.includes_resolved = resolved
 
     def _backup_file(self) -> None:

@@ -8,6 +8,7 @@ from gettext import gettext as _
 import gettext
 
 import os
+import threading
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -107,6 +108,8 @@ class SSHConfigStudioApp(Adw.Application):
                     "io.github.BuddySirJava.SSH-Studio",
                     "ssh-studio-resources.gresource",
                 ),
+                "/opt/homebrew/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource",
+                "/usr/local/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource",
                 "data/ssh-studio-resources.gresource",
             ]
             for candidate in resource_candidates:
@@ -132,12 +135,28 @@ class SSHConfigStudioApp(Adw.Application):
         GLib.idle_add(self._parse_config_async)
 
     def _parse_config_async(self):
-        try:
-            if self.parser is not None:
-                self.parser.parse()
-        except Exception as e:
-            logging.error(f"Failed to initialize SSH config parser: {e}")
-            self._show_error_dialog(_("Failed to load SSH config"), str(e))
+        def worker():
+            try:
+                if self.parser is not None:
+                    self.parser.parse()
+                def update_ui():
+                    try:
+                        if self.main_window and getattr(self.main_window, "host_list", None):
+                            self.main_window.host_list.load_hosts(self.parser.config.hosts)
+                            try:
+                                self.main_window._update_status(_("Configuration loaded successfully"))
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+                    return False
+                GLib.idle_add(update_ui)
+            except Exception as e:
+                logging.error(f"Failed to initialize SSH config parser: {e}")
+                GLib.idle_add(lambda: (self._show_error_dialog(_("Failed to load SSH config"), str(e)), False)[1])
+
+        t = threading.Thread(target=worker, daemon=True)
+        t.start()
         return False
 
     def _add_actions(self):
@@ -211,6 +230,8 @@ class SSHConfigStudioApp(Adw.Application):
                         "io.github.BuddySirJava.SSH-Studio",
                         "ssh-studio.css",
                     ),
+                    "/opt/homebrew/share/io.github.BuddySirJava.SSH-Studio/ssh-studio.css",
+                    "/usr/local/share/io.github.BuddySirJava.SSH-Studio/ssh-studio.css",
                     "data/ssh-studio.css",
                 ]
 
@@ -244,12 +265,10 @@ class SSHConfigStudioApp(Adw.Application):
         dialog.present()
 
     def _show_error(self, message: str):
-        """Displays an error message to the user, typically from HostEditor or other components."""
         logging.error(f"Application Error: {message}")
         self._show_error_dialog(_("Error"), message)
 
     def _show_toast(self, message: str):
-        """Displays a transient toast message to the user."""
         logging.info(f"Toast: {message}")
         if self.main_window and hasattr(self.main_window, "show_toast"):
             try:

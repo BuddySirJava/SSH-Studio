@@ -22,17 +22,31 @@ template $HostList: Box {
       margin-top: 8;
       margin-bottom: 8;
 
-      Label {
-        margin-start: 14;
-        label: _("SSH Hosts");
-        halign: start;
+      Button search_button {
+        icon-name: "system-search-symbolic";
+        tooltip-text: _("Search");
+        styles [ "flat", ]
+      }
 
+      Label {
+        label: _("SSH Studio");
+        halign: center;
+        hexpand: true;
+        margin-start: 24;
         styles [
-          "title",
+          "title-4",
         ]
       }
 
-      Box { hexpand: true; }
+      MenuButton {
+        icon-name: "open-menu-symbolic";
+        menu-model: main_menu;
+        valign: center;
+
+        styles [
+          "flat",
+        ]
+      }
 
       Button add_bottom_button {
         icon-name: "list-add-symbolic";
@@ -40,6 +54,27 @@ template $HostList: Box {
         styles [ "flat", ]
       }
     }
+
+    Box search_bar {
+      orientation: horizontal;
+      spacing: 0;
+      hexpand: true;
+      visible: false;
+
+      SearchEntry search_entry {
+        placeholder-text: _("Search hosts, hostnames, users, keys...");
+        tooltip-text: _("Search across all SSH host configurations");
+        hexpand: true;
+        halign: center;
+        margin-start: 20;
+        margin-end: 20;
+        margin-bottom: 12;
+        styles [
+          "pill",
+        ]
+      }
+    }
+
 
     ScrolledWindow {
       hexpand: true;
@@ -72,5 +107,44 @@ template $HostList: Box {
       ]
     }
 
+  }
+}
+
+menu main_menu {
+  section {
+
+    item {
+      label: _("Open Config");
+      action: "app.open-config";
+    }
+
+    item {
+      label: _("Reload");
+      action: "app.reload";
+    }
+
+    item {
+      label: _("Preferences");
+      action: "app.preferences";
+    }
+
+    item {
+      label: _("Keyboard Shortcuts");
+      action: "app.keyboard-shortcuts";
+    }
+    
+  }
+
+  section {
+    item {
+      label: _("Manage SSH Keys…");
+      action: "app.manage-keys";
+    }
+  }
+  section {
+    item {
+      label: _("About");
+      action: "app.about";
+    }
   }
 }

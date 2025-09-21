@@ -425,10 +425,11 @@ msgstr ""
 msgid "Use dark theme when available"
 msgstr ""
 
-#: data/ui/search_bar.blp:16
+#: data/ui/host_list.blp:24
 msgid "Search hosts, hostnames, users, keys..."
 msgstr ""
 
-#: data/ui/search_bar.blp:17
+#: data/ui/host_list.blp:25
 msgid "Search across all SSH host configurations"
 msgstr ""
+

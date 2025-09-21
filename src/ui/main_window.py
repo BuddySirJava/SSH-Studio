@@ -6,9 +6,9 @@ from gi.repository import Gtk, Gio, Gdk, Adw
 from pathlib import Path
 from gettext import gettext as _
 import sys
-from .search_bar import SearchBar
 from .host_list import HostList
 from .host_editor import HostEditor
+from .welcome_view import WelcomeView
 
 
 @Gtk.Template(resource_path="/io/github/BuddySirJava/SSH-Studio/ui/main_window.ui")
@@ -19,16 +19,13 @@ class MainWindow(Adw.ApplicationWindow):
 
     main_box = Gtk.Template.Child()
     toast_overlay = Gtk.Template.Child()
-    toggle_sidebar_button = Gtk.Template.Child()
     global_actionbar = Gtk.Template.Child()
     unsaved_label = Gtk.Template.Child()
-    add_button = Gtk.Template.Child()
-    duplicate_button = Gtk.Template.Child()
-    delete_button = Gtk.Template.Child()
-    search_bar = Gtk.Template.Child()
     split_view = Gtk.Template.Child()
+    content_nav = Gtk.Template.Child()
     host_list = Gtk.Template.Child()
     host_editor = Gtk.Template.Child()
+    welcome_view = Gtk.Template.Child()
     save_button = Gtk.Template.Child()
     revert_button = Gtk.Template.Child()
 
@@ -52,9 +49,19 @@ class MainWindow(Adw.ApplicationWindow):
 
         self._connect_signals()
         self._load_preferences()
-        self._load_config()
+        # Defer config loading to the application's async parser to avoid UI stalls
+        try:
+            if hasattr(self.app, "_parse_config_async"):
+                self.app._parse_config_async()
+        except Exception:
+            pass
 
         self.connect("notify::has-focus", self._on_window_focus_changed)
+        
+        if hasattr(self, 'global_actionbar') and self.global_actionbar:
+            self.global_actionbar.set_visible(False)
+        
+        self._show_welcome_view()
 
         try:
             key_controller = Gtk.EventControllerKey.new()
@@ -161,24 +168,6 @@ class MainWindow(Adw.ApplicationWindow):
             self.save_button.connect("clicked", self._on_save_clicked)
         except Exception:
             self.save_button = None
-        try:
-            self.toggle_sidebar_button.connect(
-                "clicked", self._on_toggle_sidebar_clicked
-            )
-        except Exception:
-            pass
-        try:
-            self.add_button.connect("clicked", self._on_add_clicked)
-        except Exception:
-            pass
-        try:
-            self.duplicate_button.connect("clicked", self._on_duplicate_clicked)
-        except Exception:
-            pass
-        try:
-            self.delete_button.connect("clicked", self._on_delete_clicked)
-        except Exception:
-            pass
 
         self.host_list.connect("host-selected", self._on_host_selected)
         self.host_list.connect("host-added", self._on_host_added)
@@ -200,14 +189,13 @@ class MainWindow(Adw.ApplicationWindow):
         except Exception:
             pass
 
-        self.search_bar.connect("search-changed", self._on_search_changed)
+        self.host_list.search_entry.connect("search-changed", self._on_search_changed)
 
         self._setup_actions()
 
     def _setup_actions(self):
         actions = Gio.SimpleActionGroup()
 
-        # File operations
         open_action = Gio.SimpleAction.new("open-config", None)
         open_action.connect("activate", self._on_open_config)
         actions.add_action(open_action)
@@ -220,29 +208,23 @@ class MainWindow(Adw.ApplicationWindow):
         reload_action.connect("activate", self._on_reload)
         actions.add_action(reload_action)
 
-        # Host operations
         add_host_action = Gio.SimpleAction.new("add-host", None)
-        add_host_action.connect("activate", self._on_add_clicked)
+        add_host_action.connect("activate", lambda a, p: self.host_editor._on_add_clicked(None) if hasattr(self.host_editor, "_on_add_clicked") else None)
         actions.add_action(add_host_action)
 
         duplicate_host_action = Gio.SimpleAction.new("duplicate-host", None)
-        duplicate_host_action.connect("activate", self._on_duplicate_clicked)
+        duplicate_host_action.connect("activate", lambda a, p: self.host_editor._on_duplicate_clicked(None) if hasattr(self.host_editor, "_on_duplicate_clicked") else None)
         actions.add_action(duplicate_host_action)
 
         delete_host_action = Gio.SimpleAction.new("delete-host", None)
-        delete_host_action.connect("activate", self._on_delete_clicked)
+        delete_host_action.connect("activate", lambda a, p: self.host_editor._on_delete_clicked(None) if hasattr(self.host_editor, "_on_delete_clicked") else None)
         actions.add_action(delete_host_action)
 
-        # Navigation
         search_action = Gio.SimpleAction.new("search", None)
         search_action.connect("activate", self._on_search_action)
         actions.add_action(search_action)
 
-        toggle_sidebar_action = Gio.SimpleAction.new("toggle-sidebar", None)
-        toggle_sidebar_action.connect("activate", self._on_toggle_sidebar_action)
-        actions.add_action(toggle_sidebar_action)
 
-        # Preferences and tools
         prefs_action = Gio.SimpleAction.new("preferences", None)
         prefs_action.connect("activate", self._on_preferences)
         actions.add_action(prefs_action)
@@ -261,36 +243,11 @@ class MainWindow(Adw.ApplicationWindow):
 
         self.insert_action_group("app", actions)
 
-    def _on_toggle_sidebar_action(self, action, param):
-        """Handle toggle sidebar action."""
-        self._on_toggle_sidebar_clicked(None)
 
     def _on_search_action(self, action, param):
         """Handle search action."""
         self._toggle_search()
 
-    def _on_toggle_sidebar_clicked(self, button):
-        """Toggle visibility of the host list (sidebar) in the split view."""
-        try:
-            collapsed = self.split_view.get_collapsed()
-            self.split_view.set_collapsed(not collapsed)
-            if self.toggle_sidebar_button is not None:
-                if collapsed:
-                    try:
-                        self.toggle_sidebar_button.set_tooltip_text(
-                            _("Hide Host Editor")
-                        )
-                    except Exception:
-                        pass
-                else:
-                    try:
-                        self.toggle_sidebar_button.set_tooltip_text(
-                            _("Show Host Editor")
-                        )
-                    except Exception:
-                        pass
-        except Exception:
-            pass
 
     def _on_key_pressed(self, controller, keyval, keycode, state):
         ctrl_pressed = bool(state & Gdk.ModifierType.CONTROL_MASK)
@@ -306,10 +263,12 @@ class MainWindow(Adw.ApplicationWindow):
                 self._on_reload(None, None)
                 return True
             elif keyval == Gdk.KEY_n:
-                self._on_add_clicked(None)
+                if hasattr(self.host_editor, "_on_add_clicked"):
+                    self.host_editor._on_add_clicked(None)
                 return True
             elif keyval == Gdk.KEY_d:
-                self._on_duplicate_clicked(None)
+                if hasattr(self.host_editor, "_on_duplicate_clicked"):
+                    self.host_editor._on_duplicate_clicked(None)
                 return True
             elif keyval == Gdk.KEY_f:
                 self._toggle_search()
@@ -322,11 +281,12 @@ class MainWindow(Adw.ApplicationWindow):
                 return True
 
         if ctrl_pressed and keyval == Gdk.KEY_Delete:
-            self._on_delete_clicked(None)
+            if hasattr(self.host_editor, "_on_delete_clicked"):
+                self.host_editor._on_delete_clicked(None)
             return True
 
         if keyval == Gdk.KEY_Escape:
-            if self.search_bar.get_visible():
+            if self.host_list.search_bar.get_visible():
                 try:
                     focus_widget = None
                     try:
@@ -344,23 +304,17 @@ class MainWindow(Adw.ApplicationWindow):
                             pass
                         return False
 
-                    if not _is_descendant(focus_widget, self.search_bar):
+                    if not _is_descendant(focus_widget, self.host_list.search_bar):
                         return False
 
-                    if hasattr(self.search_bar, "set_search_mode"):
-                        self.search_bar.set_search_mode(False)
-                    else:
-                        self.search_bar.set_visible(False)
+                    self.host_list.search_bar.set_visible(False)
                 except Exception:
-                    self.search_bar.set_visible(False)
-                self.search_bar.clear_search()
+                    self.host_list.search_bar.set_visible(False)
+                self.host_list.search_entry.set_text("")
                 self.host_list.filter_hosts("")
                 return True
             return False
 
-        if keyval == Gdk.KEY_F9:
-            self._on_toggle_sidebar_clicked(None)
-            return True
 
         if keyval == Gdk.KEY_Return or keyval == Gdk.KEY_KP_Enter:
             if hasattr(self.host_list, "get_selected_host"):
@@ -396,49 +350,31 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _on_escape_pressed(self, shortcut):
         """Handle Escape key press - close search bar if visible."""
-        if self.search_bar.get_visible():
-            self.search_bar.clear_search()
-            self.search_bar.set_visible(False)
+        if self.host_list.search_bar.get_visible():
+            self.host_list.search_entry.set_text("")
+            self.host_list.search_bar.set_visible(False)
             self.host_list.filter_hosts("")
 
     def _load_config(self):
-        """Load the SSH configuration."""
-        if not self.parser:
-            return
-
+        """Trigger async config parsing via the application to keep UI responsive."""
         try:
-            self.parser.parse()
-            self.host_list.load_hosts(self.parser.config.hosts)
-            self._update_status("Configuration loaded successfully")
+            if hasattr(self.app, "_parse_config_async"):
+                self.app._parse_config_async()
         except Exception as e:
-            self._show_error(f"Failed to load configuration: {e}")
+            self._show_error(f"Failed to trigger config reload: {e}")
 
     def _toggle_search(self, force=None):
         try:
             make_visible = True if force is None else bool(force)
-            if hasattr(self.search_bar, "set_search_mode"):
-                self.search_bar.set_search_mode(make_visible)
-            else:
-                self.search_bar.set_visible(make_visible)
+            self.host_list.search_bar.set_visible(make_visible)
             if make_visible:
-                self.search_bar.grab_focus()
+                self.host_list.search_entry.grab_focus()
             else:
-                self.search_bar.clear_search()
+                self.host_list.search_entry.set_text("")
                 self.host_list.filter_hosts("")
         except Exception:
             pass
 
-    def _on_add_clicked(self, button):
-        """Handle add host button click."""
-        self.host_list.add_host()
-
-    def _on_duplicate_clicked(self, button):
-        """Handle duplicate host button click."""
-        self.host_list.duplicate_host()
-
-    def _on_delete_clicked(self, button):
-        """Handle delete host button click."""
-        self.host_list.delete_host()
 
     def _on_host_save(self, editor, host):
         """Handle host save signal from editor."""
@@ -446,9 +382,9 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _on_window_focus_changed(self, window, param):
         """Hide search bar if window loses focus."""
-        if not self.get_has_focus() and self.search_bar.get_visible():
-            self.search_bar.clear_search()
-            self.search_bar.set_visible(False)
+        if not self.get_has_focus() and self.host_list.search_bar.get_visible():
+            self.host_list.search_entry.set_text("")
+            self.host_list.search_bar.set_visible(False)
             self.host_list.filter_hosts("")
 
     def on_status_bar_close_clicked(self, button):
@@ -502,12 +438,29 @@ class MainWindow(Adw.ApplicationWindow):
         """Handle host selection from the list."""
         self.host_editor.load_host(host)
         self._set_host_editor_visible(True)
-        try:
-            if self.split_view.get_collapsed():
-                self.split_view.set_collapsed(False)
-        except Exception:
-            pass
+        if hasattr(self, 'content_nav') and self.content_nav:
+            try:
+                pages = self.content_nav.get_pages()
+                for page in pages:
+                    if hasattr(page, 'get_tag') and page.get_tag() == "host-editor":
+                        self.content_nav.pop_to_page(page)
+                        return
+            except Exception:
+                pass
+            self.content_nav.push_by_tag("host-editor")
 
+    def _show_welcome_view(self):
+        """Show the welcome view when no host is selected."""
+        if hasattr(self, 'content_nav') and self.content_nav:
+            try:
+                pages = self.content_nav.get_pages()
+                for page in pages:
+                    if hasattr(page, 'get_tag') and page.get_tag() == "welcome":
+                        self.content_nav.pop_to_page(page)
+                        return
+            except Exception:
+                pass
+            self.content_nav.push_by_tag("welcome")
     def _on_host_added(self, host_list, host):
         if self.parser:
             base_pattern = "new-host"
@@ -582,10 +535,7 @@ class MainWindow(Adw.ApplicationWindow):
                 if self.save_button is not None:
                     self.save_button.set_sensitive(False)
                 self.is_dirty = False
-                try:
-                    self.split_view.set_collapsed(True)
-                except Exception:
-                    pass
+
             else:
                 self.host_list.select_host(self.parser.config.hosts[0])
 
