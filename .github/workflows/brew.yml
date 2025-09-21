@@ -2,12 +2,15 @@ name: Homebrew Formula
 
 on:
   workflow_dispatch:
+  repository_dispatch:
+    types: [website-build]
   pull_request:
     paths:
-      - 'Formula/ssh-studio.rb'
+      - 'Formula/**'
       - '.github/workflows/brew.yml'
   push:
     branches: [ master ]
+    tags: [ '[0-9]*.[0-9]*.[0-9]*' ]
 
 jobs:
   test-formula:
@@ -45,15 +48,23 @@ jobs:
 
       - name: Test formula
         run: |
-          ssh-studio
+          ssh-studio &
+          sleep 2
           brew test local/ssh-studio/ssh-studio
+          # Close the GUI app
+          pkill -f "SSH Studio" || true
+          pkill -f "ssh-studio" || true
 
       - name: Test app bundle
         run: |
           # Test the .app bundle was created
           ls -la "$(brew --prefix local/ssh-studio/ssh-studio)/Applications/SSH Studio.app"
           # Test the launcher script
-          "$(brew --prefix local/ssh-studio/ssh-studio)/Applications/SSH Studio.app/Contents/MacOS/ssh-studio" --help
+          "$(brew --prefix local/ssh-studio/ssh-studio)/Applications/SSH Studio.app/Contents/MacOS/ssh-studio" --help &
+          sleep 2
+          # Close the GUI app
+          pkill -f "SSH Studio" || true
+          pkill -f "ssh-studio" || true
 
       - name: Create bottle (optional)
         run: |

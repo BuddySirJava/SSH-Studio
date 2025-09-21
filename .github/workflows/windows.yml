@@ -1,0 +1,120 @@
+name: Windows Installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  build-windows-installer:
+    runs-on: windows-latest
+    env:
+      APP_ID: io.github.BuddySirJava.SSH-Studio
+      APP_NAME: SSH Studio
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2 (UCRT64)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            base-devel
+            git
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-meson
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-pkg-config
+            mingw-w64-ucrt-x86_64-python
+            mingw-w64-ucrt-x86_64-python-pip
+            mingw-w64-ucrt-x86_64-python-gobject
+            mingw-w64-ucrt-x86_64-gtk4
+            mingw-w64-ucrt-x86_64-libadwaita
+            mingw-w64-ucrt-x86_64-glib2
+            mingw-w64-ucrt-x86_64-gobject-introspection
+            mingw-w64-ucrt-x86_64-gsettings-desktop-schemas
+            mingw-w64-ucrt-x86_64-gtk-update-icon-cache
+            p7zip
+            nsis
+
+      - name: Show tool versions
+        shell: msys2 {0}
+        run: |
+          python --version
+          meson --version
+          ninja --version
+          pkg-config --version
+
+      - name: Build blueprint-compiler from git (v0.18.0)
+        shell: msys2 {0}
+        run: |
+          set -e
+          rm -rf /c/_deps && mkdir -p /c/_deps
+          cd /c/_deps
+          git clone --depth 1 --branch v0.18.0 https://gitlab.gnome.org/GNOME/blueprint-compiler.git
+          cd blueprint-compiler
+          meson setup build --prefix=/opt/blueprint-compiler --buildtype=release
+          meson compile -C build
+          meson install -C build
+          echo "/opt/blueprint-compiler/bin" >> $GITHUB_PATH
+          blueprint-compiler --version
+
+      - name: Configure & build SSH Studio (Meson)
+        shell: msys2 {0}
+        run: |
+          set -e
+          rm -rf builddir && mkdir -p builddir
+          meson setup builddir --prefix=/opt/ssh-studio --buildtype=release
+          meson compile -C builddir
+          meson install -C builddir
+
+      - name: Stage install tree for packaging
+        id: stage
+        shell: msys2 {0}
+        run: |
+          set -e
+          STAGE=/c/_stage/ssh-studio
+          rm -rf "$STAGE" && mkdir -p "$STAGE"
+          # Copy installed prefix
+          cp -r /opt/ssh-studio/* "$STAGE"/
+          # Create a simple Windows launcher that runs via MSYS2 bash
+          cat > "$STAGE/SSH-Studio (MSYS2).bat" << 'BAT'
+          @echo off
+          setlocal
+          set "MSYSBASH=C:\\msys64\\ucrt64\\bin\\bash.exe"
+          if exist "%MSYSBASH%" (
+            for %%I in ("%~dp0.") do set "APPDIR_WIN=%%~fI"
+            "%MSYSBASH%" -lc "APPDIR=\$(cygpath -u '$APPDIR_WIN'); APPDIR=\${APPDIR%/}; \"$APPDIR/bin/ssh-studio\" $*"
+          ) else (
+            echo MSYS2 UCRT64 not found at C:\\msys64. Please install MSYS2 and required GTK/PyGObject runtime.
+            pause
+          )
+          endlocal
+          BAT
+          # Produce a portable zip as well
+          cd /c/_stage
+          7z a SSH-Studio-portable.zip ssh-studio > /dev/null
+          echo STAGE_WIN_PATH=C:\\_stage\\ssh-studio >> $GITHUB_OUTPUT
+
+      - name: Build NSIS installer
+        shell: msys2 {0}
+        run: |
+          set -e
+          VERSION="${GITHUB_REF_NAME}"
+          if [ -z "$VERSION" ]; then VERSION="dev"; fi
+          mkdir -p installer/out
+          makensis -DSourceDir=/c/_stage/ssh-studio -DVersion="$VERSION" -DAppName="${APP_NAME}" installer/ssh-studio.nsi
+          cp installer/*.exe installer/out/ || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: |
+            C:/_stage/SSH-Studio-portable.zip
+            installer/*.exe
+
+
