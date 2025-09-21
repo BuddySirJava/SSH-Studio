@@ -10,9 +10,9 @@ class SshStudio < Formula
   depends_on "ninja" => :build
   depends_on "pkg-config" => :build
 
+  depends_on "adwaita-icon-theme"
   depends_on "glib"
   depends_on "gtk4"
-  depends_on "adwaita-icon-theme"
   depends_on "libadwaita"
   depends_on "pygobject3"
   depends_on "python@3.13"
