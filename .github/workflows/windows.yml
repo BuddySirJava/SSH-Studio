@@ -7,39 +7,38 @@ on:
       - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
-  build-windows-installer:
+  build-windows:
     runs-on: windows-latest
-    env:
-      APP_ID: io.github.BuddySirJava.SSH-Studio
-      APP_NAME: SSH Studio
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-      - name: Setup MSYS2 (UCRT64)
+      - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:
           msystem: UCRT64
           update: true
-          install: >-
-            base-devel
-            git
-            mingw-w64-ucrt-x86_64-toolchain
-            mingw-w64-ucrt-x86_64-meson
-            mingw-w64-ucrt-x86_64-ninja
-            mingw-w64-ucrt-x86_64-pkg-config
-            mingw-w64-ucrt-x86_64-python
-            mingw-w64-ucrt-x86_64-python-pip
-            mingw-w64-ucrt-x86_64-python-gobject
-            mingw-w64-ucrt-x86_64-gtk4
-            mingw-w64-ucrt-x86_64-libadwaita
-            mingw-w64-ucrt-x86_64-glib2
-            mingw-w64-ucrt-x86_64-gobject-introspection
-            mingw-w64-ucrt-x86_64-gsettings-desktop-schemas
-            mingw-w64-ucrt-x86_64-gtk-update-icon-cache
-            p7zip
-            nsis
 
+      - name: Install dependencies
+        shell: msys2 {0}
+        run: |
+          pacman --noconfirm -S --needed \
+            mingw-w64-ucrt-x86_64-toolchain \
+            mingw-w64-ucrt-x86_64-meson \
+            mingw-w64-ucrt-x86_64-ninja \
+            mingw-w64-ucrt-x86_64-pkg-config \
+            mingw-w64-ucrt-x86_64-python \
+            mingw-w64-ucrt-x86_64-python-pip \
+            mingw-w64-ucrt-x86_64-python-gobject \
+            mingw-w64-ucrt-x86_64-gtk4 \
+            mingw-w64-ucrt-x86_64-libadwaita \
+            mingw-w64-ucrt-x86_64-glib2 \
+            mingw-w64-ucrt-x86_64-gobject-introspection \
+            mingw-w64-ucrt-x86_64-gsettings-desktop-schemas \
+            mingw-w64-ucrt-x86_64-gtk-update-icon-cache
+
+          pacman --noconfirm -S --needed \
+            msys/p7zip \
+            msys/nsis
       - name: Show tool versions
         shell: msys2 {0}
         run: |
