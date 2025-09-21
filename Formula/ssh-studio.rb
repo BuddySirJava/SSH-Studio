@@ -10,11 +10,11 @@ class SshStudio < Formula
   depends_on "ninja" => :build
   depends_on "pkg-config" => :build
 
-  depends_on "python@3.12"
   depends_on "glib"
   depends_on "gtk4"
   depends_on "libadwaita"
   depends_on "pygobject3"
+  depends_on "python@3.12"
 
   resource "blueprint-compiler" do
     url "https://gitlab.gnome.org/GNOME/blueprint-compiler/-/archive/v0.18.0/blueprint-compiler-v0.18.0.tar.gz"
@@ -80,5 +80,3 @@ class SshStudio < Formula
     system bin/"ssh-studio", "--help"
   end
 end
-
-
