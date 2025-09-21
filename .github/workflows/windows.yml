@@ -106,6 +106,7 @@ jobs:
           # Produce a portable zip as well
           cd /c/_stage
           7z a SSH-Studio-portable.zip ssh-studio > /dev/null
+          cp SSH-Studio-portable.zip /c/SSH-Studio/
           echo STAGE_WIN_PATH=C:\\_stage\\ssh-studio >> $GITHUB_OUTPUT
 
       - name: Download Inno Setup
@@ -125,7 +126,7 @@ jobs:
         with:
           name: windows-artifacts
           path: |
-            C:/_stage/SSH-Studio-portable.zip
+            SSH-Studio-portable.zip
             installer/installer/out/*.exe
 
 
