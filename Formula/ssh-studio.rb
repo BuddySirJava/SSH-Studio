@@ -31,6 +31,8 @@ class SshStudio < Formula
 
     ENV["PYTHON"] = Formula["python@3.12"].opt_bin/"python3"
 
+    inreplace "data/ssh-studio.in", "python3", "#{Formula["python@3.12"].opt_bin}/python3"
+
     system "meson", "setup", "build", *std_meson_args
     system "meson", "compile", "-C", "build"
     system "meson", "install", "-C", "build"
@@ -47,12 +49,6 @@ class SshStudio < Formula
     cp_r "src/__init__.py", python_site_packages/"ssh_studio/"
     cp_r Dir["src/ui/*.py"], python_site_packages/"ssh_studio/ui/"
     cp_r "src/ui/__init__.py", python_site_packages/"ssh_studio/ui/"
-
-    (bin/"ssh-studio").write <<~SH
-      #!/bin/bash
-      exec "#{Formula["python@3.12"].opt_bin}/python3" -m ssh_studio.main "$@"
-    SH
-    chmod 0755, bin/"ssh-studio"
 
     app_root = prefix/"Applications/SSH Studio.app/Contents"
     (app_root/"MacOS").mkpath
