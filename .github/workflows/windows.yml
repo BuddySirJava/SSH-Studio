@@ -2,6 +2,8 @@ name: Windows Installer
 
 on:
   workflow_dispatch:
+  repository_dispatch:
+    types: [website-build]  
   push:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
@@ -36,7 +38,8 @@ jobs:
               mingw-w64-ucrt-x86_64-glib2 \
               mingw-w64-ucrt-x86_64-gobject-introspection \
               mingw-w64-ucrt-x86_64-gsettings-desktop-schemas \
-              mingw-w64-ucrt-x86_64-gtk-update-icon-cache
+              mingw-w64-ucrt-x86_64-gtk-update-icon-cache \
+              mingw-w64-ucrt-x86_64-gtksourceview5
         
       - name: Install packaging tools
         shell: msys2 {0}
