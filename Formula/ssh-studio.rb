@@ -41,7 +41,7 @@ class SshStudio < Formula
 
     (python_site_packages/"ssh_studio").mkpath
     (python_site_packages/"ssh_studio/ui").mkpath
-    
+
     cp_r "src/ssh_config_parser.py", python_site_packages/"ssh_studio/"
     cp_r "src/main.py", python_site_packages/"ssh_studio/"
     cp_r "src/__init__.py", python_site_packages/"ssh_studio/"
