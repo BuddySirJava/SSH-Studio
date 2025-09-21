@@ -116,27 +116,9 @@ jobs:
             if ($content -notmatch 'import site') { Add-Content -Path $pth -Value "`r`nimport site`r`n" }
           }
 
-          $api = 'https://api.github.com/repos/wingtk/gvsbuild/releases/latest'
-          $headers = @{ 'User-Agent' = 'github-actions'; 'Authorization' = "Bearer $env:GITHUB_TOKEN" }
-          $rel = Invoke-RestMethod -Headers $headers -Uri $api -Method GET
-          $asset = $rel.assets |
-            Where-Object { $_.name -match '(?i)gtk(4)?[-_]?.*(runtime|bundle).*(64|x86_64).*\.zip$' -or $_.name -match '(?i)^gtk4-runtime-64.*\.zip$' -or $_.name -match '(?i)^gtk-runtime-64.*\.zip$' } |
-            Select-Object -First 1
           $gtkZip = "$env:RUNNER_TEMP\gtk-runtime.zip"
-          if ($asset) {
-            Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $gtkZip
-          } else {
-            # Fallback to well-known asset names under latest/download
-            $fallbacks = @(
-              'https://github.com/wingtk/gvsbuild/releases/latest/download/gtk4-runtime-64.zip',
-              'https://github.com/wingtk/gvsbuild/releases/latest/download/gtk-runtime-64.zip'
-            )
-            $ok = $false
-            foreach ($u in $fallbacks) {
-              try { Invoke-WebRequest -Uri $u -OutFile $gtkZip -ErrorAction Stop; $ok = $true; break } catch { }
-            }
-            if (-not $ok) { throw 'Could not download GTK runtime from gvsbuild latest release.' }
-          }
+          $gtkUrl = 'https://github.com/wingtk/gvsbuild/releases/download/2025.9.0/GTK4_Gvsbuild_2025.9.0_x64.zip'
+          Invoke-WebRequest -Uri $gtkUrl -OutFile $gtkZip
           Expand-Archive -LiteralPath $gtkZip -DestinationPath "$stage\gtk_tmp" -Force
           $gtkOut = "$stage\gtk"
           New-Item -ItemType Directory -Force -Path $gtkOut | Out-Null
@@ -152,7 +134,7 @@ jobs:
           appDir = fso.GetAbsolutePathName(".")
           env("PATH") = appDir & "\\gtk\\bin;" & appDir & "\\python;" & env("PATH")
           env("PYTHONHOME") = appDir & "\\python"
-          env("PYTHONPATH") = appDir & "\\lib\\python3.12\\site-packages"
+          env("PYTHONPATH") = appDir & "\\lib\\python3.13\\site-packages;" & appDir & "\\lib\\python3.12\\site-packages"
           env("GI_TYPELIB_PATH") = appDir & "\\gtk\\lib\\girepository-1.0"
           env("XDG_DATA_DIRS") = appDir & "\\share;" & appDir & "\\gtk\\share"
           oShell.Run '"' & appDir & "\\python\\pythonw.exe" & '" -m ssh_studio.main', 0
