@@ -37,17 +37,11 @@ jobs:
               mingw-w64-ucrt-x86_64-gsettings-desktop-schemas \
               mingw-w64-ucrt-x86_64-gtk-update-icon-cache
         
-      - name: Install MSYS packaging tools
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MSYS
-          update: true
-
       - name: Install packaging tools
         shell: msys2 {0}
         run: |
           pacman -Sy --noconfirm
-          pacman --noconfirm -S --needed p7zip nsis
+          pacman --noconfirm -S --needed p7zip
         
       - name: Show tool versions
         shell: msys2 {0}
@@ -108,15 +102,17 @@ jobs:
           7z a SSH-Studio-portable.zip ssh-studio > /dev/null
           echo STAGE_WIN_PATH=C:\\_stage\\ssh-studio >> $GITHUB_OUTPUT
 
-      - name: Build NSIS installer
-        shell: msys2 {0}
+      - name: Download Inno Setup
         run: |
-          set -e
-          VERSION="${GITHUB_REF_NAME}"
-          if [ -z "$VERSION" ]; then VERSION="dev"; fi
-          mkdir -p installer/out
-          makensis -DSourceDir=/c/_stage/ssh-studio -DVersion="$VERSION" -DAppName="${APP_NAME}" installer/ssh-studio.nsi
-          cp installer/*.exe installer/out/ || true
+          $url = "https://files.jrsoftware.org/is/6/innosetup-6.2.2.exe"
+          $output = "C:\innosetup.exe"
+          Invoke-WebRequest -Uri $url -OutFile $output
+          Start-Process -FilePath $output -ArgumentList "/SILENT" -Wait
+
+      - name: Build Inno Setup installer
+        run: |
+          $version = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "dev" }
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppName="SSH Studio" /DVersion="$version" /DSourceDir="C:\_stage\ssh-studio" "installer\ssh-studio.iss"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
