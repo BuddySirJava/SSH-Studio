@@ -30,9 +30,14 @@ jobs:
         run: |
           brew style ./Formula/ssh-studio.rb
 
-      - name: Audit formula
+      - name: Add formula to tap and audit
         run: |
-          brew audit --new --strict ssh-studio
+          # Create a local tap
+          brew tap-new --no-git local/ssh-studio
+          # Copy formula to the tap
+          cp ./Formula/ssh-studio.rb $(brew --repository local/ssh-studio)/Formula/
+          # Now audit the formula
+          brew audit --new --strict local/ssh-studio/ssh-studio
 
       - name: Build and install
         run: |
