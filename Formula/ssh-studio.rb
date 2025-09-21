@@ -52,10 +52,23 @@ class SshStudio < Formula
 
     (libexec/"bin").mkpath
     mv bin/"ssh-studio", libexec/"bin/ssh-studio" if (bin/"ssh-studio").exist?
+    resource_file = share/"io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource"
+
+    launcher = libexec/"ssh-studio-launch.py"
+    launcher.write <<~PY
+      #!/usr/bin/env python3
+      import sys
+      from gi.repository import Gio
+      Gio.resources_register(Gio.Resource.load("#{resource_file}"))
+      from ssh_studio import main as _main
+      sys.exit(_main.main())
+    PY
+    chmod 0755, launcher
+
     (bin/"ssh-studio").write <<~SH
       #!/bin/bash
       export PYTHONPATH="#{python_site_packages}"
-      exec "#{Formula["python@3.13"].opt_bin}/python3" -m ssh_studio.main "$@"
+      exec "#{Formula["python@3.13"].opt_bin}/python3" "#{launcher}" "$@"
     SH
     chmod 0755, bin/"ssh-studio"
 
@@ -83,7 +96,7 @@ class SshStudio < Formula
     (app_root/"MacOS/ssh-studio").write <<~SH
       #!/bin/bash
       export PYTHONPATH="#{python_site_packages}"
-      exec "#{Formula["python@3.13"].opt_bin}/python3" -m ssh_studio.main "$@"
+      exec "#{Formula["python@3.13"].opt_bin}/python3" "#{launcher}" "$@"
     SH
     chmod 0755, (app_root/"MacOS/ssh-studio")
   end
