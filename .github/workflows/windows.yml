@@ -89,25 +89,63 @@ jobs:
           rm -rf "$STAGE" && mkdir -p "$STAGE"
           # Copy installed prefix
           cp -r /opt/ssh-studio/* "$STAGE"/
-          # Create a simple Windows launcher that runs via MSYS2 bash
-          cat > "$STAGE/SSH-Studio (MSYS2).bat" << 'BAT'
-          @echo off
-          setlocal
-          set "MSYSBASH=C:\\msys64\\ucrt64\\bin\\bash.exe"
-          if exist "%MSYSBASH%" (
-            for %%I in ("%~dp0.") do set "APPDIR_WIN=%%~fI"
-            "%MSYSBASH%" -lc "APPDIR=\$(cygpath -u '$APPDIR_WIN'); APPDIR=\${APPDIR%/}; \"$APPDIR/bin/ssh-studio\" $*"
-          ) else (
-            echo MSYS2 UCRT64 not found at C:\\msys64. Please install MSYS2 and required GTK/PyGObject runtime.
-            pause
-          )
-          endlocal
-          BAT
           # Produce a portable zip as well
           cd /c/_stage
           7z a SSH-Studio-portable.zip ssh-studio > /dev/null
-          cp SSH-Studio-portable.zip /D/a/SSH-Studio/SSH-Studio/
+          cp SSH-Studio-portable.zip /d/a/SSH-Studio/SSH-Studio/
           echo STAGE_WIN_PATH=C:\\_stage\\ssh-studio >> $GITHUB_OUTPUT
+
+      - name: Prepare self-contained runtime (Python embeddable + GTK runtime)
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $stage = 'C:\_stage\ssh-studio'
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+
+          # Download Python embeddable 3.12
+          $pyUrl = 'https://www.python.org/ftp/python/3.12.11/python-3.12.11-embed-amd64.zip'
+          $pyZip = "$env:RUNNER_TEMP\python-embed.zip"
+          Invoke-WebRequest -Uri $pyUrl -OutFile $pyZip
+          Expand-Archive -LiteralPath $pyZip -DestinationPath "$stage\python" -Force
+          $pth = Join-Path "$stage\python" 'python312._pth'
+          if (Test-Path $pth) {
+            $content = Get-Content -Raw -Path $pth
+            if ($content -notmatch 'import site') {
+              Add-Content -Path $pth -Value "`r`nimport site`r`n"
+            }
+          }
+
+          # Download GTK runtime (gvsbuild release)
+          $api = 'https://api.github.com/repos/wingtk/gvsbuild/releases/latest'
+          $headers = @{ 'User-Agent' = 'github-actions'; 'Authorization' = "Bearer $env:GITHUB_TOKEN" }
+          $rel = Invoke-RestMethod -Headers $headers -Uri $api -Method GET
+          $asset = $rel.assets | Where-Object { $_.name -match 'gtk.*runtime.*(64|x86_64).*\.zip' } | Select-Object -First 1
+          if (-not $asset) { throw 'Could not find GTK runtime asset in gvsbuild latest release.' }
+          $gtkZip = "$env:RUNNER_TEMP\gtk-runtime.zip"
+          Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $gtkZip
+          Expand-Archive -LiteralPath $gtkZip -DestinationPath "$stage\gtk_tmp" -Force
+          $gtkOut = "$stage\gtk"
+          New-Item -ItemType Directory -Force -Path $gtkOut | Out-Null
+          $candidate = Get-ChildItem -Path "$stage\gtk_tmp" -Directory | Select-Object -First 1
+          if ($candidate) { Copy-Item -Recurse -Force "$($candidate.FullName)\*" $gtkOut } else { Copy-Item -Recurse -Force "$stage\gtk_tmp\*" $gtkOut }
+          Remove-Item -Recurse -Force "$stage\gtk_tmp"
+
+          # Create launcher.vbs (no console)
+          $vbs = @'
+Set oShell = CreateObject("WScript.Shell")
+Set env = oShell.Environment("PROCESS")
+Set fso = CreateObject("Scripting.FileSystemObject")
+appDir = fso.GetAbsolutePathName(".")
+env("PATH") = appDir & "\\gtk\\bin;" & appDir & "\\python;" & env("PATH")
+env("PYTHONHOME") = appDir & "\\python"
+env("PYTHONPATH") = appDir & "\\lib\\python3.12\\site-packages"
+env("GI_TYPELIB_PATH") = appDir & "\\gtk\\lib\\girepository-1.0"
+env("XDG_DATA_DIRS") = appDir & "\\share;" & appDir & "\\gtk\\share"
+oShell.Run '"' & appDir & "\\python\\pythonw.exe" & '" -m ssh_studio.main', 0
+'@
+          Set-Content -Encoding ASCII -Path "$stage\launcher.vbs" -Value $vbs
 
       - name: Download Inno Setup
         run: |
@@ -119,7 +157,7 @@ jobs:
       - name: Build Inno Setup installer
         run: |
           $version = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "dev" }
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppName="SSH Studio" /DVersion="$version" /DSourceDir="C:\_stage\ssh-studio" "installer\ssh-studio.iss"
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppName="SSH-Studio" /DVersion="$version" /DSourceDir="C:\_stage\ssh-studio" "installer\ssh-studio.iss"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
