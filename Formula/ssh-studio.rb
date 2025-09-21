@@ -35,6 +35,25 @@ class SshStudio < Formula
     system "meson", "compile", "-C", "build"
     system "meson", "install", "-C", "build"
 
+    python_version = Formula["python@3.12"].version.major_minor
+    python_site_packages = lib/"python#{python_version}/site-packages"
+    python_site_packages.mkpath
+
+    (python_site_packages/"ssh_studio").mkpath
+    (python_site_packages/"ssh_studio/ui").mkpath
+    
+    cp_r "src/ssh_config_parser.py", python_site_packages/"ssh_studio/"
+    cp_r "src/main.py", python_site_packages/"ssh_studio/"
+    cp_r "src/__init__.py", python_site_packages/"ssh_studio/"
+    cp_r Dir["src/ui/*.py"], python_site_packages/"ssh_studio/ui/"
+    cp_r "src/ui/__init__.py", python_site_packages/"ssh_studio/ui/"
+
+    (bin/"ssh-studio").write <<~SH
+      #!/bin/bash
+      exec "#{Formula["python@3.12"].opt_bin}/python3" -m ssh_studio.main "$@"
+    SH
+    chmod 0755, bin/"ssh-studio"
+
     app_root = prefix/"Applications/SSH Studio.app/Contents"
     (app_root/"MacOS").mkpath
     (app_root/"Resources").mkpath
