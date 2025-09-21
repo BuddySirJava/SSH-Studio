@@ -41,23 +41,23 @@ jobs:
 
       - name: Build and install
         run: |
-          brew install --build-from-source ./Formula/ssh-studio.rb
+          brew install --build-from-source local/ssh-studio/ssh-studio
 
       - name: Test formula
         run: |
           ssh-studio
-          brew test ssh-studio
+          brew test local/ssh-studio/ssh-studio
 
       - name: Test app bundle
         run: |
           # Test the .app bundle was created
-          ls -la "$(brew --prefix ssh-studio)/Applications/SSH Studio.app"
+          ls -la "$(brew --prefix local/ssh-studio/ssh-studio)/Applications/SSH Studio.app"
           # Test the launcher script
-          "$(brew --prefix ssh-studio)/Applications/SSH Studio.app/Contents/MacOS/ssh-studio" --help
+          "$(brew --prefix local/ssh-studio/ssh-studio)/Applications/SSH Studio.app/Contents/MacOS/ssh-studio" --help
 
       - name: Create bottle (optional)
         run: |
-          brew uninstall --force ssh-studio || true
-          brew install --build-bottle ./Formula/ssh-studio.rb
-          brew bottle --json ssh-studio
+          brew uninstall --force local/ssh-studio/ssh-studio || true
+          brew install --build-bottle local/ssh-studio/ssh-studio
+          brew bottle --json local/ssh-studio/ssh-studio
         continue-on-error: true
