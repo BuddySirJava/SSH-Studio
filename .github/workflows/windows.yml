@@ -64,12 +64,14 @@ jobs:
           meson compile -C build
           meson install -C build
           echo "/opt/blueprint-compiler/bin" >> $GITHUB_PATH
-          blueprint-compiler --version
+          export PATH="/opt/blueprint-compiler/bin:$PATH"
+          /opt/blueprint-compiler/bin/blueprint-compiler --version
 
       - name: Configure & build SSH Studio (Meson)
         shell: msys2 {0}
         run: |
           set -e
+          export PATH="/opt/blueprint-compiler/bin:$PATH"
           rm -rf builddir && mkdir -p builddir
           meson setup builddir --prefix=/opt/ssh-studio --buildtype=release
           meson compile -C builddir
