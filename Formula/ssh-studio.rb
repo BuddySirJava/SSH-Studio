@@ -14,7 +14,7 @@ class SshStudio < Formula
   depends_on "gtk4"
   depends_on "libadwaita"
   depends_on "pygobject3"
-  depends_on "python@3.12"
+  depends_on "python@3.13"
 
   resource "blueprint-compiler" do
     url "https://gitlab.gnome.org/GNOME/blueprint-compiler/-/archive/v0.18.0/blueprint-compiler-v0.18.0.tar.gz"
@@ -29,15 +29,15 @@ class SshStudio < Formula
     end
     ENV.prepend_path "PATH", libexec/"bin"
 
-    ENV["PYTHON"] = Formula["python@3.12"].opt_bin/"python3"
+    ENV["PYTHON"] = Formula["python@3.13"].opt_bin/"python3"
 
-    inreplace "data/ssh-studio.in", "python3", "#{Formula["python@3.12"].opt_bin}/python3"
+    inreplace "data/ssh-studio.in", "python3", "#{Formula["python@3.13"].opt_bin}/python3"
 
     system "meson", "setup", "build", *std_meson_args
     system "meson", "compile", "-C", "build"
     system "meson", "install", "-C", "build"
 
-    python_version = Formula["python@3.12"].version.major_minor
+    python_version = Formula["python@3.13"].version.major_minor
     python_site_packages = lib/"python#{python_version}/site-packages"
     python_site_packages.mkpath
 
@@ -49,6 +49,17 @@ class SshStudio < Formula
     cp_r "src/__init__.py", python_site_packages/"ssh_studio/"
     cp_r Dir["src/ui/*.py"], python_site_packages/"ssh_studio/ui/"
     cp_r "src/ui/__init__.py", python_site_packages/"ssh_studio/ui/"
+
+    (libexec/"bin").mkpath
+    if (bin/"ssh-studio").exist?
+      mv bin/"ssh-studio", libexec/"bin/ssh-studio"
+    end
+    (bin/"ssh-studio").write <<~SH
+      #!/bin/bash
+      export PYTHONPATH="#{python_site_packages}"
+      exec "#{Formula["python@3.13"].opt_bin}/python3" -m ssh_studio.main "$@"
+    SH
+    chmod 0755, bin/"ssh-studio"
 
     app_root = prefix/"Applications/SSH Studio.app/Contents"
     (app_root/"MacOS").mkpath
@@ -73,7 +84,8 @@ class SshStudio < Formula
 
     (app_root/"MacOS/ssh-studio").write <<~SH
       #!/bin/bash
-      exec "#{Formula["python@3.12"].opt_bin}/python3" -m ssh_studio.main "$@"
+      export PYTHONPATH="#{python_site_packages}"
+      exec "#{Formula["python@3.13"].opt_bin}/python3" -m ssh_studio.main "$@"
     SH
     chmod 0755, (app_root/"MacOS/ssh-studio")
   end
