@@ -126,6 +126,6 @@ jobs:
           name: windows-artifacts
           path: |
             C:/_stage/SSH-Studio-portable.zip
-            installer/*.exe
+            installer/installer/out/*.exe
 
 
