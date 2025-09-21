@@ -104,7 +104,6 @@ jobs:
           $stage = 'C:\_stage\ssh-studio'
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
 
-          # Download specific Python 3.13.7 embeddable ZIP (validated)
           $pyZip = "$env:RUNNER_TEMP\python-embed.zip"
           $pyUrl = 'https://www.python.org/ftp/python/3.13.7/python-3.13.7-embed-amd64.zip'
           Invoke-WebRequest -Uri $pyUrl -OutFile $pyZip
@@ -117,14 +116,27 @@ jobs:
             if ($content -notmatch 'import site') { Add-Content -Path $pth -Value "`r`nimport site`r`n" }
           }
 
-          # Download GTK runtime (gvsbuild release)
           $api = 'https://api.github.com/repos/wingtk/gvsbuild/releases/latest'
           $headers = @{ 'User-Agent' = 'github-actions'; 'Authorization' = "Bearer $env:GITHUB_TOKEN" }
           $rel = Invoke-RestMethod -Headers $headers -Uri $api -Method GET
-          $asset = $rel.assets | Where-Object { $_.name -match 'gtk.*runtime.*(64|x86_64).*\.zip' } | Select-Object -First 1
-          if (-not $asset) { throw 'Could not find GTK runtime asset in gvsbuild latest release.' }
+          $asset = $rel.assets |
+            Where-Object { $_.name -match '(?i)gtk(4)?[-_]?.*(runtime|bundle).*(64|x86_64).*\.zip$' -or $_.name -match '(?i)^gtk4-runtime-64.*\.zip$' -or $_.name -match '(?i)^gtk-runtime-64.*\.zip$' } |
+            Select-Object -First 1
           $gtkZip = "$env:RUNNER_TEMP\gtk-runtime.zip"
-          Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $gtkZip
+          if ($asset) {
+            Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $gtkZip
+          } else {
+            # Fallback to well-known asset names under latest/download
+            $fallbacks = @(
+              'https://github.com/wingtk/gvsbuild/releases/latest/download/gtk4-runtime-64.zip',
+              'https://github.com/wingtk/gvsbuild/releases/latest/download/gtk-runtime-64.zip'
+            )
+            $ok = $false
+            foreach ($u in $fallbacks) {
+              try { Invoke-WebRequest -Uri $u -OutFile $gtkZip -ErrorAction Stop; $ok = $true; break } catch { }
+            }
+            if (-not $ok) { throw 'Could not download GTK runtime from gvsbuild latest release.' }
+          }
           Expand-Archive -LiteralPath $gtkZip -DestinationPath "$stage\gtk_tmp" -Force
           $gtkOut = "$stage\gtk"
           New-Item -ItemType Directory -Force -Path $gtkOut | Out-Null
