@@ -134,17 +134,17 @@ jobs:
 
           # Create launcher.vbs (no console)
           $vbs = @'
-Set oShell = CreateObject("WScript.Shell")
-Set env = oShell.Environment("PROCESS")
-Set fso = CreateObject("Scripting.FileSystemObject")
-appDir = fso.GetAbsolutePathName(".")
-env("PATH") = appDir & "\\gtk\\bin;" & appDir & "\\python;" & env("PATH")
-env("PYTHONHOME") = appDir & "\\python"
-env("PYTHONPATH") = appDir & "\\lib\\python3.12\\site-packages"
-env("GI_TYPELIB_PATH") = appDir & "\\gtk\\lib\\girepository-1.0"
-env("XDG_DATA_DIRS") = appDir & "\\share;" & appDir & "\\gtk\\share"
-oShell.Run '"' & appDir & "\\python\\pythonw.exe" & '" -m ssh_studio.main', 0
-'@
+          Set oShell = CreateObject("WScript.Shell")
+          Set env = oShell.Environment("PROCESS")
+          Set fso = CreateObject("Scripting.FileSystemObject")
+          appDir = fso.GetAbsolutePathName(".")
+          env("PATH") = appDir & "\\gtk\\bin;" & appDir & "\\python;" & env("PATH")
+          env("PYTHONHOME") = appDir & "\\python"
+          env("PYTHONPATH") = appDir & "\\lib\\python3.12\\site-packages"
+          env("GI_TYPELIB_PATH") = appDir & "\\gtk\\lib\\girepository-1.0"
+          env("XDG_DATA_DIRS") = appDir & "\\share;" & appDir & "\\gtk\\share"
+          oShell.Run '"' & appDir & "\\python\\pythonw.exe" & '" -m ssh_studio.main', 0
+          '@
           Set-Content -Encoding ASCII -Path "$stage\launcher.vbs" -Value $vbs
 
       - name: Download Inno Setup
