@@ -51,9 +51,7 @@ class SshStudio < Formula
     cp_r "src/ui/__init__.py", python_site_packages/"ssh_studio/ui/"
 
     (libexec/"bin").mkpath
-    if (bin/"ssh-studio").exist?
-      mv bin/"ssh-studio", libexec/"bin/ssh-studio"
-    end
+    mv bin/"ssh-studio", libexec/"bin/ssh-studio" if (bin/"ssh-studio").exist?
     (bin/"ssh-studio").write <<~SH
       #!/bin/bash
       export PYTHONPATH="#{python_site_packages}"
