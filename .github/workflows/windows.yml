@@ -126,20 +126,67 @@ jobs:
           if ($candidate) { Copy-Item -Recurse -Force "$($candidate.FullName)\*" $gtkOut } else { Copy-Item -Recurse -Force "$stage\gtk_tmp\*" $gtkOut }
           Remove-Item -Recurse -Force "$stage\gtk_tmp"
 
-          # Create launcher.vbs (no console)
-          $vbs = @'
-          Set oShell = CreateObject("WScript.Shell")
-          Set env = oShell.Environment("PROCESS")
-          Set fso = CreateObject("Scripting.FileSystemObject")
-          appDir = fso.GetAbsolutePathName(".")
-          env("PATH") = appDir & "\\gtk\\bin;" & appDir & "\\python;" & env("PATH")
-          env("PYTHONHOME") = appDir & "\\python"
-          env("PYTHONPATH") = appDir & "\\lib\\python3.13\\site-packages;" & appDir & "\\lib\\python3.12\\site-packages"
-          env("GI_TYPELIB_PATH") = appDir & "\\gtk\\lib\\girepository-1.0"
-          env("XDG_DATA_DIRS") = appDir & "\\share;" & appDir & "\\gtk\\share"
-          oShell.Run '"' & appDir & "\\python\\pythonw.exe" & '" -m ssh_studio.main', 0
-          '@
-          Set-Content -Encoding ASCII -Path "$stage\launcher.vbs" -Value $vbs
+          # VBScript launcher removed; using native C WinGUI launcher instead
+
+      - name: Build native launcher (C WinGUI)
+        shell: msys2 {0}
+        run: |
+          set -e
+          STAGE=/c/_stage/ssh-studio
+          cat > "$STAGE/launcher.c" << 'EOF'
+          #include <windows.h>
+          #include <wchar.h>
+          #include <stdio.h>
+          int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrev, PWSTR pCmdLine, int nCmdShow) {
+              wchar_t appDir[MAX_PATH];
+              if (GetModuleFileNameW(NULL, appDir, MAX_PATH) == 0) return 0;
+              wchar_t *lastSlash = wcsrchr(appDir, L'\\');
+              if (lastSlash) *lastSlash = L'\0';
+
+              wchar_t path[32768];
+              DWORD plen = GetEnvironmentVariableW(L"PATH", path, 32768);
+              if (plen == 0 || plen >= 32768) path[0] = L'\0';
+              wchar_t newPath[36000];
+              _snwprintf(newPath, 35999, L"%ls\\gtk\\bin;%ls\\python;%ls", appDir, appDir, path);
+              newPath[35999] = 0;
+              SetEnvironmentVariableW(L"PATH", newPath);
+
+              wchar_t buf[4096];
+              _snwprintf(buf, 4095, L"%ls\\python", appDir);
+              buf[4095] = 0;
+              SetEnvironmentVariableW(L"PYTHONHOME", buf);
+
+              wchar_t pyPath[8192];
+              _snwprintf(pyPath, 8191, L"%ls\\lib\\python3.13\\site-packages;%ls\\lib\\python3.12\\site-packages", appDir, appDir);
+              pyPath[8191] = 0;
+              SetEnvironmentVariableW(L"PYTHONPATH", pyPath);
+
+              _snwprintf(buf, 4095, L"%ls\\gtk\\lib\\girepository-1.0", appDir);
+              buf[4095] = 0;
+              SetEnvironmentVariableW(L"GI_TYPELIB_PATH", buf);
+
+              _snwprintf(buf, 4095, L"%ls\\share;%ls\\gtk\\share", appDir, appDir);
+              buf[4095] = 0;
+              SetEnvironmentVariableW(L"XDG_DATA_DIRS", buf);
+
+              wchar_t pythonw[MAX_PATH];
+              _snwprintf(pythonw, MAX_PATH - 1, L"%ls\\python\\pythonw.exe", appDir);
+              pythonw[MAX_PATH - 1] = 0;
+
+              wchar_t cmd[32768];
+              _snwprintf(cmd, 32767, L"\"%ls\" -m ssh_studio.main %ls", pythonw, pCmdLine ? pCmdLine : L"");
+              cmd[32767] = 0;
+
+              STARTUPINFOW si; ZeroMemory(&si, sizeof(si)); si.cb = sizeof(si);
+              PROCESS_INFORMATION pi; ZeroMemory(&pi, sizeof(pi));
+              if (CreateProcessW(NULL, cmd, NULL, NULL, FALSE, 0, NULL, appDir, &si, &pi)) {
+                  CloseHandle(pi.hThread);
+                  CloseHandle(pi.hProcess);
+              }
+              return 0;
+          }
+          EOF
+          x86_64-w64-mingw32-gcc -municode -mwindows -O2 "$STAGE/launcher.c" -o "$STAGE/SSH-Studio.exe"
 
       - name: Download Inno Setup
         run: |
