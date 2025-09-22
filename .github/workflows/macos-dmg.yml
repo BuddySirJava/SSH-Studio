@@ -72,13 +72,17 @@ jobs:
           BREW_PREFIX="$(brew --prefix)"
           echo "Detected Homebrew prefix: $BREW_PREFIX"
 
-          cat > macos/ssh-studio.bundle << XML
+          cat > macos/ssh-studio.bundle << 'XML'
           <?xml version="1.0"?>
           <app-bundle>
             <id>io.github.BuddySirJava.SSH-Studio</id>
             <name>SSH Studio</name>
             <version>1.0.0</version>
             <icon>data/media/icon_512.png</icon>
+
+            <meta>
+              <prefix>${BREW_PREFIX}</prefix>
+            </meta>
 
             <prefixes>
               <prefix>${BREW_PREFIX}</prefix>
@@ -104,6 +108,11 @@ jobs:
           XML
 
           gtk-mac-bundler macos/ssh-studio.bundle
+
+      - name: Diagnostic: list .app contents
+        run: |
+          set -euxo pipefail
+          ls -R build/ssh-studio.bundle/SSH\ Studio.app/Contents
 
       - name: Create DMG
         run: |
