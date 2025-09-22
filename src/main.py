@@ -14,6 +14,42 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Gtk, Gio, GLib, Gdk, Adw
 
+
+def _ensure_utf8_locale():
+    import locale
+    try:
+        current = locale.setlocale(locale.LC_ALL, "")
+        if current is None or ("UTF-8" not in current and "utf8" not in current):
+            os.environ.setdefault("LC_ALL", "C.UTF-8")
+            os.environ.setdefault("LANG", "C.UTF-8")
+            try:
+                locale.setlocale(locale.LC_ALL, "C.UTF-8")
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+def _configure_renderer_for_x11():
+    if os.getenv("GSK_RENDERER") or os.getenv("SSH_STUDIO_FORCE_GPU") == "1":
+        return
+
+    is_x11 = os.getenv("DISPLAY") and not os.getenv("WAYLAND_DISPLAY")
+    if not is_x11:
+        return
+
+    os.environ.setdefault("GDK_BACKEND", "x11")
+
+    dri_path = "/dev/dri"
+    try:
+        has_dri = os.path.exists(dri_path) and os.access(dri_path, os.R_OK)
+    except Exception:
+        has_dri = False
+
+    if not has_dri and not os.getenv("LIBGL_ALWAYS_SOFTWARE"):
+        os.environ["GSK_RENDERER"] = "cairo"
+        logging.info("GSK_RENDERER=cairo set for X11 without DRM; forcing software rendering")
+
 try:
     from ssh_studio.ssh_config_parser import SSHConfigParser
 except ImportError:
@@ -281,6 +317,8 @@ class SSHConfigStudioApp(Adw.Application):
 
 
 def main():
+    _ensure_utf8_locale()
+    _configure_renderer_for_x11()
     app = SSHConfigStudioApp()
     try:
         app.set_default_icon_name("io.github.BuddySirJava.SSH-Studio")

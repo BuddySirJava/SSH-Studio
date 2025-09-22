@@ -52,6 +52,7 @@ template $HostEditor: Gtk.Box {
     hexpand: true;
 
     Adw.HeaderBar {
+
       show-title: false;
       [center]
       Adw.ViewSwitcher viewswitcher {
@@ -68,7 +69,9 @@ template $HostEditor: Gtk.Box {
       }
       
       [end]
-      Gtk.WindowControls window_controls {}
+      Gtk.WindowControls window_controls {
+        margin-start: 20;
+      }
     }
   
   Adw.ViewStack viewstack {
@@ -415,10 +418,8 @@ template $HostEditor: Gtk.Box {
     }
   }
 
-  /* Local banner moved to main window ActionBar for consistency */
   Revealer banner_revealer { visible: false; }
 
-    /* Hidden placeholders to satisfy template children in code */
     Box {
       visible: false;
       Button save_button {}

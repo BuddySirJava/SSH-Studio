@@ -49,7 +49,6 @@ class MainWindow(Adw.ApplicationWindow):
 
         self._connect_signals()
         self._load_preferences()
-        # Defer config loading to the application's async parser to avoid UI stalls
         try:
             if hasattr(self.app, "_parse_config_async"):
                 self.app._parse_config_async()
@@ -75,7 +74,7 @@ class MainWindow(Adw.ApplicationWindow):
             if self._original_width == -1:
                 self._original_width = self.get_width()
                 self._original_height = self.get_height()
-            self.set_default_size(1200, self._original_height)
+            self.set_default_size(1300, self._original_height)
         elif self._original_width != -1:
             self.set_default_size(self._original_width, self._original_height)
             self._original_width = -1
@@ -673,7 +672,7 @@ class MainWindow(Adw.ApplicationWindow):
             transient_for=self,
             application_name=_("SSH-Studio"),
             application_icon="io.github.BuddySirJava.SSH-Studio",
-            version="1.2.3",
+            version="1.3.0",
             developer_name=_("Made with ❤️ by Mahyar Darvishi"),
             website="https://github.com/BuddySirJava/ssh-studio",
             issue_url="https://github.com/BuddySirJava/ssh-studio/issues",

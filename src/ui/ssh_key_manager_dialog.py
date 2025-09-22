@@ -2,7 +2,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk, Gio, Adw, Gdk
+from gi.repository import Gtk, Gio, Adw, Gdk, GLib
 from gettext import gettext as _
 from pathlib import Path
 import subprocess
@@ -203,10 +203,10 @@ class SSHKeyManagerDialog(Adw.Dialog):
             return
         try:
             text = pub_path.read_text()
-            display = Gtk.Display.get_default()
-            clipboard = display.get_clipboard()
-            clipboard.set(text)
-            self._show_toast(_("Public key copied"))
+            if self._copy_text_to_clipboard(text):
+                self._show_toast(_("Public key copied"))
+            else:
+                raise RuntimeError("clipboard backends unavailable")
         except Exception as e:
             self._show_toast(_(f"Failed to copy: {e}"))
 
@@ -316,3 +316,63 @@ class SSHKeyManagerDialog(Adw.Dialog):
             self.toast_overlay.add_toast(toast)
         except Exception:
             pass
+
+    def _copy_text_to_clipboard(self, text: str) -> bool:
+        try:
+            display = Gdk.Display.get_default()
+            if not display:
+                raise RuntimeError("no display")
+            clipboard = display.get_clipboard()
+            bytes_utf8 = GLib.Bytes.new(text.encode("utf-8"))
+            providers = [
+                Gdk.ContentProvider.new_for_bytes(
+                    "text/plain;charset=utf-8", bytes_utf8
+                ),
+                Gdk.ContentProvider.new_for_bytes("text/plain", bytes_utf8),
+            ]
+            provider = (
+                Gdk.ContentProvider.new_union(providers)
+                if hasattr(Gdk.ContentProvider, "new_union")
+                else providers[0]
+            )
+            # Keep a reference to avoid premature GC
+            self._last_clip_provider = provider
+            if hasattr(clipboard, "set_content"):
+                clipboard.set_content(provider)
+            elif hasattr(clipboard, "set"):
+                clipboard.set(provider)
+            elif hasattr(clipboard, "set_text"):
+                clipboard.set_text(text)
+            else:
+                raise RuntimeError("unsupported clipboard api")
+            try:
+                primary = display.get_primary_clipboard()
+                if primary:
+                    if hasattr(primary, "set_content"):
+                        primary.set_content(self._last_clip_provider)
+                    elif hasattr(primary, "set"):
+                        primary.set(self._last_clip_provider)
+                    elif hasattr(primary, "set_text"):
+                        primary.set_text(text)
+            except Exception:
+                pass
+            return True
+        except Exception:
+            pass
+        try:
+            import subprocess as _sub
+
+            for cmd in [
+                ["wl-copy"],
+                ["xclip", "-selection", "clipboard"],
+                ["xsel", "--clipboard", "--input"],
+            ]:
+                try:
+                    res = _sub.run(cmd, input=text, text=True, capture_output=True)
+                    if res.returncode == 0:
+                        return True
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        return False

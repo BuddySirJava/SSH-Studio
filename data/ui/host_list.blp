@@ -17,8 +17,6 @@ template $HostList: Box {
     Box {
       orientation: horizontal;
       spacing: 12;
-      margin-start: 16;
-      margin-end: 20;
       margin-top: 8;
       margin-bottom: 8;
 
@@ -38,6 +36,12 @@ template $HostList: Box {
         ]
       }
 
+      Button add_bottom_button {
+        icon-name: "list-add-symbolic";
+        tooltip-text: _("Add Host");
+        styles [ "flat", ]
+      }
+
       MenuButton {
         icon-name: "open-menu-symbolic";
         menu-model: main_menu;
@@ -48,11 +52,6 @@ template $HostList: Box {
         ]
       }
 
-      Button add_bottom_button {
-        icon-name: "list-add-symbolic";
-        tooltip-text: _("Add Host");
-        styles [ "flat", ]
-      }
     }
 
     Box search_bar {
@@ -89,12 +88,10 @@ template $HostList: Box {
         selection-mode: single;
         hexpand: true;
         vexpand: true;
-        margin-start: 20;
-        margin-end: 20;
         margin-bottom: 12;
 
         styles [
-          "boxed-list",
+          "navigation-sidebar",
         ]
       }
     }
