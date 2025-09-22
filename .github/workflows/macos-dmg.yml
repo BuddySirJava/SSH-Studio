@@ -61,7 +61,7 @@ jobs:
           set -euxo pipefail
           APP_NAME="SSH Studio"
           APP_ID="io.github.BuddySirJava.SSH-Studio"
-          VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build)
+          VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)
           ARCH=$(uname -m)
           APP_ROOT="$PWD/dist/${APP_NAME}.app/Contents"
           mkdir -p "$APP_ROOT/MacOS" "$APP_ROOT/Resources/python"
@@ -141,7 +141,7 @@ jobs:
       - name: Create DMG
         run: |
           set -euxo pipefail
-          VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build)
+          VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)
           ARCH=$(uname -m)
           mkdir -p dmgroot
           cp -R "dist/SSH Studio.app" dmgroot/
