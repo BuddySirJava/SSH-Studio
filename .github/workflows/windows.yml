@@ -2,8 +2,6 @@ name: Windows Installer
 
 on:
   workflow_dispatch:
-  repository_dispatch:
-    types: [website-build]  
   push:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
@@ -20,42 +18,28 @@ jobs:
           msystem: UCRT64
           update: true
 
-      - name: Install UCRT64 dependencies
-        shell: msys2 {0}
-        run: |
-            pacman -Sy --noconfirm
-            pacman --noconfirm -S --needed \
-              git \
-              mingw-w64-ucrt-x86_64-toolchain \
-              mingw-w64-ucrt-x86_64-meson \
-              mingw-w64-ucrt-x86_64-ninja \
-              mingw-w64-ucrt-x86_64-pkg-config \
-              mingw-w64-ucrt-x86_64-python \
-              mingw-w64-ucrt-x86_64-python-pip \
-              mingw-w64-ucrt-x86_64-python-gobject \
-              mingw-w64-ucrt-x86_64-gtk4 \
-              mingw-w64-ucrt-x86_64-libadwaita \
-              mingw-w64-ucrt-x86_64-glib2 \
-              mingw-w64-ucrt-x86_64-gobject-introspection \
-              mingw-w64-ucrt-x86_64-gsettings-desktop-schemas \
-              mingw-w64-ucrt-x86_64-gtk-update-icon-cache \
-              mingw-w64-ucrt-x86_64-gtksourceview5
-        
-      - name: Install packaging tools
+      - name: Install build dependencies (GTK4 + Python + build tools)
         shell: msys2 {0}
         run: |
           pacman -Sy --noconfirm
-          pacman --noconfirm -S --needed p7zip
-        
-      - name: Show tool versions
-        shell: msys2 {0}
-        run: |
-          python --version
-          meson --version
-          ninja --version
-          pkg-config --version
+          pacman --noconfirm -S --needed \
+            git \
+            mingw-w64-ucrt-x86_64-toolchain \
+            mingw-w64-ucrt-x86_64-meson \
+            mingw-w64-ucrt-x86_64-ninja \
+            mingw-w64-ucrt-x86_64-pkg-config \
+            mingw-w64-ucrt-x86_64-python \
+            mingw-w64-ucrt-x86_64-python-pip \
+            mingw-w64-ucrt-x86_64-python-gobject \
+            mingw-w64-ucrt-x86_64-gtk4 \
+            mingw-w64-ucrt-x86_64-libadwaita \
+            mingw-w64-ucrt-x86_64-glib2 \
+            mingw-w64-ucrt-x86_64-gobject-introspection \
+            mingw-w64-ucrt-x86_64-gsettings-desktop-schemas \
+            mingw-w64-ucrt-x86_64-gtksourceview5 \
+            p7zip
 
-      - name: Build blueprint-compiler from git (v0.18.0)
+      - name: Build blueprint-compiler (v0.18.0)
         shell: msys2 {0}
         run: |
           set -e
@@ -68,7 +52,7 @@ jobs:
           meson install -C build
           echo "/opt/blueprint-compiler/bin" >> $GITHUB_PATH
           export PATH="/opt/blueprint-compiler/bin:$PATH"
-          /opt/blueprint-compiler/bin/blueprint-compiler --version
+          blueprint-compiler --version
 
       - name: Configure & build SSH Studio (Meson)
         shell: msys2 {0}
@@ -80,113 +64,37 @@ jobs:
           meson compile -C builddir
           meson install -C builddir
 
-      - name: Stage install tree for packaging
-        id: stage
+      - name: Stage install tree
         shell: msys2 {0}
         run: |
-          set -e
           STAGE=/c/_stage/ssh-studio
           rm -rf "$STAGE" && mkdir -p "$STAGE"
-          # Copy installed prefix
           cp -r /opt/ssh-studio/* "$STAGE"/
-          # Produce a portable zip as well
+
+          # Copy MSYS2 runtime (Python + GTK)
+          cp /ucrt64/bin/python.exe "$STAGE"/
+          cp /ucrt64/bin/pythonw.exe "$STAGE"/
+          cp -r /ucrt64/lib/python3* "$STAGE"/python-lib
+          cp -r /ucrt64/bin "$STAGE"/gtk-bin
+          cp -r /ucrt64/lib "$STAGE"/gtk-lib
+          cp -r /ucrt64/share "$STAGE"/gtk-share
+
+          # Add batch launcher
+          cat > "$STAGE/SSH-Studio.bat" << 'EOF'
+          @echo off
+          setlocal
+          set APPDIR=%~dp0
+          set PATH=%APPDIR%gtk-bin;%PATH%
+          set GI_TYPELIB_PATH=%APPDIR%gtk-lib\girepository-1.0
+          set XDG_DATA_DIRS=%APPDIR%share;%APPDIR%gtk-share
+          "%APPDIR%pythonw.exe" -m ssh_studio.main %*
+          endlocal
+          EOF
+
+          # Make portable zip
           cd /c/_stage
           7z a SSH-Studio-portable.zip ssh-studio > /dev/null
           cp SSH-Studio-portable.zip /d/a/SSH-Studio/SSH-Studio/
-          echo STAGE_WIN_PATH=C:\\_stage\\ssh-studio >> $GITHUB_OUTPUT
-
-      - name: Prepare self-contained runtime (Python embeddable + GTK runtime)
-        shell: pwsh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $stage = 'C:\_stage\ssh-studio'
-          New-Item -ItemType Directory -Force -Path $stage | Out-Null
-
-          $pyZip = "$env:RUNNER_TEMP\python-embed.zip"
-          $pyUrl = 'https://www.python.org/ftp/python/3.13.7/python-3.13.7-embed-amd64.zip'
-          Invoke-WebRequest -Uri $pyUrl -OutFile $pyZip
-          Expand-Archive -LiteralPath $pyZip -DestinationPath "$stage\python" -Force
-          # Enable site packages in the embeddable runtime (.pth filename varies)
-          $pthFile = Get-ChildItem -Path "$stage\python" -Filter '*._pth' | Select-Object -First 1
-          if ($pthFile) {
-            $pth = $pthFile.FullName
-            $content = Get-Content -Raw -Path $pth
-            if ($content -notmatch 'import site') { Add-Content -Path $pth -Value "`r`nimport site`r`n" }
-          }
-
-          $gtkZip = "$env:RUNNER_TEMP\gtk-runtime.zip"
-          $gtkUrl = 'https://github.com/wingtk/gvsbuild/releases/download/2025.9.0/GTK4_Gvsbuild_2025.9.0_x64.zip'
-          Invoke-WebRequest -Uri $gtkUrl -OutFile $gtkZip
-          Expand-Archive -LiteralPath $gtkZip -DestinationPath "$stage\gtk_tmp" -Force
-          $gtkOut = "$stage\gtk"
-          New-Item -ItemType Directory -Force -Path $gtkOut | Out-Null
-          $candidate = Get-ChildItem -Path "$stage\gtk_tmp" -Directory | Select-Object -First 1
-          if ($candidate) { Copy-Item -Recurse -Force "$($candidate.FullName)\*" $gtkOut } else { Copy-Item -Recurse -Force "$stage\gtk_tmp\*" $gtkOut }
-          Remove-Item -Recurse -Force "$stage\gtk_tmp"
-
-          # VBScript launcher removed; using native C WinGUI launcher instead
-
-      - name: Build native launcher (C WinGUI)
-        shell: msys2 {0}
-        run: |
-          set -e
-          STAGE=/c/_stage/ssh-studio
-          cat > "$STAGE/launcher.c" << 'EOF'
-          #include <windows.h>
-          #include <wchar.h>
-          #include <stdio.h>
-          int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrev, PWSTR pCmdLine, int nCmdShow) {
-              wchar_t appDir[MAX_PATH];
-              if (GetModuleFileNameW(NULL, appDir, MAX_PATH) == 0) return 0;
-              wchar_t *lastSlash = wcsrchr(appDir, L'\\');
-              if (lastSlash) *lastSlash = L'\0';
-
-              wchar_t path[32768];
-              DWORD plen = GetEnvironmentVariableW(L"PATH", path, 32768);
-              if (plen == 0 || plen >= 32768) path[0] = L'\0';
-              wchar_t newPath[36000];
-              _snwprintf(newPath, 35999, L"%ls\\gtk\\bin;%ls\\python;%ls", appDir, appDir, path);
-              newPath[35999] = 0;
-              SetEnvironmentVariableW(L"PATH", newPath);
-
-              wchar_t buf[4096];
-              _snwprintf(buf, 4095, L"%ls\\python", appDir);
-              buf[4095] = 0;
-              SetEnvironmentVariableW(L"PYTHONHOME", buf);
-
-              wchar_t pyPath[8192];
-              _snwprintf(pyPath, 8191, L"%ls\\lib\\python3.13\\site-packages;%ls\\lib\\python3.12\\site-packages", appDir, appDir);
-              pyPath[8191] = 0;
-              SetEnvironmentVariableW(L"PYTHONPATH", pyPath);
-
-              _snwprintf(buf, 4095, L"%ls\\gtk\\lib\\girepository-1.0", appDir);
-              buf[4095] = 0;
-              SetEnvironmentVariableW(L"GI_TYPELIB_PATH", buf);
-
-              _snwprintf(buf, 4095, L"%ls\\share;%ls\\gtk\\share", appDir, appDir);
-              buf[4095] = 0;
-              SetEnvironmentVariableW(L"XDG_DATA_DIRS", buf);
-
-              wchar_t pythonw[MAX_PATH];
-              _snwprintf(pythonw, MAX_PATH - 1, L"%ls\\python\\pythonw.exe", appDir);
-              pythonw[MAX_PATH - 1] = 0;
-
-              wchar_t cmd[32768];
-              _snwprintf(cmd, 32767, L"\"%ls\" -m ssh_studio.main %ls", pythonw, pCmdLine ? pCmdLine : L"");
-              cmd[32767] = 0;
-
-              STARTUPINFOW si; ZeroMemory(&si, sizeof(si)); si.cb = sizeof(si);
-              PROCESS_INFORMATION pi; ZeroMemory(&pi, sizeof(pi));
-              if (CreateProcessW(NULL, cmd, NULL, NULL, FALSE, 0, NULL, appDir, &si, &pi)) {
-                  CloseHandle(pi.hThread);
-                  CloseHandle(pi.hProcess);
-              }
-              return 0;
-          }
-          EOF
-          x86_64-w64-mingw32-gcc -municode -mwindows -O2 "$STAGE/launcher.c" -o "$STAGE/SSH-Studio.exe"
 
       - name: Download Inno Setup
         run: |
@@ -206,6 +114,4 @@ jobs:
           name: windows-artifacts
           path: |
             SSH-Studio-portable.zip
-            installer/installer/out/*.exe
-
-
+            installer/out/*.exe
