@@ -110,6 +110,7 @@ class SSHConfigStudioApp(Adw.Application):
                 ),
                 "/opt/homebrew/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource",
                 "/usr/local/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource",
+                "/usr/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource",
                 "data/ssh-studio-resources.gresource",
             ]
             for candidate in resource_candidates:
