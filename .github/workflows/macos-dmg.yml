@@ -41,9 +41,9 @@ jobs:
         run: |
           git clone https://gitlab.gnome.org/GNOME/gtk-mac-bundler.git
           cd gtk-mac-bundler
-          ./autogen.sh --prefix=/usr/local
-          make -j$(sysctl -n hw.ncpu)
-          sudo make install
+          meson setup build --prefix=/usr/local --buildtype=release
+          meson compile -C build
+          sudo meson install -C build
           which gtk-mac-bundler
           gtk-mac-bundler --version || true
 
