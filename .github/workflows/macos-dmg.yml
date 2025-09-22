@@ -73,34 +73,34 @@ jobs:
           echo "Detected Homebrew prefix: $BREW_PREFIX"
 
           cat > macos/ssh-studio.bundle << XML
-          <?xml version="1.0"?>
-          <app-bundle>
-            <meta>
-              <prefix>${BREW_PREFIX}</prefix>
-            </meta>
+<?xml version="1.0"?>
+<app-bundle>
+  <meta>
+    <prefix>${BREW_PREFIX}</prefix>
+  </meta>
 
-            <id>io.github.BuddySirJava.SSH-Studio</id>
-            <name>SSH Studio</name>
-            <version>1.0.0</version>
-            <icon>data/media/icon_512.png</icon>
+  <id>io.github.BuddySirJava.SSH-Studio</id>
+  <name>SSH Studio</name>
+  <version>1.0.0</version>
+  <icon>data/media/icon_512.png</icon>
 
-            <main-binary>
-              <binary>ssh-studio</binary>
-            </main-binary>
+  <main-binary>
+    <binary>ssh-studio</binary>
+  </main-binary>
 
-            <resources>
-              <file>stage/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource</file>
-              <dir>src</dir>
-            </resources>
+  <resources>
+    <file>stage/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource</file>
+    <dir>src</dir>
+  </resources>
 
-            <dependencies>
-              <dep>gtk4</dep>
-              <dep>libadwaita</dep>
-              <dep>gtksourceview5</dep>
-              <dep>pygobject3</dep>
-              <dep>python3</dep>
-            </dependencies>
-          </app-bundle>
+  <dependencies>
+    <dep>gtk4</dep>
+    <dep>libadwaita</dep>
+    <dep>gtksourceview5</dep>
+    <dep>pygobject3</dep>
+    <dep>python3</dep>
+  </dependencies>
+</app-bundle>
 XML
 
           gtk-mac-bundler macos/ssh-studio.bundle
