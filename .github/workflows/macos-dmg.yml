@@ -101,7 +101,7 @@ jobs:
               <dep>python3</dep>
             </dependencies>
           </app-bundle>
-          XML
+XML
 
           gtk-mac-bundler macos/ssh-studio.bundle
 
