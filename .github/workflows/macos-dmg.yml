@@ -11,6 +11,7 @@ on:
       - 'meson.build'
       - 'data/**'
       - 'src/**'
+      - 'macos/**'
 
 jobs:
   build-dmg:
@@ -32,7 +33,7 @@ jobs:
       - name: Setup Homebrew and dependencies
         run: |
           brew update-reset
-          brew install meson ninja pkg-config glib gtk4 libadwaita pygobject3 gtksourceview5 python@3.13
+          brew install meson ninja pkg-config glib gtk4 libadwaita pygobject3 gtksourceview5 python@3.13 gtk-mac-bundler
           brew --version
           brew list --versions
 
@@ -56,87 +57,38 @@ jobs:
           meson compile -C build
           meson install -C build
 
-      - name: Prepare .app bundle
+      - name: Bundle app with gtk-mac-bundler
         run: |
-          set -euxo pipefail
-          APP_NAME="SSH Studio"
-          APP_ID="io.github.BuddySirJava.SSH-Studio"
-          VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)
-          ARCH=$(uname -m)
-          APP_ROOT="$PWD/dist/${APP_NAME}.app/Contents"
-          mkdir -p "$APP_ROOT/MacOS" "$APP_ROOT/Resources/python"
+          mkdir -p macos
+          # Create bundler recipe if not in repo
+          cat > macos/ssh-studio.bundle << 'XML'
+          <?xml version="1.0"?>
+          <app-bundle>
+            <id>io.github.BuddySirJava.SSH-Studio</id>
+            <name>SSH Studio</name>
+            <version>1.0.0</version>
+            <icon>data/media/icon_512.png</icon>
 
-          # Copy Python sources into bundle
-          mkdir -p "$APP_ROOT/Resources/python/ssh_studio/ui"
-          cp -R src/__init__.py "$APP_ROOT/Resources/python/ssh_studio/__init__.py"
-          cp -R src/main.py "$APP_ROOT/Resources/python/ssh_studio/main.py"
-          cp -R src/ssh_config_parser.py "$APP_ROOT/Resources/python/ssh_studio/ssh_config_parser.py"
-          cp -R src/ui/__init__.py "$APP_ROOT/Resources/python/ssh_studio/ui/__init__.py"
-          cp -R src/ui/*.py "$APP_ROOT/Resources/python/ssh_studio/ui/"
+            <main-binary>
+              <binary>ssh-studio</binary>
+            </main-binary>
 
-          # Copy compiled resources into bundle
-          cp -R "stage/share/${APP_ID}/ssh-studio-resources.gresource" "$APP_ROOT/Resources/ssh-studio-resources.gresource"
+            <resources>
+              <file>stage/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource</file>
+              <dir>src</dir>
+            </resources>
 
-          # Generate .icns from existing PNGs
-          ICON_SRC="data/media/icon_512.png"
-          ICONSET_DIR="$APP_ROOT/Resources/AppIcon.iconset"
-          mkdir -p "$ICONSET_DIR"
-          sips -z 16 16   "$ICON_SRC" --out "$ICONSET_DIR/icon_16x16.png"
-          sips -z 32 32   "$ICON_SRC" --out "$ICONSET_DIR/icon_16x16@2x.png"
-          sips -z 32 32   "$ICON_SRC" --out "$ICONSET_DIR/icon_32x32.png"
-          sips -z 64 64   "$ICON_SRC" --out "$ICONSET_DIR/icon_32x32@2x.png"
-          sips -z 128 128 "$ICON_SRC" --out "$ICONSET_DIR/icon_128x128.png"
-          sips -z 256 256 "$ICON_SRC" --out "$ICONSET_DIR/icon_128x128@2x.png"
-          sips -z 256 256 "$ICON_SRC" --out "$ICONSET_DIR/icon_256x256.png"
-          sips -z 512 512 "$ICON_SRC" --out "$ICONSET_DIR/icon_256x256@2x.png"
-          cp "$ICON_SRC" "$ICONSET_DIR/icon_512x512.png"
-          sips -z 1024 1024 "$ICON_SRC" --out "$ICONSET_DIR/icon_512x512@2x.png"
-          iconutil -c icns "$ICONSET_DIR" -o "$APP_ROOT/Resources/AppIcon.icns"
-          rm -rf "$ICONSET_DIR"
+            <dependencies>
+              <dep>gtk4</dep>
+              <dep>libadwaita</dep>
+              <dep>gtksourceview5</dep>
+              <dep>pygobject3</dep>
+              <dep>python3</dep>
+            </dependencies>
+          </app-bundle>
+          XML
 
-          # Create launcher (Python) that registers resources then runs main
-          cat > "$APP_ROOT/Resources/ssh-studio-launch.py" << 'PY'
-          #!/usr/bin/env python3
-          import os, sys
-          from gi.repository import Gio
-          resource_path = os.path.join(os.path.dirname(__file__), 'ssh-studio-resources.gresource')
-          Gio.resources_register(Gio.Resource.load(resource_path))
-          from ssh_studio import main as _main
-          sys.exit(_main.main())
-          PY
-          chmod 0755 "$APP_ROOT/Resources/ssh-studio-launch.py"
-
-          # Info.plist
-          cat > "$APP_ROOT/Info.plist" << PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>CFBundleName</key><string>${APP_NAME}</string>
-            <key>CFBundleIdentifier</key><string>${APP_ID}</string>
-            <key>CFBundleVersion</key><string>${VER}</string>
-            <key>CFBundleShortVersionString</key><string>${VER}</string>
-            <key>CFBundleExecutable</key><string>ssh-studio</string>
-            <key>CFBundlePackageType</key><string>APPL</string>
-            <key>CFBundleIconFile</key><string>AppIcon</string>
-            <key>LSMinimumSystemVersion</key><string>11.0</string>
-            <key>LSApplicationCategoryType</key><string>public.app-category.developer-tools</string>
-          </dict>
-          </plist>
-          PLIST
-
-          # App executable that wires Python and PYTHONPATH
-          PY_BIN="$(brew --prefix python@3.13)/bin/python3"
-          cat > "$APP_ROOT/MacOS/ssh-studio" << 'SH'
-          #!/bin/bash
-          SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-          RES_DIR="${SCRIPT_DIR}/../Resources"
-          export PYTHONPATH="${RES_DIR}/python"
-          # Use Homebrew Python 3.13 explicitly
-          PY_BIN="$(brew --prefix python@3.13)/bin/python3"
-          exec "${PY_BIN}" "${RES_DIR}/ssh-studio-launch.py" "$@"
-          SH
-          chmod 0755 "$APP_ROOT/MacOS/ssh-studio"
+          gtk-mac-bundler macos/ssh-studio.bundle
 
       - name: Create DMG
         run: |
@@ -144,7 +96,7 @@ jobs:
           VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)
           ARCH=$(uname -m)
           mkdir -p dmgroot
-          cp -R "dist/SSH Studio.app" dmgroot/
+          cp -R "build/ssh-studio.bundle/SSH Studio.app" dmgroot/
           ln -s /Applications dmgroot/Applications
           hdiutil create -volname "SSH Studio" -srcfolder dmgroot -ov -fs HFS+ "ssh-studio-${VER}-${ARCH}.dmg"
 
@@ -154,5 +106,3 @@ jobs:
           name: ssh-studio-dmg-${{ matrix.os }}
           path: |
             *.dmg
-
-
