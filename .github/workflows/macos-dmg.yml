@@ -33,7 +33,7 @@ jobs:
       - name: Setup Homebrew and dependencies
         run: |
           brew update-reset
-          brew install meson ninja pkg-config glib gtk4 libadwaita pygobject3 gtksourceview5 python@3.13 automake
+          brew install meson ninja pkg-config glib gtk4 libadwaita pygobject3 gtksourceview5 python@3.13
           brew --version
           brew list --versions
 
@@ -41,9 +41,8 @@ jobs:
         run: |
           git clone https://gitlab.gnome.org/GNOME/gtk-mac-bundler.git
           cd gtk-mac-bundler
-          meson setup build --prefix=/usr/local --buildtype=release
-          meson compile -C build
-          sudo meson install -C build
+          make
+          sudo make install
           which gtk-mac-bundler
           gtk-mac-bundler --version || true
 
