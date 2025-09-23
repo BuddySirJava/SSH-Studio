@@ -204,7 +204,13 @@ jobs:
           for p in glib gtk4 libadwaita gtksourceview5 gdk-pixbuf pango cairo harfbuzz fribidi graphite2 libpng jpeg libtiff libepoxy libffi gettext; do
             if [ -d "$BREW_PREFIX/opt/$p/lib" ]; then
               mkdir -p "$FRAMEWORKS/$p/lib"
-              rsync -a "$BREW_PREFIX/opt/$p/lib/" "$FRAMEWORKS/$p/lib/"
+              # Copy only runtime libraries; exclude static archives and dev files
+              rsync -a --prune-empty-dirs \
+                --include '*/' \
+                --include '*.dylib' --include '*.dylib.*' \
+                --include '*.so' --include '*.so.*' \
+                --exclude '*' \
+                "$BREW_PREFIX/opt/$p/lib/" "$FRAMEWORKS/$p/lib/"
             fi
             if [ -d "$BREW_PREFIX/opt/$p/lib/girepository-1.0" ]; then
               mkdir -p "$RES/girepository-1.0"
@@ -215,6 +221,9 @@ jobs:
               rsync -a "$BREW_PREFIX/opt/$p/share/" "$RES/share/"
             fi
           done
+
+          # Ensure no static archives slipped in (can break codesign)
+          find "$FRAMEWORKS" \( -name '*.a' -o -name '*.la' \) -delete || true
 
            # 4b) Vendor PyGObject (gi) and PyCairo into bundled Python path
            for SITE in \
@@ -308,6 +317,9 @@ jobs:
         run: |
           set -euxo pipefail
           APP="dist/SSH Studio.app"
+          # Ensure files are writable and clear any quarantine attrs
+          chmod -R u+rw "$APP"
+          xattr -cr "$APP" || true
           # Deep ad-hoc sign the app and embedded content to improve launch reliability
           codesign --force --deep --sign - --timestamp=none "$APP"
           codesign --verify --deep --verbose=2 "$APP" || (codesign --display --verbose=5 "$APP"; exit 1)
