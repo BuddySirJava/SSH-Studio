@@ -441,6 +441,10 @@ class HostList(Gtk.Box):
                     self.search_entry.set_text("")
                     self.filter_hosts("")
 
-    def _on_search_changed(self, search_bar, query):
+    def _on_search_changed(self, entry):
         """Handle search query changes."""
-        self.filter_hosts(query)
+        try:
+            text = entry.get_text()
+        except Exception:
+            text = ""
+        self.filter_hosts(text)

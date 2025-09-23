@@ -580,9 +580,13 @@ class MainWindow(Adw.ApplicationWindow):
         """Handle show-toast signal from host editor."""
         self.show_toast(message)
 
-    def _on_search_changed(self, search_bar, query):
+    def _on_search_changed(self, entry):
         """Handle search query changes."""
-        self.host_list.filter_hosts(query)
+        try:
+            text = entry.get_text()
+        except Exception:
+            text = ""
+        self.host_list.filter_hosts(text)
 
     def _on_open_config(self, action, param):
         """Handle open config action."""
