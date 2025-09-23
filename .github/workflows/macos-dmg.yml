@@ -312,6 +312,44 @@ jobs:
           codesign --force --deep --sign - --timestamp=none "$APP"
           codesign --verify --deep --verbose=2 "$APP" || (codesign --display --verbose=5 "$APP"; exit 1)
 
+      - name: Verify permissions and Info.plist
+        run: |
+          set -euxo pipefail
+          APP="dist/SSH Studio.app"
+          chmod +x "$APP/Contents/MacOS/ssh-studio"
+          plutil -lint "$APP/Contents/Info.plist"
+          # Show signature and linkage (non-fatal)
+          codesign -dv --verbose=4 "$APP" || true
+          otool -L "$APP/Contents/MacOS/ssh-studio" || true
+
+      - name: Gatekeeper assessment (non-fatal)
+        run: |
+          set -euxo pipefail
+          APP="dist/SSH Studio.app"
+          spctl --assess --type execute -v "$APP" || true
+
+      - name: Developer ID sign app (optional)
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_DEVELOPER_CERT_BASE64: ${{ secrets.APPLE_DEVELOPER_CERT_BASE64 }}
+          APPLE_DEVELOPER_CERT_PASSWORD: ${{ secrets.APPLE_DEVELOPER_CERT_PASSWORD }}
+        run: |
+          set -euxo pipefail
+          APP="dist/SSH Studio.app"
+          if [ -z "${APPLE_SIGNING_IDENTITY:-}" ] || [ -z "${APPLE_DEVELOPER_CERT_BASE64:-}" ] || [ -z "${APPLE_DEVELOPER_CERT_PASSWORD:-}" ]; then
+            echo "Signing secrets not provided; skipping Developer ID signing."; exit 0; fi
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          KEYCHAIN_PWD="$(openssl rand -hex 12)"
+          security create-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          echo "$APPLE_DEVELOPER_CERT_BASE64" | base64 --decode > "$RUNNER_TEMP/dev_cert.p12"
+          security import "$RUNNER_TEMP/dev_cert.p12" -k "$KEYCHAIN_PATH" -P "$APPLE_DEVELOPER_CERT_PASSWORD" -A
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
+          # Re-sign app with Developer ID (replaces ad-hoc)
+          codesign --force --deep --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+
 
       - name: Create DMG
         run: |
@@ -323,6 +361,76 @@ jobs:
           cp -R "dist/SSH Studio.app" "dmgroot/SSH Studio.app"
           ln -s /Applications dmgroot/Applications
           hdiutil create -volname "SSH Studio" -srcfolder dmgroot -ov -fs HFS+ "ssh-studio-${VER}-${ARCH}.dmg"
+
+      - name: Developer ID sign DMG (optional)
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_DEVELOPER_CERT_BASE64: ${{ secrets.APPLE_DEVELOPER_CERT_BASE64 }}
+          APPLE_DEVELOPER_CERT_PASSWORD: ${{ secrets.APPLE_DEVELOPER_CERT_PASSWORD }}
+        run: |
+          set -euxo pipefail
+          if [ -z "${APPLE_SIGNING_IDENTITY:-}" ] || [ -z "${APPLE_DEVELOPER_CERT_BASE64:-}" ] || [ -z "${APPLE_DEVELOPER_CERT_PASSWORD:-}" ]; then
+            echo "Signing secrets not provided; skipping DMG signing."; exit 0; fi
+          VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)
+          ARCH=$(uname -m)
+          DMG="ssh-studio-${VER}-${ARCH}.dmg"
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          if [ ! -f "$RUNNER_TEMP/dev_cert.p12" ]; then
+            echo "$APPLE_DEVELOPER_CERT_BASE64" | base64 --decode > "$RUNNER_TEMP/dev_cert.p12"
+          fi
+          if [ ! -f "$KEYCHAIN_PATH" ]; then
+            KEYCHAIN_PWD="$(openssl rand -hex 12)"
+            security create-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+            security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+            security unlock-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+            security import "$RUNNER_TEMP/dev_cert.p12" -k "$KEYCHAIN_PATH" -P "$APPLE_DEVELOPER_CERT_PASSWORD" -A
+            security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
+          fi
+          codesign --force --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$DMG"
+          spctl --assess --type open -v "$DMG" || true
+
+      - name: Notarize DMG with notarytool (API key) (optional)
+        env:
+          NOTARYTOOL_KEY_ID: ${{ secrets.NOTARYTOOL_KEY_ID }}
+          NOTARYTOOL_ISSUER_ID: ${{ secrets.NOTARYTOOL_ISSUER_ID }}
+          NOTARYTOOL_PRIVATE_KEY: ${{ secrets.NOTARYTOOL_PRIVATE_KEY }}
+        run: |
+          set -euxo pipefail
+          if [ -z "${NOTARYTOOL_KEY_ID:-}" ] || [ -z "${NOTARYTOOL_ISSUER_ID:-}" ] || [ -z "${NOTARYTOOL_PRIVATE_KEY:-}" ]; then
+            echo "Notary API key secrets not provided; skipping API-key notarization."; exit 0; fi
+          VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)
+          ARCH=$(uname -m)
+          DMG="ssh-studio-${VER}-${ARCH}.dmg"
+          KEYFILE="$RUNNER_TEMP/AuthKey.p8"
+          echo "$NOTARYTOOL_PRIVATE_KEY" > "$KEYFILE"
+          xcrun notarytool submit "$DMG" \
+            --key "$KEYFILE" \
+            --key-id "$NOTARYTOOL_KEY_ID" \
+            --issuer "$NOTARYTOOL_ISSUER_ID" \
+            --wait
+          xcrun stapler staple "$DMG"
+
+      - name: Notarize DMG with notarytool (Apple ID) (optional)
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          set -euxo pipefail
+          # Only run if API key secrets are missing but Apple ID-based secrets are present
+          if [ -n "${NOTARYTOOL_KEY_ID:-}" ] && [ -n "${NOTARYTOOL_ISSUER_ID:-}" ] && [ -n "${NOTARYTOOL_PRIVATE_KEY:-}" ]; then
+            echo "API key provided; skipping Apple ID notarization path."; exit 0; fi
+          if [ -z "${APPLE_ID:-}" ] || [ -z "${APPLE_TEAM_ID:-}" ] || [ -z "${APPLE_APP_SPECIFIC_PASSWORD:-}" ]; then
+            echo "Apple ID notarization secrets not provided; skipping."; exit 0; fi
+          VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)
+          ARCH=$(uname -m)
+          DMG="ssh-studio-${VER}-${ARCH}.dmg"
+          xcrun notarytool submit "$DMG" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --wait
+          xcrun stapler staple "$DMG"
 
 
       - name: Upload artifact
