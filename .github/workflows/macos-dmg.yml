@@ -165,6 +165,19 @@ jobs:
             fi
           done
 
+           # 4b) Vendor PyGObject (gi) and PyCairo into bundled Python path
+           for SITE in \
+             "$BREW_PREFIX/lib/python3.13/site-packages" \
+             "$BREW_PREFIX/opt/pygobject3/lib/python3.13/site-packages" \
+             "$BREW_PREFIX/opt/py3cairo/lib/python3.13/site-packages"; do
+             if [ -d "$SITE/gi" ]; then
+               rsync -a "$SITE/gi" "$RES/python/"
+             fi
+             if [ -d "$SITE/cairo" ]; then
+               rsync -a "$SITE/cairo" "$RES/python/"
+             fi
+           done
+
           # 5) Schemas needed by GSettings
           mkdir -p "$RES/share/glib-2.0/schemas"
           rsync -a "$BREW_PREFIX/opt/glib/share/glib-2.0/schemas/" "$RES/share/glib-2.0/schemas/"
@@ -214,7 +227,10 @@ jobs:
       - name: List .app contents
         run: |
           set -euxo pipefail
+          echo 'gtk-mac-bundler app:' || true
           ls -R build/ssh-studio.bundle/SSH\ Studio.app/Contents || true
+          echo 'self-contained app:' || true
+          ls -R 'dist/SSH Studio.app/Contents' || true
 
       - name: Create DMG
         run: |
@@ -222,7 +238,8 @@ jobs:
           VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)
           ARCH=$(uname -m)
           mkdir -p dmgroot
-          cp -R "build/ssh-studio.bundle/SSH Studio.app" "dmgroot/SSH Studio.app"
+          # Prefer self-contained app for distribution
+          cp -R "dist/SSH Studio.app" "dmgroot/SSH Studio.app"
           ln -s /Applications dmgroot/Applications
           hdiutil create -volname "SSH Studio" -srcfolder dmgroot -ov -fs HFS+ "ssh-studio-${VER}-${ARCH}.dmg"
 
