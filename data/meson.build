@@ -11,6 +11,7 @@ blueprint_files = files(
   'ui/key_picker_dialog.blp',
   'ui/keyboard_shortcuts_dialog.blp',
   'ui/welcome_view.blp',
+  'ui/unsaved_changes_dialog.blp',
 )
 
 bp_gen = generator(blueprint_compiler,

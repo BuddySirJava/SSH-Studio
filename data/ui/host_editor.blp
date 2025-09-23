@@ -77,33 +77,13 @@ template $HostEditor: Gtk.Box {
       child: Adw.Banner unsaved_banner {
         revealed: false;
         title: _("You have unsaved changes.");
+        button-label: _("Save");
+        use-markup: false;
+        styles [
+          "banner",
+        ]
       };
 
-      [overlay]
-      Box {
-        halign: end;
-        valign: start;
-        spacing: 8;
-        margin-top: 6;
-        margin-end: 12;
-
-        Button save_button {
-          label: _("Save");
-          visible: false;
-          styles [
-            "suggested-action",
-          ]
-        }
-
-        Button revert_button {
-          label: _("Revert");
-          visible: false;
-          styles [
-            "flat",
-            "destructive-action",
-          ]
-        }
-      }
     }
 
   Adw.ViewStack viewstack {

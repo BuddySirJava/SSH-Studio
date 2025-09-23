@@ -2,13 +2,14 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk, Gio, Gdk, Adw
+from gi.repository import Gtk, Gio, Gdk, Adw, GLib
 from pathlib import Path
 from gettext import gettext as _
 import sys
 from .host_list import HostList
 from .host_editor import HostEditor
 from .welcome_view import WelcomeView
+from gi.repository import Gio as _Gio
 
 
 @Gtk.Template(resource_path="/io/github/BuddySirJava/SSH-Studio/ui/main_window.ui")
@@ -52,6 +53,7 @@ class MainWindow(Adw.ApplicationWindow):
             pass
 
         self.connect("notify::has-focus", self._on_window_focus_changed)
+        self.connect("close-request", self._on_close_request)
         self._show_welcome_view()
 
         try:
@@ -155,10 +157,6 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _connect_signals(self):
         """Connect all the signal handlers."""
-        try:
-            self.save_button.connect("clicked", self._on_save_clicked)
-        except Exception:
-            self.save_button = None
 
         self.host_list.connect("host-selected", self._on_host_selected)
         self.host_list.connect("host-added", self._on_host_added)
@@ -171,14 +169,6 @@ class MainWindow(Adw.ApplicationWindow):
         )
         self.host_editor.connect("show-toast", self._on_show_toast)
 
-        try:
-            if (
-                hasattr(self.host_editor, "save_button")
-                and self.host_editor.save_button is not None
-            ):
-                self.host_editor.save_button.set_sensitive(False)
-        except Exception:
-            pass
 
         self.host_list.search_entry.connect("search-changed", self._on_search_changed)
 
@@ -394,6 +384,50 @@ class MainWindow(Adw.ApplicationWindow):
             self.host_list.search_bar.set_visible(False)
             self.host_list.filter_hosts("")
 
+    def _on_close_request(self, window):
+        """Handle window close request - check for unsaved changes."""
+        if hasattr(self.host_editor, 'is_host_dirty') and self.host_editor.is_host_dirty():
+            return self._show_unsaved_changes_dialog()
+        return False
+
+    def _show_unsaved_changes_dialog(self):
+        """Show alert dialog asking user what to do with unsaved changes."""
+        # Load from blueprint resource
+        builder = Gtk.Builder.new_from_resource("/io/github/BuddySirJava/SSH-Studio/ui/unsaved_changes_dialog.ui")
+        dialog = builder.get_object("unsaved_changes_dialog")
+        dialog.set_close_response("cancel")
+        dialog.add_response("discard", _("Discard Changes"))
+        dialog.add_response("cancel", _("Cancel"))
+        dialog.add_response("save", _("Save & Quit"))
+        dialog.set_response_appearance("discard", Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_response_appearance("save", Adw.ResponseAppearance.SUGGESTED)
+        dialog.set_default_response("save")
+
+        def on_response(dialog, response):
+            if response == "save":
+                try:
+                    if hasattr(self.host_editor, 'unsaved_banner') and self.host_editor.unsaved_banner:
+                        self.host_editor._on_save_clicked(None)
+                    dialog.close()
+                    GLib.timeout_add(200, self._delayed_close)
+                except Exception as e:
+                    self.show_toast(_(f"Failed to save: {e}"))
+            elif response == "discard":
+                dialog.close()
+                self.destroy()
+            else:
+                dialog.close()
+                return True
+
+        dialog.connect("response", on_response)
+        dialog.present(self)
+        return True
+
+    def _delayed_close(self):
+        """Close the window after a short delay to allow save to complete."""
+        self.destroy()
+        return False
+
     def on_status_bar_close_clicked(self, button):
         pass
 
@@ -417,16 +451,12 @@ class MainWindow(Adw.ApplicationWindow):
 
             self.host_list.load_hosts(self.parser.config.hosts)
             self.is_dirty = False
-            if self.save_button is not None:
-                self.save_button.set_sensitive(False)
             self._update_status(_("Configuration saved successfully"))
         except Exception as e:
             self._show_error(f"Failed to save configuration: {e}")
 
     def _write_and_reload(self, show_status: bool = False):
-        """Write the config to disk and reload UI without showing validation dialogs.
-        Disables the save button afterward.
-        """
+        """Write the config to disk and reload UI without showing validation dialogs."""
         if not self.parser:
             return
         try:
@@ -434,8 +464,6 @@ class MainWindow(Adw.ApplicationWindow):
             self.parser.parse()
             self.host_list.load_hosts(self.parser.config.hosts)
             self.is_dirty = False
-            if self.save_button is not None:
-                self.save_button.set_sensitive(False)
             if show_status:
                 self._update_status(_("Configuration saved"))
         except Exception as e:
@@ -485,16 +513,12 @@ class MainWindow(Adw.ApplicationWindow):
 
             self.parser.config.add_host(host)
             self.is_dirty = True
-            if self.save_button is not None:
-                self.save_button.set_sensitive(True)
 
             def undo_add():
                 try:
                     if host in self.parser.config.hosts:
                         self.parser.config.remove_host(host)
                     self.is_dirty = self.parser.config.is_dirty()
-                    if self.save_button is not None:
-                        self.save_button.set_sensitive(self.is_dirty)
                     self.host_list.load_hosts(self.parser.config.hosts)
                     try:
                         if not self.parser.config.hosts:
@@ -540,8 +564,6 @@ class MainWindow(Adw.ApplicationWindow):
                 self.host_editor.current_host = None
                 self.host_editor._clear_all_fields()
                 self._set_host_editor_visible(False)
-                if self.save_button is not None:
-                    self.save_button.set_sensitive(False)
                 self.is_dirty = False
 
             else:
@@ -549,18 +571,10 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _on_host_changed(self, editor, host):
         self.is_dirty = self.parser.config.is_dirty()
-        if self.save_button is not None:
-            if self.save_button is not None:
-                self.save_button.set_sensitive(self.is_dirty)
 
     def _on_editor_validity_changed(self, editor, is_valid: bool):
-        if self.save_button is not None:
-            if not is_valid:
-                if self.save_button is not None:
-                    self.save_button.set_sensitive(False)
-            else:
-                if self.save_button is not None:
-                    self.save_button.set_sensitive(self.is_dirty)
+        # The banner handles its own sensitivity based on validity
+        pass
 
     def _on_show_toast(self, editor, message: str):
         """Handle show-toast signal from host editor."""

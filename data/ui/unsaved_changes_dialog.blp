@@ -1,0 +1,10 @@
+using Gtk 4.0;
+using Adw 1;
+
+Adw.AlertDialog unsaved_changes_dialog {
+  heading: _("Unsaved Changes");
+  body: _("You have unsaved changes that will be lost if you quit.\n\nWhat would you like to do?");
+  close-response: "cancel";
+}
+
+

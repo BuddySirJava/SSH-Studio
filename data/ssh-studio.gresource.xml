@@ -11,6 +11,7 @@
     <file alias="ui/key_picker_dialog.ui" preprocess="xml-stripblanks">key_picker_dialog.ui</file>
     <file alias="ui/keyboard_shortcuts_dialog.ui" preprocess="xml-stripblanks">keyboard_shortcuts_dialog.ui</file>
     <file alias="ui/welcome_view.ui" preprocess="xml-stripblanks">welcome_view.ui</file>
+    <file alias="ui/unsaved_changes_dialog.ui" preprocess="xml-stripblanks">unsaved_changes_dialog.ui</file>
     <file>ssh-studio.css</file>
     <file alias="media/icon_256.png">icon_256.png</file>
     <file alias="icons/256x256/apps/io.github.BuddySirJava.SSH-Studio.png">icon_256.png</file>

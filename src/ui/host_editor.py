@@ -64,8 +64,6 @@ class HostEditor(Gtk.Box):
     copy_row = Gtk.Template.Child()
     test_row = Gtk.Template.Child()
     unsaved_banner = Gtk.Template.Child()
-    save_button = Gtk.Template.Child()
-    revert_button = Gtk.Template.Child()
 
     __gsignals__ = {
         "host-changed": (GObject.SignalFlags.RUN_LAST, None, (object,)),
@@ -113,12 +111,6 @@ class HostEditor(Gtk.Box):
             if getattr(self, "unsaved_banner", None):
                 self.unsaved_banner.set_revealed(False)
                 self.unsaved_banner.set_sensitive(False)
-            if getattr(self, "save_button", None):
-                self.save_button.set_visible(False)
-                self.save_button.set_sensitive(False)
-            if getattr(self, "revert_button", None):
-                self.revert_button.set_visible(False)
-                self.revert_button.set_sensitive(False)
         except Exception:
             pass
 
@@ -415,16 +407,6 @@ class HostEditor(Gtk.Box):
                 self.unsaved_banner.connect("button-clicked", lambda *_: self._on_save_clicked(None))
         except Exception:
             pass
-        try:
-            if getattr(self, "save_button", None) is not None:
-                self.save_button.connect("clicked", self._on_save_clicked)
-        except Exception:
-            pass
-        try:
-            if getattr(self, "revert_button", None) is not None:
-                self.revert_button.connect("clicked", self._on_revert_clicked)
-        except Exception:
-            pass
 
     def _connect_header_buttons(self):
         """Connect header bar button signals."""
@@ -622,12 +604,6 @@ class HostEditor(Gtk.Box):
             if getattr(self, "unsaved_banner", None):
                 self.unsaved_banner.set_revealed(False)
                 self.unsaved_banner.set_sensitive(False)
-            if getattr(self, "save_button", None):
-                self.save_button.set_visible(False)
-                self.save_button.set_sensitive(False)
-            if getattr(self, "revert_button", None):
-                self.revert_button.set_visible(False)
-                self.revert_button.set_sensitive(False)
         except Exception:
             pass
 
@@ -1737,52 +1713,9 @@ class HostEditor(Gtk.Box):
             except Exception:
                 pass
 
-    def _on_revert_clicked(self, button):
-        """Reverts the current host's changes to its last loaded state by reloading the configuration."""
-        if not self.current_host:
-            return
-
-        if not hasattr(self, "original_host_state") or not self.original_host_state:
-            return
-        self.is_loading = True
-        self.current_host.patterns = copy.deepcopy(self.original_host_state.patterns)
-        self.current_host.options = copy.deepcopy(self.original_host_state.options)
-        self.current_host.raw_lines = copy.deepcopy(self.original_host_state.raw_lines)
-
-        self._sync_fields_from_host()
-
-        buffer = self.raw_text_view.get_buffer()
-        if hasattr(self, "_raw_changed_handler_id"):
-            buffer.handler_block(self._raw_changed_handler_id)
-        self._programmatic_raw_update = True
-        buffer.set_text("\n".join(self.current_host.raw_lines))
-        if hasattr(self, "_raw_changed_handler_id"):
-            buffer.handler_unblock(self._raw_changed_handler_id)
-        self._programmatic_raw_update = False
-        self.original_raw_content = "\n".join(self.current_host.raw_lines)
-        self.is_loading = False
-
-        self._ensure_buffer_initialized()
-        if self.buffer is not None:
-            self.buffer.remove_all_tags(
-                self.buffer.get_start_iter(), self.buffer.get_end_iter()
-            )
-        self.emit("host-changed", self.current_host)
-        try:
-            if getattr(self, "save_banner", None):
-                self.save_banner.set_revealed(False)
-                self.save_banner.set_sensitive(False)
-            if getattr(self, "revert_banner", None):
-                self.revert_banner.set_revealed(False)
-                self.revert_banner.set_sensitive(False)
-        except Exception:
-            pass
-        self._show_message(_(f"Reverted changes for {self.current_host.patterns[0]}"))
-        self._touched_options.clear()
-        self._update_button_sensitivity()
 
     def _update_button_sensitivity(self):
-        """Updates the sensitivity of save and revert buttons based on dirty state and validity."""
+        """Updates the sensitivity of banner based on dirty state and validity."""
         is_dirty = self.is_host_dirty()
         field_errors = self._collect_field_errors()
         is_valid = not bool(field_errors)
@@ -1790,12 +1723,6 @@ class HostEditor(Gtk.Box):
             if getattr(self, "unsaved_banner", None):
                 self.unsaved_banner.set_revealed(is_dirty)
                 self.unsaved_banner.set_sensitive(is_dirty and is_valid)
-            if getattr(self, "save_button", None):
-                self.save_button.set_visible(is_dirty)
-                self.save_button.set_sensitive(is_dirty and is_valid)
-            if getattr(self, "revert_button", None):
-                self.revert_button.set_visible(is_dirty)
-                self.revert_button.set_sensitive(is_dirty)
         except Exception:
             pass
 
