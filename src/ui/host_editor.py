@@ -121,9 +121,6 @@ class HostEditor(Gtk.Box):
                 self.revert_button.set_sensitive(False)
         except Exception:
             pass
-        # No global actionbar anymore
-
-        # No global banner/buttons in MainWindow anymore
 
         try:
             key_ctrl = Gtk.EventControllerKey.new()
@@ -416,9 +413,7 @@ class HostEditor(Gtk.Box):
             self.test_row.connect("activated", lambda r: self._on_test_connection(None))
         try:
             if getattr(self, "unsaved_banner", None) is not None:
-                self.unsaved_banner.connect(
-                    "button-clicked", lambda *_: self._on_save_clicked(None)
-                )
+                self.unsaved_banner.connect("button-clicked", lambda *_: self._on_save_clicked(None))
         except Exception:
             pass
         try:
@@ -449,6 +444,7 @@ class HostEditor(Gtk.Box):
                 self.delete_button.connect("clicked", self._on_delete_clicked)
         except Exception:
             pass
+
 
     def _on_add_clicked(self, button):
         """Handle add host button click."""
@@ -1392,7 +1388,6 @@ class HostEditor(Gtk.Box):
             pass
         try:
             import subprocess as _sub
-
             for cmd in [
                 ["wl-copy"],
                 ["xclip", "-selection", "clipboard"],
