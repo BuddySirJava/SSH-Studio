@@ -432,7 +432,7 @@ class HostList(Gtk.Box):
         if self.search_bar:
             is_visible = self.search_bar.get_visible()
             self.search_bar.set_visible(not is_visible)
-            
+
             if not is_visible:
                 if self.search_entry:
                     self.search_entry.grab_focus()

@@ -70,10 +70,11 @@ jobs:
         run: |
           mkdir -p macos
           BREW_PREFIX="$(brew --prefix)"
+          export BREW_PREFIX
           echo "Detected Homebrew prefix: $BREW_PREFIX"
 
           # Write Info.plist required by gtk-mac-bundler
-          cat > macos/Info.plist << PLIST
+          cat > macos/Info.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -95,11 +96,11 @@ jobs:
           PLIST
 
           # Bundle description for gtk-mac-bundler
-          cat > macos/ssh-studio.bundle << XML
+          cat > macos/ssh-studio.bundle << 'XML'
           <?xml version="1.0"?>
           <app-bundle>
             <meta>
-              <prefix>${BREW_PREFIX}</prefix>
+              <prefix>${env:BREW_PREFIX}</prefix>
               <destination overwrite="yes">${project}/../build/ssh-studio.bundle</destination>
             </meta>
 
@@ -108,16 +109,14 @@ jobs:
             <version>1.0.0</version>
             <icon>${project}/../data/media/icon_512.png</icon>
 
-            <plist>${project}/Info.plist</plist>
+            <plist>${env:GITHUB_WORKSPACE}/macos/Info.plist</plist>
 
             <main-binary dest="${bundle}/Contents/MacOS/${name}">
               <binary>${project}/../stage/bin/ssh-studio</binary>
             </main-binary>
 
-            <resources>
-              <file dest="${bundle}/Contents/Resources/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource">${project}/../stage/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource</file>
-              <dir dest="${bundle}/Contents/Resources/src">${project}/../src</dir>
-            </resources>
+            <data dest="${bundle}/Contents/Resources/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource">${project}/../stage/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource</data>
+            <data dest="${bundle}/Contents/Resources/src">${project}/../src</data>
           </app-bundle>
           XML
 

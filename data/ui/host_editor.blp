@@ -51,8 +51,9 @@ template $HostEditor: Gtk.Box {
     vexpand: true;
     hexpand: true;
 
-    Adw.HeaderBar {
 
+    Adw.HeaderBar {
+      show-back-button: false;
       show-title: false;
       [center]
       Adw.ViewSwitcher viewswitcher {
@@ -68,12 +69,43 @@ template $HostEditor: Gtk.Box {
         ]
       }
       
-      [end]
       Gtk.WindowControls window_controls {
         margin-start: 20;
       }
     }
-  
+    Overlay banner_overlay {
+      child: Adw.Banner unsaved_banner {
+        revealed: false;
+        title: _("You have unsaved changes.");
+      };
+
+      [overlay]
+      Box {
+        halign: end;
+        valign: start;
+        spacing: 8;
+        margin-top: 6;
+        margin-end: 12;
+
+        Button save_button {
+          label: _("Save");
+          visible: false;
+          styles [
+            "suggested-action",
+          ]
+        }
+
+        Button revert_button {
+          label: _("Revert");
+          visible: false;
+          styles [
+            "flat",
+            "destructive-action",
+          ]
+        }
+      }
+    }
+
   Adw.ViewStack viewstack {
     vexpand: true;
     margin-start: 4;
@@ -418,13 +450,7 @@ template $HostEditor: Gtk.Box {
     }
   }
 
-  Revealer banner_revealer { visible: false; }
-
-    Box {
-      visible: false;
-      Button save_button {}
-      Button revert_button {}
-    }
+  
   }
 }
 

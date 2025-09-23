@@ -63,9 +63,9 @@ class HostEditor(Gtk.Box):
     raw_text_view = Gtk.Template.Child()
     copy_row = Gtk.Template.Child()
     test_row = Gtk.Template.Child()
+    unsaved_banner = Gtk.Template.Child()
     save_button = Gtk.Template.Child()
     revert_button = Gtk.Template.Child()
-    banner_revealer = Gtk.Template.Child()
 
     __gsignals__ = {
         "host-changed": (GObject.SignalFlags.RUN_LAST, None, (object,)),
@@ -110,25 +110,20 @@ class HostEditor(Gtk.Box):
             self._show_helpful_placeholder()
 
         try:
+            if getattr(self, "unsaved_banner", None):
+                self.unsaved_banner.set_revealed(False)
+                self.unsaved_banner.set_sensitive(False)
             if getattr(self, "save_button", None):
+                self.save_button.set_visible(False)
                 self.save_button.set_sensitive(False)
             if getattr(self, "revert_button", None):
+                self.revert_button.set_visible(False)
                 self.revert_button.set_sensitive(False)
-            if getattr(self, "banner_revealer", None):
-                self.banner_revealer.set_reveal_child(False)
         except Exception:
             pass
-        try:
-            main_window = self.get_root()
-            if (
-                hasattr(main_window, "global_actionbar")
-                and main_window.global_actionbar is not None
-            ):
-                self.banner_revealer.set_visible(False)
-        except Exception:
-            pass
+        # No global actionbar anymore
 
-        GLib.idle_add(self._wire_global_buttons)
+        # No global banner/buttons in MainWindow anymore
 
         try:
             key_ctrl = Gtk.EventControllerKey.new()
@@ -141,38 +136,14 @@ class HostEditor(Gtk.Box):
         self.app = app
 
     def _wire_global_buttons(self):
-        try:
-            main_window = self.get_root()
-        except Exception:
-            main_window = None
-        if not main_window:
-            return True
-        if self._wired_global_buttons:
-            return False
-        try:
-            if hasattr(main_window, "save_button") and main_window.save_button:
-                self.save_button = main_window.save_button
-                self.save_button.connect("clicked", self._on_save_clicked)
-            if hasattr(main_window, "revert_button") and main_window.revert_button:
-                self.revert_button = main_window.revert_button
-                self.revert_button.connect("clicked", self._on_revert_clicked)
-            if hasattr(main_window, "unsaved_label"):
-                self._unsaved_label = main_window.unsaved_label
-        except Exception:
-            pass
+        # Deprecated: kept for compatibility; no-op with Adw.Banner
         self._wired_global_buttons = True
         return False
 
     def _on_key_pressed(self, controller, keyval, keycode, state):
         if keyval == Gdk.KEY_s and (state & Gdk.ModifierType.CONTROL_MASK):
-            if (
-                hasattr(self, "save_button")
-                and self.save_button
-                and self.save_button.get_sensitive()
-            ):
-                self.save_button.activate()
-                return True
-            return False
+            self._on_save_clicked(None)
+            return True
 
         if keyval == Gdk.KEY_z and (state & Gdk.ModifierType.CONTROL_MASK):
             # TODO: Implement undo functionality (Im bored)
@@ -444,6 +415,13 @@ class HostEditor(Gtk.Box):
         if hasattr(self, "test_row") and self.test_row:
             self.test_row.connect("activated", lambda r: self._on_test_connection(None))
         try:
+            if getattr(self, "unsaved_banner", None) is not None:
+                self.unsaved_banner.connect(
+                    "button-clicked", lambda *_: self._on_save_clicked(None)
+                )
+        except Exception:
+            pass
+        try:
             if getattr(self, "save_button", None) is not None:
                 self.save_button.connect("clicked", self._on_save_clicked)
         except Exception:
@@ -451,14 +429,6 @@ class HostEditor(Gtk.Box):
         try:
             if getattr(self, "revert_button", None) is not None:
                 self.revert_button.connect("clicked", self._on_revert_clicked)
-        except Exception:
-            pass
-        try:
-            main_window = self.get_root()
-            if getattr(main_window, "save_button", None) is not None:
-                main_window.save_button.connect("clicked", self._on_save_clicked)
-            if getattr(main_window, "revert_button", None) is not None:
-                main_window.revert_button.connect("clicked", self._on_revert_clicked)
         except Exception:
             pass
 
@@ -479,7 +449,6 @@ class HostEditor(Gtk.Box):
                 self.delete_button.connect("clicked", self._on_delete_clicked)
         except Exception:
             pass
-
 
     def _on_add_clicked(self, button):
         """Handle add host button click."""
@@ -654,17 +623,16 @@ class HostEditor(Gtk.Box):
         self.original_raw_content = "\n".join(host.raw_lines)
 
         self.is_loading = False
-        self.revert_button.set_sensitive(False)
-        self.banner_revealer.set_reveal_child(False)
         try:
-            main_window = self.get_root()
-            if (
-                hasattr(main_window, "global_actionbar")
-                and main_window.global_actionbar
-            ):
-                main_window.unsaved_label.set_visible(False)
-                main_window.save_button.set_visible(False)
-                main_window.revert_button.set_visible(False)
+            if getattr(self, "unsaved_banner", None):
+                self.unsaved_banner.set_revealed(False)
+                self.unsaved_banner.set_sensitive(False)
+            if getattr(self, "save_button", None):
+                self.save_button.set_visible(False)
+                self.save_button.set_sensitive(False)
+            if getattr(self, "revert_button", None):
+                self.revert_button.set_visible(False)
+                self.revert_button.set_sensitive(False)
         except Exception:
             pass
 
@@ -1424,6 +1392,7 @@ class HostEditor(Gtk.Box):
             pass
         try:
             import subprocess as _sub
+
             for cmd in [
                 ["wl-copy"],
                 ["xclip", "-selection", "clipboard"],
@@ -1805,10 +1774,15 @@ class HostEditor(Gtk.Box):
                 self.buffer.get_start_iter(), self.buffer.get_end_iter()
             )
         self.emit("host-changed", self.current_host)
-        self.revert_button.set_sensitive(False)
-        if hasattr(self, "save_button"):
-            self.save_button.set_sensitive(False)
-        self.banner_revealer.set_reveal_child(False)
+        try:
+            if getattr(self, "save_banner", None):
+                self.save_banner.set_revealed(False)
+                self.save_banner.set_sensitive(False)
+            if getattr(self, "revert_banner", None):
+                self.revert_banner.set_revealed(False)
+                self.revert_banner.set_sensitive(False)
+        except Exception:
+            pass
         self._show_message(_(f"Reverted changes for {self.current_host.patterns[0]}"))
         self._touched_options.clear()
         self._update_button_sensitivity()
@@ -1819,35 +1793,15 @@ class HostEditor(Gtk.Box):
         field_errors = self._collect_field_errors()
         is_valid = not bool(field_errors)
         try:
+            if getattr(self, "unsaved_banner", None):
+                self.unsaved_banner.set_revealed(is_dirty)
+                self.unsaved_banner.set_sensitive(is_dirty and is_valid)
             if getattr(self, "save_button", None):
+                self.save_button.set_visible(is_dirty)
                 self.save_button.set_sensitive(is_dirty and is_valid)
             if getattr(self, "revert_button", None):
+                self.revert_button.set_visible(is_dirty)
                 self.revert_button.set_sensitive(is_dirty)
-            if getattr(self, "banner_revealer", None) and hasattr(
-                self.banner_revealer, "set_reveal_child"
-            ):
-                self.banner_revealer.set_reveal_child(is_dirty)
-            mw = self.get_root()
-            if hasattr(mw, "unsaved_label") and mw.unsaved_label:
-                mw.unsaved_label.set_visible(is_dirty)
-            if hasattr(mw, "save_button") and mw.save_button:
-                mw.save_button.set_visible(is_dirty)
-                mw.save_button.set_sensitive(is_dirty and is_valid)
-            if hasattr(mw, "revert_button") and mw.revert_button:
-                mw.revert_button.set_visible(is_dirty)
-                mw.revert_button.set_sensitive(is_dirty)
-        except Exception:
-            pass
-        try:
-            main_window = self.get_root()
-            if (
-                hasattr(main_window, "global_actionbar")
-                and main_window.global_actionbar
-            ):
-                main_window.global_actionbar.set_visible(is_dirty)
-                main_window.unsaved_label.set_visible(is_dirty)
-                main_window.save_button.set_visible(is_dirty and is_valid)
-                main_window.revert_button.set_visible(is_dirty)
         except Exception:
             pass
 

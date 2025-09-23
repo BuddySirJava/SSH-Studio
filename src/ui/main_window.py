@@ -19,15 +19,11 @@ class MainWindow(Adw.ApplicationWindow):
 
     main_box = Gtk.Template.Child()
     toast_overlay = Gtk.Template.Child()
-    global_actionbar = Gtk.Template.Child()
-    unsaved_label = Gtk.Template.Child()
     split_view = Gtk.Template.Child()
     content_nav = Gtk.Template.Child()
     host_list = Gtk.Template.Child()
     host_editor = Gtk.Template.Child()
     welcome_view = Gtk.Template.Child()
-    save_button = Gtk.Template.Child()
-    revert_button = Gtk.Template.Child()
 
     def __init__(self, app):
         super().__init__(
@@ -56,10 +52,6 @@ class MainWindow(Adw.ApplicationWindow):
             pass
 
         self.connect("notify::has-focus", self._on_window_focus_changed)
-        
-        if hasattr(self, 'global_actionbar') and self.global_actionbar:
-            self.global_actionbar.set_visible(False)
-        
         self._show_welcome_view()
 
         try:
@@ -208,21 +200,41 @@ class MainWindow(Adw.ApplicationWindow):
         actions.add_action(reload_action)
 
         add_host_action = Gio.SimpleAction.new("add-host", None)
-        add_host_action.connect("activate", lambda a, p: self.host_editor._on_add_clicked(None) if hasattr(self.host_editor, "_on_add_clicked") else None)
+        add_host_action.connect(
+            "activate",
+            lambda a, p: (
+                self.host_editor._on_add_clicked(None)
+                if hasattr(self.host_editor, "_on_add_clicked")
+                else None
+            ),
+        )
         actions.add_action(add_host_action)
 
         duplicate_host_action = Gio.SimpleAction.new("duplicate-host", None)
-        duplicate_host_action.connect("activate", lambda a, p: self.host_editor._on_duplicate_clicked(None) if hasattr(self.host_editor, "_on_duplicate_clicked") else None)
+        duplicate_host_action.connect(
+            "activate",
+            lambda a, p: (
+                self.host_editor._on_duplicate_clicked(None)
+                if hasattr(self.host_editor, "_on_duplicate_clicked")
+                else None
+            ),
+        )
         actions.add_action(duplicate_host_action)
 
         delete_host_action = Gio.SimpleAction.new("delete-host", None)
-        delete_host_action.connect("activate", lambda a, p: self.host_editor._on_delete_clicked(None) if hasattr(self.host_editor, "_on_delete_clicked") else None)
+        delete_host_action.connect(
+            "activate",
+            lambda a, p: (
+                self.host_editor._on_delete_clicked(None)
+                if hasattr(self.host_editor, "_on_delete_clicked")
+                else None
+            ),
+        )
         actions.add_action(delete_host_action)
 
         search_action = Gio.SimpleAction.new("search", None)
         search_action.connect("activate", self._on_search_action)
         actions.add_action(search_action)
-
 
         prefs_action = Gio.SimpleAction.new("preferences", None)
         prefs_action.connect("activate", self._on_preferences)
@@ -242,11 +254,9 @@ class MainWindow(Adw.ApplicationWindow):
 
         self.insert_action_group("app", actions)
 
-
     def _on_search_action(self, action, param):
         """Handle search action."""
         self._toggle_search()
-
 
     def _on_key_pressed(self, controller, keyval, keycode, state):
         ctrl_pressed = bool(state & Gdk.ModifierType.CONTROL_MASK)
@@ -314,7 +324,6 @@ class MainWindow(Adw.ApplicationWindow):
                 return True
             return False
 
-
         if keyval == Gdk.KEY_Return or keyval == Gdk.KEY_KP_Enter:
             if hasattr(self.host_list, "get_selected_host"):
                 selected_host = self.host_list.get_selected_host()
@@ -373,7 +382,6 @@ class MainWindow(Adw.ApplicationWindow):
                 self.host_list.filter_hosts("")
         except Exception:
             pass
-
 
     def _on_host_save(self, editor, host):
         """Handle host save signal from editor."""
@@ -437,11 +445,11 @@ class MainWindow(Adw.ApplicationWindow):
         """Handle host selection from the list."""
         self.host_editor.load_host(host)
         self._set_host_editor_visible(True)
-        if hasattr(self, 'content_nav') and self.content_nav:
+        if hasattr(self, "content_nav") and self.content_nav:
             try:
                 pages = self.content_nav.get_pages()
                 for page in pages:
-                    if hasattr(page, 'get_tag') and page.get_tag() == "host-editor":
+                    if hasattr(page, "get_tag") and page.get_tag() == "host-editor":
                         self.content_nav.pop_to_page(page)
                         return
             except Exception:
@@ -450,16 +458,17 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _show_welcome_view(self):
         """Show the welcome view when no host is selected."""
-        if hasattr(self, 'content_nav') and self.content_nav:
+        if hasattr(self, "content_nav") and self.content_nav:
             try:
                 pages = self.content_nav.get_pages()
                 for page in pages:
-                    if hasattr(page, 'get_tag') and page.get_tag() == "welcome":
+                    if hasattr(page, "get_tag") and page.get_tag() == "welcome":
                         self.content_nav.pop_to_page(page)
                         return
             except Exception:
                 pass
             self.content_nav.push_by_tag("welcome")
+
     def _on_host_added(self, host_list, host):
         if self.parser:
             base_pattern = "new-host"

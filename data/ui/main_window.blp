@@ -18,8 +18,8 @@ template $MainWindow: Adw.ApplicationWindow {
 
               child: Box {
                 orientation: vertical;
-                margin-start: 15;
-                margin-end: 15;
+                margin-start: 8;
+                margin-end: 8;
 
                 $HostList host_list {}
               }
@@ -47,28 +47,7 @@ template $MainWindow: Adw.ApplicationWindow {
         };
       }
 
-      [bottom]
-      ActionBar global_actionbar {
-        visible: false;
-        [start]
-        Label unsaved_label { label: _("You have unsaved changes."); visible: false; }
-        [end]
-        Button save_button {
-          label: _("Save");
-          styles [
-            "suggested-action",
-          ]
-          visible: false;
-        }
-        [end]
-        Button revert_button {
-          label: _("Revert");
-          styles [
-            "destructive-action",
-          ]
-          visible: false;
-        }
-      }
+      
     }
   }
 }

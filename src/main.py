@@ -17,6 +17,7 @@ from gi.repository import Gtk, Gio, GLib, Gdk, Adw
 
 def _ensure_utf8_locale():
     import locale
+
     try:
         current = locale.setlocale(locale.LC_ALL, "")
         if current is None or ("UTF-8" not in current and "utf8" not in current):
@@ -48,7 +49,10 @@ def _configure_renderer_for_x11():
 
     if not has_dri and not os.getenv("LIBGL_ALWAYS_SOFTWARE"):
         os.environ["GSK_RENDERER"] = "cairo"
-        logging.info("GSK_RENDERER=cairo set for X11 without DRM; forcing software rendering")
+        logging.info(
+            "GSK_RENDERER=cairo set for X11 without DRM; forcing software rendering"
+        )
+
 
 try:
     from ssh_studio.ssh_config_parser import SSHConfigParser
@@ -176,21 +180,34 @@ class SSHConfigStudioApp(Adw.Application):
             try:
                 if self.parser is not None:
                     self.parser.parse()
+
                 def update_ui():
                     try:
-                        if self.main_window and getattr(self.main_window, "host_list", None):
-                            self.main_window.host_list.load_hosts(self.parser.config.hosts)
+                        if self.main_window and getattr(
+                            self.main_window, "host_list", None
+                        ):
+                            self.main_window.host_list.load_hosts(
+                                self.parser.config.hosts
+                            )
                             try:
-                                self.main_window._update_status(_("Configuration loaded successfully"))
+                                self.main_window._update_status(
+                                    _("Configuration loaded successfully")
+                                )
                             except Exception:
                                 pass
                     except Exception:
                         pass
                     return False
+
                 GLib.idle_add(update_ui)
             except Exception as e:
                 logging.error(f"Failed to initialize SSH config parser: {e}")
-                GLib.idle_add(lambda: (self._show_error_dialog(_("Failed to load SSH config"), str(e)), False)[1])
+                GLib.idle_add(
+                    lambda: (
+                        self._show_error_dialog(_("Failed to load SSH config"), str(e)),
+                        False,
+                    )[1]
+                )
 
         t = threading.Thread(target=worker, daemon=True)
         t.start()
