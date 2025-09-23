@@ -72,57 +72,78 @@ jobs:
           BREW_PREFIX="$(brew --prefix)"
           echo "Detected Homebrew prefix: $BREW_PREFIX"
 
+          # Write Info.plist required by gtk-mac-bundler
+          cat > macos/Info.plist << PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleIdentifier</key>
+            <string>io.github.BuddySirJava.SSH-Studio</string>
+            <key>CFBundleName</key>
+            <string>SSH Studio</string>
+            <key>CFBundleExecutable</key>
+            <string>ssh-studio</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0.0</string>
+            <key>CFBundleVersion</key>
+            <string>1.0.0</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+          </dict>
+          </plist>
+          PLIST
+
+          # Bundle description for gtk-mac-bundler
           cat > macos/ssh-studio.bundle << XML
           <?xml version="1.0"?>
           <app-bundle>
             <meta>
               <prefix>${BREW_PREFIX}</prefix>
+              <destination overwrite="yes">${project}/../build/ssh-studio.bundle</destination>
             </meta>
 
             <id>io.github.BuddySirJava.SSH-Studio</id>
             <name>SSH Studio</name>
             <version>1.0.0</version>
-            <icon>data/media/icon_512.png</icon>
+            <icon>${project}/../data/media/icon_512.png</icon>
 
-            <main-binary>
-              <binary>ssh-studio</binary>
+            <plist>${project}/Info.plist</plist>
+
+            <main-binary dest="${bundle}/Contents/MacOS/${name}">
+              <binary>${project}/../stage/bin/ssh-studio</binary>
             </main-binary>
 
             <resources>
-              <file>stage/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource</file>
-              <dir>src</dir>
+              <file dest="${bundle}/Contents/Resources/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource">${project}/../stage/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource</file>
+              <dir dest="${bundle}/Contents/Resources/src">${project}/../src</dir>
             </resources>
-
-            <dependencies>
-              <dep>gtk4</dep>
-              <dep>libadwaita</dep>
-              <dep>gtksourceview5</dep>
-              <dep>pygobject3</dep>
-              <dep>python3</dep>
-            </dependencies>
           </app-bundle>
           XML
 
-                    gtk-mac-bundler macos/ssh-studio.bundle
+          - name: Run gtk-mac-bundler
+            run: |
+              set -euxo pipefail
+              gtk-mac-bundler macos/ssh-studio.bundle
 
-                - name: Diagnostic: list .app contents
-                  run: |
-                    set -euxo pipefail
-                    ls -R build/ssh-studio.bundle/SSH\ Studio.app/Contents || true
+          - name: Diagnostic: list .app contents
+            run: |
+              set -euxo pipefail
+              ls -R build/ssh-studio.bundle/.SSH\ Studio.app/Contents || true
 
-                - name: Create DMG
-                  run: |
-                    set -euxo pipefail
-                    VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)
-                    ARCH=$(uname -m)
-                    mkdir -p dmgroot
-                    cp -R "build/ssh-studio.bundle/SSH Studio.app" dmgroot/
-                    ln -s /Applications dmgroot/Applications
-                    hdiutil create -volname "SSH Studio" -srcfolder dmgroot -ov -fs HFS+ "ssh-studio-${VER}-${ARCH}.dmg"
+      - name: Create DMG
+        run: |
+          set -euxo pipefail
+          VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)
+          ARCH=$(uname -m)
+          mkdir -p dmgroot
+          cp -R "build/ssh-studio.bundle/.SSH Studio.app" "dmgroot/SSH Studio.app"
+          ln -s /Applications dmgroot/Applications
+          hdiutil create -volname "SSH Studio" -srcfolder dmgroot -ov -fs HFS+ "ssh-studio-${VER}-${ARCH}.dmg"
 
-                - name: Upload artifact
-                  uses: actions/upload-artifact@v4
-                  with:
-                    name: ssh-studio-dmg-${{ matrix.os }}
-                    path: |
-                      *.dmg
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ssh-studio-dmg-${{ matrix.os }}
+          path: |
+            *.dmg
