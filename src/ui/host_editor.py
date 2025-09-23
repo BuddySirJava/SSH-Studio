@@ -133,7 +133,6 @@ class HostEditor(Gtk.Box):
         self.app = app
 
     def _wire_global_buttons(self):
-        # Deprecated: kept for compatibility; no-op with Adw.Banner
         self._wired_global_buttons = True
         return False
 
