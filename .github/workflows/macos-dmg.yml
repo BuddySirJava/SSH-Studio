@@ -3,15 +3,15 @@ name: macOS DMG
 on:
   workflow_dispatch:
   push:
-    branches: [ master ]
-    tags: [ '[0-9]*.[0-9]*.[0-9]*' ]
+    branches: [master]
+    tags: ["[0-9]*.[0-9]*.[0-9]*"]
   pull_request:
     paths:
-      - '.github/workflows/macos-dmg.yml'
-      - 'meson.build'
-      - 'data/**'
-      - 'src/**'
-      - 'macos/**'
+      - ".github/workflows/macos-dmg.yml"
+      - "meson.build"
+      - "data/**"
+      - "src/**"
+      - "macos/**"
 
 jobs:
   build-dmg:
@@ -73,56 +73,56 @@ jobs:
           echo "Detected Homebrew prefix: $BREW_PREFIX"
 
           cat > macos/ssh-studio.bundle << XML
-<?xml version="1.0"?>
-<app-bundle>
-  <meta>
-    <prefix>${BREW_PREFIX}</prefix>
-  </meta>
+          <?xml version="1.0"?>
+          <app-bundle>
+            <meta>
+              <prefix>${BREW_PREFIX}</prefix>
+            </meta>
 
-  <id>io.github.BuddySirJava.SSH-Studio</id>
-  <name>SSH Studio</name>
-  <version>1.0.0</version>
-  <icon>data/media/icon_512.png</icon>
+            <id>io.github.BuddySirJava.SSH-Studio</id>
+            <name>SSH Studio</name>
+            <version>1.0.0</version>
+            <icon>data/media/icon_512.png</icon>
 
-  <main-binary>
-    <binary>ssh-studio</binary>
-  </main-binary>
+            <main-binary>
+              <binary>ssh-studio</binary>
+            </main-binary>
 
-  <resources>
-    <file>stage/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource</file>
-    <dir>src</dir>
-  </resources>
+            <resources>
+              <file>stage/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource</file>
+              <dir>src</dir>
+            </resources>
 
-  <dependencies>
-    <dep>gtk4</dep>
-    <dep>libadwaita</dep>
-    <dep>gtksourceview5</dep>
-    <dep>pygobject3</dep>
-    <dep>python3</dep>
-  </dependencies>
-</app-bundle>
-XML
+            <dependencies>
+              <dep>gtk4</dep>
+              <dep>libadwaita</dep>
+              <dep>gtksourceview5</dep>
+              <dep>pygobject3</dep>
+              <dep>python3</dep>
+            </dependencies>
+          </app-bundle>
+          XML
 
-          gtk-mac-bundler macos/ssh-studio.bundle
+                    gtk-mac-bundler macos/ssh-studio.bundle
 
-      - name: Diagnostic: list .app contents
-        run: |
-          set -euxo pipefail
-          ls -R build/ssh-studio.bundle/SSH\ Studio.app/Contents || true
+                - name: Diagnostic: list .app contents
+                  run: |
+                    set -euxo pipefail
+                    ls -R build/ssh-studio.bundle/SSH\ Studio.app/Contents || true
 
-      - name: Create DMG
-        run: |
-          set -euxo pipefail
-          VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)
-          ARCH=$(uname -m)
-          mkdir -p dmgroot
-          cp -R "build/ssh-studio.bundle/SSH Studio.app" dmgroot/
-          ln -s /Applications dmgroot/Applications
-          hdiutil create -volname "SSH Studio" -srcfolder dmgroot -ov -fs HFS+ "ssh-studio-${VER}-${ARCH}.dmg"
+                - name: Create DMG
+                  run: |
+                    set -euxo pipefail
+                    VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)
+                    ARCH=$(uname -m)
+                    mkdir -p dmgroot
+                    cp -R "build/ssh-studio.bundle/SSH Studio.app" dmgroot/
+                    ln -s /Applications dmgroot/Applications
+                    hdiutil create -volname "SSH Studio" -srcfolder dmgroot -ov -fs HFS+ "ssh-studio-${VER}-${ARCH}.dmg"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ssh-studio-dmg-${{ matrix.os }}
-          path: |
-            *.dmg
+                - name: Upload artifact
+                  uses: actions/upload-artifact@v4
+                  with:
+                    name: ssh-studio-dmg-${{ matrix.os }}
+                    path: |
+                      *.dmg
