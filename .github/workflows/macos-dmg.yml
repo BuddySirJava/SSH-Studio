@@ -121,15 +121,15 @@ jobs:
           </app-bundle>
           XML
 
-          - name: Run gtk-mac-bundler
-            run: |
-              set -euxo pipefail
-              gtk-mac-bundler macos/ssh-studio.bundle
+      - name: Run gtk-mac-bundler
+        run: |
+          set -euxo pipefail
+          gtk-mac-bundler macos/ssh-studio.bundle
 
-          - name: Diagnostic: list .app contents
-            run: |
-              set -euxo pipefail
-              ls -R build/ssh-studio.bundle/.SSH\ Studio.app/Contents || true
+      - name: Diagnostic: list .app contents
+        run: |
+          set -euxo pipefail
+          ls -R build/ssh-studio.bundle/.SSH\ Studio.app/Contents || true
 
       - name: Create DMG
         run: |
