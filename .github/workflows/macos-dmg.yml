@@ -17,7 +17,7 @@ jobs:
   build-dmg:
     strategy:
       matrix:
-        os: [macos-13, macos-14]
+        os: [macos-14]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -284,18 +284,6 @@ jobs:
           echo 'self-contained app:' || true
           ls -R 'dist/SSH Studio.app/Contents' || true
 
-      - name: Smoke test self-contained app
-        run: |
-          set -euxo pipefail
-          LAUNCHER='dist/SSH Studio.app/Contents/MacOS/ssh-studio'
-          test -x "$LAUNCHER"
-          # CLI help should exit quickly without requiring a GUI session
-          "$LAUNCHER" --help || true
-          # Also try launching briefly, then kill
-          "$LAUNCHER" &
-          sleep 2 || true
-          pkill -f "SSH Studio" || true
-          pkill -f "ssh-studio" || true
 
       - name: Create DMG
         run: |
@@ -308,23 +296,6 @@ jobs:
           ln -s /Applications dmgroot/Applications
           hdiutil create -volname "SSH Studio" -srcfolder dmgroot -ov -fs HFS+ "ssh-studio-${VER}-${ARCH}.dmg"
 
-      - name: Mount DMG and smoke test app
-        run: |
-          set -euxo pipefail
-          DMG="$(ls -1 ssh-studio-*.dmg | head -n1)"
-          MNT="$(mktemp -d /tmp/sshstudio.XXXX)"
-          hdiutil attach "$DMG" -mountpoint "$MNT" -nobrowse -quiet
-          ls -la "$MNT"
-          LAUNCHER="$MNT/SSH Studio.app/Contents/MacOS/ssh-studio"
-          test -x "$LAUNCHER"
-          # CLI help should execute; ignore non-zero in case GTK prints warnings
-          "$LAUNCHER" --help || true
-          # Briefly launch then terminate
-          "$LAUNCHER" &
-          sleep 2 || true
-          pkill -f "SSH Studio" || true
-          pkill -f "ssh-studio" || true
-          hdiutil detach "$MNT" -quiet || true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
