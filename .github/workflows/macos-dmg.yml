@@ -105,6 +105,7 @@ jobs:
             <meta>
               <prefix>${env:BREW_PREFIX}</prefix>
               <destination overwrite="yes">${project}/../build/ssh-studio.bundle</destination>
+              <gtk>gtk4</gtk>
             </meta>
 
             <id>io.github.BuddySirJava.SSH-Studio</id>
@@ -114,9 +115,7 @@ jobs:
 
             <plist>${env:GITHUB_WORKSPACE}/macos/Info.plist</plist>
 
-            <main-binary dest="${bundle}/Contents/MacOS/${name}">
-              <binary>${project}/../stage/bin/ssh-studio</binary>
-            </main-binary>
+            <main-binary dest="${bundle}/Contents/MacOS/${name}">${project}/../stage/bin/ssh-studio</main-binary>
 
             <data dest="${bundle}/Contents/Resources/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource">${project}/../stage/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource</data>
             <data dest="${bundle}/Contents/Resources/src">${project}/../src</data>
@@ -133,7 +132,7 @@ jobs:
       - name: List .app contents
         run: |
           set -euxo pipefail
-          ls -R build/ssh-studio.bundle/.SSH\ Studio.app/Contents || true
+          ls -R build/ssh-studio.bundle/SSH\ Studio.app/Contents || true
 
       - name: Create DMG
         run: |
@@ -141,7 +140,7 @@ jobs:
           VER=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)
           ARCH=$(uname -m)
           mkdir -p dmgroot
-          cp -R "build/ssh-studio.bundle/.SSH Studio.app" "dmgroot/SSH Studio.app"
+          cp -R "build/ssh-studio.bundle/SSH Studio.app" "dmgroot/SSH Studio.app"
           ln -s /Applications dmgroot/Applications
           hdiutil create -volname "SSH Studio" -srcfolder dmgroot -ov -fs HFS+ "ssh-studio-${VER}-${ARCH}.dmg"
 
