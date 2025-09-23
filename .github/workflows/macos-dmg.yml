@@ -148,6 +148,13 @@ jobs:
           # 3) Vendor Python.framework
           BREW_PREFIX="$(brew --prefix)"
           rsync -a "$BREW_PREFIX/Frameworks/Python.framework" "$FRAMEWORKS/"
+          # Ensure a bin/python3 exists inside the vendored framework (Homebrew's may omit it)
+          if [ ! -x "$FRAMEWORKS/Python.framework/Versions/3.13/bin/python3" ]; then
+            mkdir -p "$FRAMEWORKS/Python.framework/Versions/3.13/bin"
+            if [ -x "$FRAMEWORKS/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python" ]; then
+              ln -sf "../Resources/Python.app/Contents/MacOS/Python" "$FRAMEWORKS/Python.framework/Versions/3.13/bin/python3"
+            fi
+          fi
 
           # 4) Vendor GTK & friends (most-used libs)
           for p in glib gtk4 libadwaita gtksourceview5 gdk-pixbuf pango cairo harfbuzz fribidi graphite2 libpng jpeg libtiff libepoxy libffi gettext; do
@@ -199,7 +206,14 @@ jobs:
           export GTK_DATA_PREFIX="$RES"
 
           # Register GResource then run app
-          "$PYTHONHOME/bin/python3" - <<'PY'
+          PYBIN="$PYTHONHOME/bin/python3"
+          if [ ! -x "$PYBIN" ]; then
+            # Fallback to framework embedded app binary if bin/python3 is absent
+            if [ -x "$PYTHONHOME/Resources/Python.app/Contents/MacOS/Python" ]; then
+              PYBIN="$PYTHONHOME/Resources/Python.app/Contents/MacOS/Python"
+            fi
+          fi
+          "$PYBIN" - <<'PY'
           import os, sys
           from gi.repository import Gio
           res_path = os.path.join(os.path.dirname(__file__), '..', 'Resources', 'ssh-studio-resources.gresource')
