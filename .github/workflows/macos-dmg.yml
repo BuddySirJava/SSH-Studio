@@ -304,6 +304,14 @@ jobs:
           echo 'self-contained app:' || true
           ls -R 'dist/SSH Studio.app/Contents' || true
 
+      - name: Ad-hoc codesign app bundle
+        run: |
+          set -euxo pipefail
+          APP="dist/SSH Studio.app"
+          # Deep ad-hoc sign the app and embedded content to improve launch reliability
+          codesign --force --deep --sign - --timestamp=none "$APP"
+          codesign --verify --deep --verbose=2 "$APP" || (codesign --display --verbose=5 "$APP"; exit 1)
+
 
       - name: Create DMG
         run: |
