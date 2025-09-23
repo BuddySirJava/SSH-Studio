@@ -126,7 +126,7 @@ jobs:
           set -euxo pipefail
           gtk-mac-bundler macos/ssh-studio.bundle
 
-      - name: Diagnostic: list .app contents
+      - name: List .app contents
         run: |
           set -euxo pipefail
           ls -R build/ssh-studio.bundle/.SSH\ Studio.app/Contents || true
