@@ -129,6 +129,88 @@ jobs:
           export BREW_PREFIX
           gtk-mac-bundler macos/ssh-studio.bundle
 
+      - name: Build self-contained .app (vendor Python + GTK)
+        run: |
+          set -euxo pipefail
+          APP="dist/SSH Studio.app"
+          APPROOT="$APP/Contents"
+          MACOS="$APPROOT/MacOS"
+          RES="$APPROOT/Resources"
+          FRAMEWORKS="$APPROOT/Frameworks"
+          mkdir -p "$MACOS" "$RES/python" "$FRAMEWORKS"
+
+          # 1) Copy your Python sources
+          rsync -a src/ "$RES/python/ssh_studio/"
+          # 2) Copy compiled GResource from Meson install
+          APP_ID="io.github.BuddySirJava.SSH-Studio"
+          install -m 0644 "stage/share/$APP_ID/ssh-studio-resources.gresource" "$RES/"
+
+          # 3) Vendor Python.framework
+          BREW_PREFIX="$(brew --prefix)"
+          rsync -a "$BREW_PREFIX/Frameworks/Python.framework" "$FRAMEWORKS/"
+
+          # 4) Vendor GTK & friends (most-used libs)
+          for p in glib gtk4 libadwaita gtksourceview5 gdk-pixbuf pango cairo harfbuzz fribidi graphite2 libpng jpeg libtiff libepoxy libffi gettext; do
+            if [ -d "$BREW_PREFIX/opt/$p/lib" ]; then
+              mkdir -p "$FRAMEWORKS/$p/lib"
+              rsync -a "$BREW_PREFIX/opt/$p/lib/" "$FRAMEWORKS/$p/lib/"
+            fi
+            if [ -d "$BREW_PREFIX/opt/$p/lib/girepository-1.0" ]; then
+              mkdir -p "$RES/girepository-1.0"
+              rsync -a "$BREW_PREFIX/opt/$p/lib/girepository-1.0/" "$RES/girepository-1.0/"
+            fi
+            if [ -d "$BREW_PREFIX/opt/$p/share" ]; then
+              mkdir -p "$RES/share/$p"
+              rsync -a "$BREW_PREFIX/opt/$p/share/" "$RES/share/"
+            fi
+          done
+
+          # 5) Schemas needed by GSettings
+          mkdir -p "$RES/share/glib-2.0/schemas"
+          rsync -a "$BREW_PREFIX/opt/glib/share/glib-2.0/schemas/" "$RES/share/glib-2.0/schemas/"
+          glib-compile-schemas "$RES/share/glib-2.0/schemas"
+
+          # 6) Launcher that sets env so app uses bundled runtimes
+          cat > "$MACOS/ssh-studio" <<'SH'
+          #!/bin/bash
+          SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+          RES="$SCRIPT_DIR/../Resources"
+          FW="$SCRIPT_DIR/../Frameworks"
+
+          export PYTHONHOME="$FW/Python.framework/Versions/3.13"
+          export PYTHONPATH="$RES/python"
+          export DYLD_FALLBACK_LIBRARY_PATH="$FW:$FW/glib/lib:$FW/gtk4/lib:$FW/libadwaita/lib:$FW/pango/lib:$FW/cairo/lib:$FW/gtksourceview5/lib"
+          export GI_TYPELIB_PATH="$RES/girepository-1.0"
+          export XDG_DATA_DIRS="$RES/share"
+          export GSETTINGS_SCHEMA_DIR="$RES/share/glib-2.0/schemas"
+          export GTK_DATA_PREFIX="$RES"
+
+          # Register GResource then run app
+          "$PYTHONHOME/bin/python3" - <<'PY'
+          import os, sys
+          from gi.repository import Gio
+          res_path = os.path.join(os.path.dirname(__file__), '..', 'Resources', 'ssh-studio-resources.gresource')
+          Gio.resources_register(Gio.Resource.load(res_path))
+          sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'Resources', 'python'))
+          from ssh_studio import main as _main
+          sys.exit(_main.main())
+          PY
+          SH
+          chmod 0755 "$MACOS/ssh-studio"
+
+          # 7) Minimal Info.plist (if you’re not generating it already)
+          cat > "$APPROOT/Info.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>CFBundleIdentifier</key><string>io.github.BuddySirJava.SSH-Studio</string>
+            <key>CFBundleName</key><string>SSH Studio</string>
+            <key>CFBundleExecutable</key><string>ssh-studio</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>LSMinimumSystemVersion</key><string>11.0</string>
+          </dict></plist>
+          PLIST
+
       - name: List .app contents
         run: |
           set -euxo pipefail
