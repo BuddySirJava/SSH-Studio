@@ -71,6 +71,7 @@ jobs:
           mkdir -p macos
           BREW_PREFIX="$(brew --prefix)"
           export BREW_PREFIX
+          echo "BREW_PREFIX=${BREW_PREFIX}" >> "$GITHUB_ENV"
           echo "Detected Homebrew prefix: $BREW_PREFIX"
 
           # Write Info.plist required by gtk-mac-bundler
@@ -123,6 +124,8 @@ jobs:
       - name: Run gtk-mac-bundler
         run: |
           set -euxo pipefail
+          BREW_PREFIX="$(brew --prefix)"
+          export BREW_PREFIX
           gtk-mac-bundler macos/ssh-studio.bundle
 
       - name: List .app contents
