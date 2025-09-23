@@ -320,9 +320,15 @@ jobs:
           # Ensure files are writable and clear any quarantine attrs
           chmod -R u+rw "$APP"
           xattr -cr "$APP" || true
-          # Deep ad-hoc sign the app and embedded content to improve launch reliability
-          codesign --force --deep --sign - --timestamp=none "$APP"
-          codesign --verify --deep --verbose=2 "$APP" || (codesign --display --verbose=5 "$APP"; exit 1)
+          # Sign only Mach-O binaries and libraries to avoid codesign errors on non-bundles
+          while IFS= read -r -d '' f; do
+            if file -b "$f" | grep -q "Mach-O"; then
+              codesign --force --sign - --timestamp=none "$f"
+            fi
+          done < <(find "$APP/Contents" -type f -print0)
+          # Finally sign the app wrapper (no --deep)
+          codesign --force --sign - --timestamp=none "$APP"
+          codesign --verify --verbose=2 "$APP" || (codesign --display --verbose=5 "$APP"; exit 1)
 
       - name: Verify permissions and Info.plist
         run: |
@@ -358,9 +364,14 @@ jobs:
           echo "$APPLE_DEVELOPER_CERT_BASE64" | base64 --decode > "$RUNNER_TEMP/dev_cert.p12"
           security import "$RUNNER_TEMP/dev_cert.p12" -k "$KEYCHAIN_PATH" -P "$APPLE_DEVELOPER_CERT_PASSWORD" -A
           security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
-          # Re-sign app with Developer ID (replaces ad-hoc)
-          codesign --force --deep --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$APP"
-          codesign --verify --deep --strict --verbose=2 "$APP"
+          # Re-sign Mach-O components, then the app wrapper (no --deep)
+          while IFS= read -r -d '' f; do
+            if file -b "$f" | grep -q "Mach-O"; then
+              codesign --force --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$f"
+            fi
+          done < <(find "$APP/Contents" -type f -print0)
+          codesign --force --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$APP"
+          codesign --verify --strict --verbose=2 "$APP"
 
 
       - name: Create DMG
