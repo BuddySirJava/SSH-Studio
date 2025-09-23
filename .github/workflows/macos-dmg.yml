@@ -37,15 +37,6 @@ jobs:
           brew --version
           brew list --versions
 
-      - name: Build gtk-mac-bundler from source
-        run: |
-          git clone https://gitlab.gnome.org/GNOME/gtk-mac-bundler.git
-          cd gtk-mac-bundler
-          make
-          sudo make install
-          which gtk-mac-bundler
-          gtk-mac-bundler --version || true
-
       - name: Build blueprint-compiler from git (v0.18.0)
         run: |
           set -euxo pipefail
@@ -66,68 +57,13 @@ jobs:
           meson compile -C build
           meson install -C build
 
-      - name: Bundle app with gtk-mac-bundler
+      - name: Prepare macOS bundle metadata
         run: |
           mkdir -p macos
           BREW_PREFIX="$(brew --prefix)"
           export BREW_PREFIX
           echo "BREW_PREFIX=${BREW_PREFIX}" >> "$GITHUB_ENV"
           echo "Detected Homebrew prefix: $BREW_PREFIX"
-
-          # Write Info.plist required by gtk-mac-bundler
-          cat > macos/Info.plist << 'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>CFBundleIdentifier</key>
-            <string>io.github.BuddySirJava.SSH-Studio</string>
-            <key>CFBundleName</key>
-            <string>SSH Studio</string>
-            <key>CFBundleExecutable</key>
-            <string>ssh-studio</string>
-            <key>CFBundleShortVersionString</key>
-            <string>1.0.0</string>
-            <key>CFBundleVersion</key>
-            <string>1.0.0</string>
-            <key>CFBundlePackageType</key>
-            <string>APPL</string>
-            <key>CFBundleSignature</key>
-            <string>SSHS</string>
-          </dict>
-          </plist>
-          PLIST
-
-          # Bundle description for gtk-mac-bundler
-          cat > macos/ssh-studio.bundle << 'XML'
-          <?xml version="1.0"?>
-          <app-bundle>
-            <meta>
-              <prefix>${env:BREW_PREFIX}</prefix>
-              <destination overwrite="yes">${project}/../build/ssh-studio.bundle</destination>
-              <gtk>gtk4</gtk>
-            </meta>
-
-            <id>io.github.BuddySirJava.SSH-Studio</id>
-            <name>SSH Studio</name>
-            <version>1.0.0</version>
-            <icon>${project}/../data/media/icon_512.png</icon>
-
-            <plist>${env:GITHUB_WORKSPACE}/macos/Info.plist</plist>
-
-            <main-binary dest="${bundle}/Contents/MacOS/${name}">${project}/../stage/bin/ssh-studio</main-binary>
-
-            <data dest="${bundle}/Contents/Resources/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource">${project}/../stage/share/io.github.BuddySirJava.SSH-Studio/ssh-studio-resources.gresource</data>
-            <data dest="${bundle}/Contents/Resources/src">${project}/../src</data>
-          </app-bundle>
-          XML
-
-      - name: Run gtk-mac-bundler
-        run: |
-          set -euxo pipefail
-          BREW_PREFIX="$(brew --prefix)"
-          export BREW_PREFIX
-          gtk-mac-bundler macos/ssh-studio.bundle
 
       - name: Build self-contained .app (vendor Python + GTK)
         run: |
@@ -308,8 +244,6 @@ jobs:
       - name: List .app contents
         run: |
           set -euxo pipefail
-          echo 'gtk-mac-bundler app:' || true
-          ls -R build/ssh-studio.bundle/SSH\ Studio.app/Contents || true
           echo 'self-contained app:' || true
           ls -R 'dist/SSH Studio.app/Contents' || true
 
@@ -321,11 +255,8 @@ jobs:
           chmod -R u+rw "$APP"
           xattr -cr "$APP" || true
           # Sign only Mach-O binaries and libraries to avoid codesign errors on non-bundles
-          while IFS= read -r -d '' f; do
-            if file -b "$f" | grep -q "Mach-O"; then
-              codesign --force --sign - --timestamp=none "$f"
-            fi
-          done < <(find "$APP/Contents" -type f -print0)
+          find "$APP/Contents" -type f \
+            -exec sh -c 'file -b "$1" | grep -q "Mach-O" && codesign --force --sign - --timestamp=none "$1" || true' _ {} \;
           # Finally sign the app wrapper (no --deep)
           codesign --force --sign - --timestamp=none "$APP"
           codesign --verify --verbose=2 "$APP" || (codesign --display --verbose=5 "$APP"; exit 1)
@@ -365,11 +296,8 @@ jobs:
           security import "$RUNNER_TEMP/dev_cert.p12" -k "$KEYCHAIN_PATH" -P "$APPLE_DEVELOPER_CERT_PASSWORD" -A
           security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
           # Re-sign Mach-O components, then the app wrapper (no --deep)
-          while IFS= read -r -d '' f; do
-            if file -b "$f" | grep -q "Mach-O"; then
-              codesign --force --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$f"
-            fi
-          done < <(find "$APP/Contents" -type f -print0)
+          find "$APP/Contents" -type f \
+            -exec sh -c 'file -b "$1" | grep -q "Mach-O" && codesign --force --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$1" || true' _ {} \;
           codesign --force --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$APP"
           codesign --verify --strict --verbose=2 "$APP"
 
