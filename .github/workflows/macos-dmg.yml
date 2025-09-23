@@ -143,7 +143,25 @@ jobs:
           rsync -a src/ "$RES/python/ssh_studio/"
           # 2) Copy compiled GResource from Meson install
           APP_ID="io.github.BuddySirJava.SSH-Studio"
-          install -m 0644 "stage/share/$APP_ID/ssh-studio-resources.gresource" "$RES/"
+          RES_GRES="$RES/ssh-studio-resources.gresource"
+          SRC_GRES=""
+          for CAND in \
+            "stage/share/$APP_ID/ssh-studio-resources.gresource" \
+            "build/data/ssh-studio-resources.gresource" \
+            "_build/data/ssh-studio-resources.gresource"; do
+            if [ -f "$CAND" ]; then
+              SRC_GRES="$CAND"
+              break
+            fi
+          done
+          if [ -n "$SRC_GRES" ]; then
+            install -m 0644 "$SRC_GRES" "$RES_GRES"
+          else
+            echo "ERROR: Could not find ssh-studio-resources.gresource in expected locations" >&2
+            ls -la stage/share "$PWD"/build/data "$PWD"/_build/data || true
+            exit 1
+          fi
+          ls -la "$RES" || true
 
           # 3) Vendor Python.framework
           BREW_PREFIX="$(brew --prefix)"
@@ -227,7 +245,18 @@ jobs:
           "$PYBIN" - <<'PY'
           import os, sys
           from gi.repository import Gio
-          res_path = os.path.join(os.path.dirname(__file__), '..', 'Resources', 'ssh-studio-resources.gresource')
+          base = os.path.dirname(__file__)
+          candidates = [
+              os.path.join(base, '..', 'Resources', 'ssh-studio-resources.gresource'),
+              os.path.join(base, '..', 'Resources', 'share', 'io.github.BuddySirJava.SSH-Studio', 'ssh-studio-resources.gresource'),
+          ]
+          res_path = None
+          for c in candidates:
+              if os.path.exists(c):
+                  res_path = c
+                  break
+          if not res_path:
+              raise SystemExit('ssh-studio-resources.gresource not found in expected locations')
           Gio.resources_register(Gio.Resource.load(res_path))
           sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'Resources', 'python'))
           from ssh_studio import main as _main
