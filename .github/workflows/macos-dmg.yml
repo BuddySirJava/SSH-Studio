@@ -222,6 +222,7 @@ jobs:
           RES="$SCRIPT_DIR/../Resources"
           FW="$SCRIPT_DIR/../Frameworks"
 
+          export RES
           if [ -d "$FW/Python.framework/Versions/3.13" ]; then
             export PYTHONHOME="$FW/Python.framework/Versions/3.13"
           else
@@ -245,20 +246,17 @@ jobs:
           "$PYBIN" - <<'PY'
           import os, sys
           from gi.repository import Gio
-          base = os.path.dirname(__file__)
-          candidates = [
-              os.path.join(base, '..', 'Resources', 'ssh-studio-resources.gresource'),
-              os.path.join(base, '..', 'Resources', 'share', 'io.github.BuddySirJava.SSH-Studio', 'ssh-studio-resources.gresource'),
-          ]
-          res_path = None
-          for c in candidates:
-              if os.path.exists(c):
-                  res_path = c
-                  break
+          res_dir = os.environ.get('RES')
+          candidates = []
+          if res_dir:
+              candidates.append(os.path.join(res_dir, 'ssh-studio-resources.gresource'))
+              candidates.append(os.path.join(res_dir, 'share', 'io.github.BuddySirJava.SSH-Studio', 'ssh-studio-resources.gresource'))
+          res_path = next((c for c in candidates if os.path.exists(c)), None)
           if not res_path:
               raise SystemExit('ssh-studio-resources.gresource not found in expected locations')
           Gio.resources_register(Gio.Resource.load(res_path))
-          sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'Resources', 'python'))
+          if res_dir:
+              sys.path.insert(0, os.path.join(res_dir, 'python'))
           from ssh_studio import main as _main
           sys.exit(_main.main())
           PY
