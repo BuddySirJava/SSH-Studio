@@ -147,12 +147,19 @@ jobs:
 
           # 3) Vendor Python.framework
           BREW_PREFIX="$(brew --prefix)"
-          rsync -a "$BREW_PREFIX/Frameworks/Python.framework" "$FRAMEWORKS/"
+          # Dereference symlinks so the framework is self-contained inside the app bundle
+          rsync -aL "$BREW_PREFIX/Frameworks/Python.framework" "$FRAMEWORKS/"
           # Ensure a bin/python3 exists inside the vendored framework (Homebrew's may omit it)
-          if [ ! -x "$FRAMEWORKS/Python.framework/Versions/3.13/bin/python3" ]; then
-            mkdir -p "$FRAMEWORKS/Python.framework/Versions/3.13/bin"
-            if [ -x "$FRAMEWORKS/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python" ]; then
-              ln -sf "../Resources/Python.app/Contents/MacOS/Python" "$FRAMEWORKS/Python.framework/Versions/3.13/bin/python3"
+          PYFW="$FRAMEWORKS/Python.framework"
+          if [ -d "$PYFW/Versions/3.13" ]; then
+            PYHOME_DIR="$PYFW/Versions/3.13"
+          else
+            PYHOME_DIR="$PYFW/Versions/Current"
+          fi
+          if [ ! -x "$PYHOME_DIR/bin/python3" ]; then
+            mkdir -p "$PYHOME_DIR/bin"
+            if [ -x "$PYHOME_DIR/Resources/Python.app/Contents/MacOS/Python" ]; then
+              ln -sf "../Resources/Python.app/Contents/MacOS/Python" "$PYHOME_DIR/bin/python3"
             fi
           fi
 
@@ -197,7 +204,11 @@ jobs:
           RES="$SCRIPT_DIR/../Resources"
           FW="$SCRIPT_DIR/../Frameworks"
 
-          export PYTHONHOME="$FW/Python.framework/Versions/3.13"
+          if [ -d "$FW/Python.framework/Versions/3.13" ]; then
+            export PYTHONHOME="$FW/Python.framework/Versions/3.13"
+          else
+            export PYTHONHOME="$FW/Python.framework/Versions/Current"
+          fi
           export PYTHONPATH="$RES/python"
           export DYLD_FALLBACK_LIBRARY_PATH="$FW:$FW/glib/lib:$FW/gtk4/lib:$FW/libadwaita/lib:$FW/pango/lib:$FW/cairo/lib:$FW/gtksourceview5/lib"
           export GI_TYPELIB_PATH="$RES/girepository-1.0"
