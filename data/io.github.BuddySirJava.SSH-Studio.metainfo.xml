@@ -71,6 +71,7 @@
     </release>
   </releases>
   <url type="homepage">https://github.com/BuddySirJava/SSH-Studio</url>
+  <url type="vcs-browser">https://github.com/BuddySirJava/SSH-Studio</url>
   <url type="bugtracker">https://github.com/BuddySirJava/SSH-Studio/issues</url>
   <developer id="io.github.buddysirjava">
     <name>Mahyar Darvishi</name>
