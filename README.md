@@ -41,6 +41,9 @@
 
 ## Install
 
+### From AUR
+You can install SSH Studio from AUR [here](https://aur.archlinux.org/packages/ssh-studio).
+
 ### From Flathub
 [![Download on Flathub](https://flathub.org/api/badge?svg&locale=en)](https://flathub.org/en/apps/io.github.BuddySirJava.SSH-Studio)
 
