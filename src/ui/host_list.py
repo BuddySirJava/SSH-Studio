@@ -19,7 +19,6 @@ class HostList(Gtk.Box):
     list_box = Gtk.Template.Child()
     host_stack = Gtk.Template.Child()
     empty_page = Gtk.Template.Child()
-    count_label = Gtk.Template.Child()
     add_bottom_button = Gtk.Template.Child()
     search_button = Gtk.Template.Child()
     undo_button = Gtk.Template.Child()
@@ -132,7 +131,6 @@ class HostList(Gtk.Box):
         self.hosts = hosts
         self.filtered_hosts = hosts.copy()
         self._refresh_view()
-        self._update_count()
         self._update_empty_state()
 
     def filter_hosts(self, query: str):
@@ -157,7 +155,6 @@ class HostList(Gtk.Box):
                     self.filtered_hosts.append(host)
 
         self._refresh_view()
-        self._update_count()
         self._update_empty_state()
 
     def _refresh_view(self):
@@ -189,15 +186,6 @@ class HostList(Gtk.Box):
         if previously_selected_host:
             self.select_host(previously_selected_host)
 
-    def _update_count(self):
-        total = len(self.hosts)
-        filtered = len(self.filtered_hosts)
-
-        if filtered == total:
-            self.count_label.set_text(_(f"{total} hosts"))
-        else:
-            self.count_label.set_text(_(f"{filtered} of {total} hosts"))
-        self._update_empty_state()
 
     def _update_empty_state(self):
         try:
@@ -273,7 +261,6 @@ class HostList(Gtk.Box):
                     if host_to_delete in self.filtered_hosts:
                         self.filtered_hosts.remove(host_to_delete)
                     self._refresh_view()
-                    self._update_count()
 
             dialog.connect("response", on_response)
             try:
@@ -389,7 +376,7 @@ class HostList(Gtk.Box):
             action_row = Adw.ActionRow()
             action_row.set_title(patterns)
             secondary = (
-                f"{user}@{hostname}" if (hostname or user) else (hostname or patterns)
+                f"{user}@{hostname}" if (hostname or user) else ("")
             )
             action_row.set_subtitle(secondary)
 
@@ -408,6 +395,8 @@ class HostList(Gtk.Box):
             except Exception:
                 grip_button.set_icon_name("open-menu-symbolic")
             grip_button.set_tooltip_text(_("Drag to reorder"))
+            grip_button.set_margin_top(8)
+            grip_button.set_margin_bottom(8)
             grip_button.add_css_class("flat")
             try:
                 grip_button.set_visible(False)
@@ -497,6 +486,8 @@ class HostList(Gtk.Box):
             duplicate_button.set_icon_name("edit-copy-symbolic")
             duplicate_button.set_tooltip_text(_("Duplicate Host"))
             duplicate_button.add_css_class("flat")
+            duplicate_button.set_margin_top(8)
+            duplicate_button.set_margin_bottom(8)
             duplicate_button.set_visible(False)
             duplicate_button.connect("clicked", self._on_duplicate_host_clicked, host)
 
@@ -505,6 +496,8 @@ class HostList(Gtk.Box):
             delete_button.set_tooltip_text(_("Delete Host"))
             delete_button.add_css_class("flat")
             delete_button.add_css_class("destructive-action")
+            delete_button.set_margin_top(8)
+            delete_button.set_margin_bottom(8)
             delete_button.set_visible(False)
             delete_button.connect("clicked", self._on_delete_host_clicked, host)
 
@@ -566,7 +559,6 @@ class HostList(Gtk.Box):
                 self.select_host(source_host)
             except Exception:
                 pass
-            self._update_count()
             prev = self._order_before_drag or []
             self._order_before_drag = None
             self.emit("hosts-reordered", prev)

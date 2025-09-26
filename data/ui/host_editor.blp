@@ -128,8 +128,16 @@ template $HostEditor: Gtk.Box {
             title: _("Username");
           }
 
-          Adw.EntryRow port_entry {
+          Adw.SpinRow port_entry {
             title: _("Port");
+            numeric: true;
+            adjustment: Gtk.Adjustment {
+              value: 22;
+              lower: 1;
+              upper: 65535;
+              step-increment: 1;
+              page-increment: 10;
+            };
           }
 
           Label port_error_label {
@@ -156,6 +164,9 @@ template $HostEditor: Gtk.Box {
               margin-bottom: 8;
               icon-name: "document-open-symbolic";
               tooltip-text: _("Choose Identity File");
+              styles [
+                "flat",
+              ]
             }
 
             [suffix]
@@ -164,6 +175,9 @@ template $HostEditor: Gtk.Box {
               margin-bottom: 8;
               icon-name: "dialog-password-symbolic";
               tooltip-text: _("Pick from existing SSH keys");
+              styles [
+                "flat",
+              ]
             }
           }
 
@@ -181,16 +195,28 @@ template $HostEditor: Gtk.Box {
         Adw.PreferencesGroup {
           title: _("Actions");
 
-          Adw.ActionRow copy_row {
-            title: _("Copy SSH command");
-            activatable: true;
-            subtitle: _("Copies the resolved SSH command to the clipboard");
-          }
+          Box {
+            orientation: horizontal;
+            spacing: 12;
+            margin-top: 12;
+            margin-bottom: 12;
 
-          Adw.ActionRow test_row {
-            title: _("Test connection");
-            activatable: true;
-            subtitle: _("Runs a quick non-interactive SSH check");
+            Button copy_button {
+              label: _("Copy SSH command");
+              hexpand: true;
+              styles [
+                "pill",
+                "suggested-action",
+              ]
+            }
+
+            Button test_button {
+              label: _("Test connection");
+              hexpand: true;
+              styles [
+                "pill",
+              ]
+            }
           }
         }
       };
@@ -247,16 +273,28 @@ template $HostEditor: Gtk.Box {
             }
           }
 
-          Adw.EntryRow serveralive_interval_entry {
+          Adw.SpinRow serveralive_interval_entry {
             title: _("ServerAliveInterval (s)");
-            show-apply-button: false;
-            input-purpose: number;
+            numeric: true;
+            adjustment: Gtk.Adjustment {
+              value: 0;
+              lower: 0;
+              upper: 300;
+              step-increment: 1;
+              page-increment: 10;
+            };
           }
 
-          Adw.EntryRow serveralive_count_entry {
+          Adw.SpinRow serveralive_count_entry {
             title: _("ServerAliveCountMax");
-            show-apply-button: false;
-            input-purpose: number;
+            numeric: true;
+            adjustment: Gtk.Adjustment {
+              value: 3;
+              lower: 1;
+              upper: 100;
+              step-increment: 1;
+              page-increment: 5;
+            };
           }
 
           Adw.ActionRow {

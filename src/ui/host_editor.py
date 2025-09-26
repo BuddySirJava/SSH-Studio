@@ -61,8 +61,8 @@ class HostEditor(Gtk.Box):
     control_persist_entry = Gtk.Template.Child()
     control_path_entry = Gtk.Template.Child()
     raw_text_view = Gtk.Template.Child()
-    copy_row = Gtk.Template.Child()
-    test_row = Gtk.Template.Child()
+    copy_button = Gtk.Template.Child()
+    test_button = Gtk.Template.Child()
     unsaved_banner = Gtk.Template.Child()
 
     __gsignals__ = {
@@ -251,7 +251,7 @@ class HostEditor(Gtk.Box):
         connect_entry_row_text(self.patterns_entry, "__patterns__")
         connect_entry_row_text(self.hostname_entry, "HostName")
         connect_entry_row_text(self.user_entry, "User")
-        connect_entry_row_text(self.port_entry, "Port")
+        connect_touch(self.port_entry, "notify::value", "Port")
         connect_entry_row_text(self.identity_entry, "IdentityFile")
         connect_touch(self.forward_agent_switch, "state-set", "ForwardAgent")
 
@@ -261,8 +261,8 @@ class HostEditor(Gtk.Box):
         connect_entry_row_text(self.remote_forward_entry, "RemoteForward")
 
         connect_touch(self.compression_switch, "state-set", "Compression")
-        connect_entry_row_text(self.serveralive_interval_entry, "ServerAliveInterval")
-        connect_entry_row_text(self.serveralive_count_entry, "ServerAliveCountMax")
+        connect_touch(self.serveralive_interval_entry, "notify::value", "ServerAliveInterval")
+        connect_touch(self.serveralive_count_entry, "notify::value", "ServerAliveCountMax")
         connect_touch(self.tcp_keepalive_switch, "state-set", "TCPKeepAlive")
         if hasattr(self, "strict_host_key_row") and self.strict_host_key_row:
             self.strict_host_key_row.connect(
@@ -396,12 +396,10 @@ class HostEditor(Gtk.Box):
             self.identity_button.connect("clicked", self._on_identity_file_clicked)
         if hasattr(self, "identity_pick_button") and self.identity_pick_button:
             self.identity_pick_button.connect("clicked", self._on_identity_pick_clicked)
-        if hasattr(self, "copy_row") and self.copy_row:
-            self.copy_row.connect(
-                "activated", lambda r: self._on_copy_ssh_command(None)
-            )
-        if hasattr(self, "test_row") and self.test_row:
-            self.test_row.connect("activated", lambda r: self._on_test_connection(None))
+        if hasattr(self, "copy_button") and self.copy_button:
+            self.copy_button.connect("clicked", self._on_copy_ssh_command)
+        if hasattr(self, "test_button") and self.test_button:
+            self.test_button.connect("clicked", self._on_test_connection)
         try:
             if getattr(self, "unsaved_banner", None) is not None:
                 self.unsaved_banner.connect(
@@ -482,9 +480,14 @@ class HostEditor(Gtk.Box):
         _safe_set_entry_text(
             getattr(self, "user_entry", None), host.get_option("User") or ""
         )
-        _safe_set_entry_text(
-            getattr(self, "port_entry", None), host.get_option("Port") or ""
-        )
+        port_value = host.get_option("Port") or "22"
+        try:
+            port_int = int(port_value) if port_value.isdigit() else 22
+            if hasattr(self, "port_entry") and self.port_entry:
+                self.port_entry.set_value(port_int)
+        except (ValueError, AttributeError):
+            if hasattr(self, "port_entry") and self.port_entry:
+                self.port_entry.set_value(22)
         _safe_set_entry_text(
             getattr(self, "identity_entry", None), host.get_option("IdentityFile") or ""
         )
@@ -519,13 +522,23 @@ class HostEditor(Gtk.Box):
         except Exception:
             pass
 
-        self.serveralive_interval_entry.set_text(
-            host.get_option("ServerAliveInterval") or "0"
-        )
+        interval_value = host.get_option("ServerAliveInterval") or "0"
+        try:
+            interval_int = int(interval_value) if interval_value.isdigit() else 0
+            if hasattr(self, "serveralive_interval_entry") and self.serveralive_interval_entry:
+                self.serveralive_interval_entry.set_value(interval_int)
+        except (ValueError, AttributeError):
+            if hasattr(self, "serveralive_interval_entry") and self.serveralive_interval_entry:
+                self.serveralive_interval_entry.set_value(0)
 
-        self.serveralive_count_entry.set_text(
-            host.get_option("ServerAliveCountMax") or "3"
-        )
+        count_value = host.get_option("ServerAliveCountMax") or "3"
+        try:
+            count_int = int(count_value) if count_value.isdigit() else 3
+            if hasattr(self, "serveralive_count_entry") and self.serveralive_count_entry:
+                self.serveralive_count_entry.set_value(count_int)
+        except (ValueError, AttributeError):
+            if hasattr(self, "serveralive_count_entry") and self.serveralive_count_entry:
+                self.serveralive_count_entry.set_value(3)
 
         tcp_keepalive = (host.get_option("TCPKeepAlive") or "yes").lower() == "yes"
         self.tcp_keepalive_switch.set_active(tcp_keepalive)
@@ -622,7 +635,7 @@ class HostEditor(Gtk.Box):
         self.patterns_entry.set_text("")
         self.hostname_entry.set_text("")
         self.user_entry.set_text("")
-        self.port_entry.set_text("")
+        self.port_entry.set_value(22)
         self.identity_entry.set_text("")
         self.forward_agent_switch.set_active(False)
         self.proxy_jump_entry.set_text("")
@@ -632,9 +645,9 @@ class HostEditor(Gtk.Box):
         if hasattr(self, "compression_switch"):
             self.compression_switch.set_active(False)
         if hasattr(self, "serveralive_interval_entry"):
-            self.serveralive_interval_entry.set_text("0")
+            self.serveralive_interval_entry.set_value(0)
         if hasattr(self, "serveralive_count_entry"):
-            self.serveralive_count_entry.set_text("3")
+            self.serveralive_count_entry.set_value(3)
         if hasattr(self, "tcp_keepalive_switch"):
             self.tcp_keepalive_switch.set_active(True)
         if hasattr(self, "strict_host_key_row"):
@@ -900,7 +913,8 @@ class HostEditor(Gtk.Box):
 
         update_if_touched("HostName", self.hostname_entry.get_text())
         update_if_touched("User", self.user_entry.get_text())
-        update_if_touched("Port", self.port_entry.get_text())
+        port_value = str(int(self.port_entry.get_value())) if self.port_entry.get_value() != 22 else ""
+        update_if_touched("Port", port_value, default_absent_values=["22"])
         update_if_touched("IdentityFile", self.identity_entry.get_text())
         if "ForwardAgent" in self._touched_options:
             fa = "yes" if self.forward_agent_switch.get_active() else "no"
@@ -919,23 +933,11 @@ class HostEditor(Gtk.Box):
             )
             update_if_touched("Compression", comp, default_absent_values=["no"])
         if "ServerAliveInterval" in self._touched_options:
-            interval = (
-                self.serveralive_interval_entry.get_text().strip()
-                if self.serveralive_interval_entry
-                else ""
-            )
-            update_if_touched(
-                "ServerAliveInterval", interval, default_absent_values=["0"]
-            )
+            interval_value = str(int(self.serveralive_interval_entry.get_value())) if self.serveralive_interval_entry.get_value() != 0 else ""
+            update_if_touched("ServerAliveInterval", interval_value, default_absent_values=["0"])
         if "ServerAliveCountMax" in self._touched_options:
-            countmax = (
-                self.serveralive_count_entry.get_text().strip()
-                if self.serveralive_count_entry
-                else ""
-            )
-            update_if_touched(
-                "ServerAliveCountMax", countmax, default_absent_values=["3"]
-            )
+            count_value = str(int(self.serveralive_count_entry.get_value())) if self.serveralive_count_entry.get_value() != 3 else ""
+            update_if_touched("ServerAliveCountMax", count_value, default_absent_values=["3"])
         if "TCPKeepAlive" in self._touched_options:
             tka = (
                 "yes"
@@ -1426,14 +1428,9 @@ class HostEditor(Gtk.Box):
         if not patterns_text:
             errors["patterns"] = _("Host name (patterns) is required.")
 
-        port_text = self.port_entry.get_text().strip()
-        if port_text:
-            try:
-                port = int(port_text)
-                if not (1 <= port <= 65535):
-                    errors["port"] = _("Port must be between 1 and 65535.")
-            except ValueError:
-                errors["port"] = _("Port must be numeric.")
+        port_value = self.port_entry.get_value()
+        if port_value and not (1 <= port_value <= 65535):
+            errors["port"] = _("Port must be between 1 and 65535.")
 
         if "patterns" in errors:
             self.patterns_error_label.set_text(errors["patterns"])
@@ -1444,47 +1441,17 @@ class HostEditor(Gtk.Box):
         if "port" in errors:
             self.port_error_label.set_text(errors["port"])
             self.port_error_label.set_visible(True)
-            self.port_entry.add_css_class("entry-error")
         else:
-            self.port_entry.remove_css_class("entry-error")
+            self.port_error_label.set_visible(False)
 
-        try:
-            if (
-                hasattr(self, "serveralive_interval_entry")
-                and self.serveralive_interval_entry
-            ):
-                interval_text = self.serveralive_interval_entry.get_text().strip()
-                if interval_text:
-                    interval_val = int(interval_text)
-                    if interval_val < 0:
-                        errors["sai"] = _("ServerAliveInterval must be >= 0.")
-        except ValueError:
-            errors["sai"] = _("ServerAliveInterval must be numeric.")
+        interval_value = self.serveralive_interval_entry.get_value()
+        if interval_value and interval_value < 0:
+            errors["sai"] = _("ServerAliveInterval must be >= 0.")
 
-        try:
-            if (
-                hasattr(self, "serveralive_count_entry")
-                and self.serveralive_count_entry
-            ):
-                count_text = self.serveralive_count_entry.get_text().strip()
-                if count_text:
-                    count_val = int(count_text)
-                    if count_val < 1:
-                        errors["sacm"] = _("ServerAliveCountMax must be >= 1.")
-        except ValueError:
-            errors["sacm"] = _("ServerAliveCountMax must be numeric.")
+        count_value = self.serveralive_count_entry.get_value()
+        if count_value and count_value < 1:
+            errors["sacm"] = _("ServerAliveCountMax must be >= 1.")
 
-        if "sai" in errors and self.serveralive_interval_entry:
-            self.serveralive_interval_entry.add_css_class("entry-error")
-        else:
-            if self.serveralive_interval_entry:
-                self.serveralive_interval_entry.remove_css_class("entry-error")
-
-        if "sacm" in errors and self.serveralive_count_entry:
-            self.serveralive_count_entry.add_css_class("entry-error")
-        else:
-            if self.serveralive_count_entry:
-                self.serveralive_count_entry.remove_css_class("entry-error")
 
         try:
             if self.connect_timeout_entry:
@@ -1510,16 +1477,7 @@ class HostEditor(Gtk.Box):
             self.port_error_label.set_visible(False)
         if hasattr(self, "patterns_entry"):
             self.patterns_entry.remove_css_class("entry-error")
-        if hasattr(self, "port_entry"):
-            self.port_entry.remove_css_class("entry-error")
 
-        if (
-            hasattr(self, "serveralive_interval_entry")
-            and self.serveralive_interval_entry
-        ):
-            self.serveralive_interval_entry.remove_css_class("entry-error")
-        if hasattr(self, "serveralive_count_entry") and self.serveralive_count_entry:
-            self.serveralive_count_entry.remove_css_class("entry-error")
         if hasattr(self, "connect_timeout_entry") and self.connect_timeout_entry:
             self.connect_timeout_entry.remove_css_class("entry-error")
 
@@ -1766,7 +1724,7 @@ class HostEditor(Gtk.Box):
         ]
 
         user_val = self.user_entry.get_text().strip()
-        port_val = self.port_entry.get_text().strip()
+        port_val = str(int(self.port_entry.get_value())) if self.port_entry.get_value() != 22 else ""
         ident_val = self.identity_entry.get_text().strip()
         proxy_jump_val = self.proxy_jump_entry.get_text().strip()
 
@@ -1816,7 +1774,12 @@ class HostEditor(Gtk.Box):
         self.patterns_entry.set_text(" ".join(self.current_host.patterns))
         self.hostname_entry.set_text(self.current_host.get_option("HostName") or "")
         self.user_entry.set_text(self.current_host.get_option("User") or "")
-        self.port_entry.set_text(self.current_host.get_option("Port") or "")
+        port_value = self.current_host.get_option("Port") or "22"
+        try:
+            port_int = int(port_value) if port_value.isdigit() else 22
+            self.port_entry.set_value(port_int)
+        except (ValueError, AttributeError):
+            self.port_entry.set_value(22)
         self.identity_entry.set_text(self.current_host.get_option("IdentityFile") or "")
         self.forward_agent_switch.set_active(
             (self.current_host.get_option("ForwardAgent") or "").lower() == "yes"
@@ -1834,12 +1797,18 @@ class HostEditor(Gtk.Box):
         self.compression_switch.set_active(
             (self.current_host.get_option("Compression") or "no").lower() == "yes"
         )
-        self.serveralive_interval_entry.set_text(
-            self.current_host.get_option("ServerAliveInterval") or "0"
-        )
-        self.serveralive_count_entry.set_text(
-            self.current_host.get_option("ServerAliveCountMax") or "3"
-        )
+        interval_value = self.current_host.get_option("ServerAliveInterval") or "0"
+        try:
+            interval_int = int(interval_value) if interval_value.isdigit() else 0
+            self.serveralive_interval_entry.set_value(interval_int)
+        except (ValueError, AttributeError):
+            self.serveralive_interval_entry.set_value(0)
+        count_value = self.current_host.get_option("ServerAliveCountMax") or "3"
+        try:
+            count_int = int(count_value) if count_value.isdigit() else 3
+            self.serveralive_count_entry.set_value(count_int)
+        except (ValueError, AttributeError):
+            self.serveralive_count_entry.set_value(3)
         self.tcp_keepalive_switch.set_active(
             (self.current_host.get_option("TCPKeepAlive") or "yes").lower() == "yes"
         )

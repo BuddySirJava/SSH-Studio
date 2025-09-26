@@ -189,12 +189,6 @@ class SSHConfigStudioApp(Adw.Application):
                             self.main_window.host_list.load_hosts(
                                 self.parser.config.hosts
                             )
-                            try:
-                                self.main_window._update_status(
-                                    _("Configuration loaded successfully")
-                                )
-                            except Exception:
-                                pass
                     except Exception:
                         pass
                     return False
