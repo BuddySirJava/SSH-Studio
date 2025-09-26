@@ -41,10 +41,24 @@ jobs:
           sudo meson install -C build
           which blueprint-compiler && env PATH="/usr/bin:$PATH" blueprint-compiler --version
 
+      - name: Warm AppRun runtime cache
+        run: |
+          set -euo pipefail
+          mkdir -p appimage-builder-cache/runtime
+          curl -fL --retry 5 --retry-all-errors \
+            https://github.com/AppImageCrafters/AppRun/releases/download/v1.2.3/AppRun-Release-x86_64 \
+            -o appimage-builder-cache/runtime/AppRun-Release-x86_64
+          curl -fL --retry 5 --retry-all-errors \
+            https://github.com/AppImageCrafters/AppRun/releases/download/v1.2.3/libapprun_hooks-Release-x86_64.so \
+            -o appimage-builder-cache/runtime/libapprun_hooks-Release-x86_64.so
+          file appimage-builder-cache/runtime/AppRun-Release-x86_64 | tee /dev/stderr
+          file appimage-builder-cache/runtime/libapprun_hooks-Release-x86_64.so | tee /dev/stderr
+
       - name: Build AppImage
         run: |
           export PATH="/usr/bin:$PATH"
           export PYTHON="/usr/bin/python3"
+          export ARCH=x86_64
           appimage-builder --recipe AppImageBuilder.yml --skip-test
 
       - name: Upload artifact
