@@ -35,10 +35,11 @@ jobs:
         run: |
           git clone --depth=1 --branch v0.18.0 https://gitlab.gnome.org/GNOME/blueprint-compiler.git
           cd blueprint-compiler
+          export PATH="/usr/bin:$PATH"
           env PYTHON=/usr/bin/python3 meson setup build
           ninja -C build
           sudo meson install -C build
-          which blueprint-compiler && blueprint-compiler --version
+          which blueprint-compiler && env PATH="/usr/bin:$PATH" blueprint-compiler --version
 
       - name: Build AppImage
         run: |
