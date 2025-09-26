@@ -137,8 +137,10 @@ flatpak run com.buddysirjava.ssh-studio
      build-dir \
      com.buddysirjava.ssh-studio.json
 ```
+
 ```
-flatpak run com.buddysirjava.ssh-studio```
+flatpak run com.buddysirjava.ssh-studio
+```
 
 ## Using flatpak app id to try and fix the issue
 
