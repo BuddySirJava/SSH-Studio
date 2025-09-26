@@ -57,12 +57,36 @@ flatpak-builder --user --force-clean --install-deps-from=flathub build-dir io.gi
 flatpak run io.github.BuddySirJava.SSH-Studio
 ```
 
+
+## Troubleshooting Flatpak Sandbox
+
+If "Test SSH Connection" fails, grant the sandbox the Flatpak talk permission:
+
+```bash
+flatpak override --user --talk-name=org.freedesktop.Flatpak io.github.BuddySirJava.SSH-Studio
+flatpak run io.github.BuddySirJava.SSH-Studio
+```
+
+### Finding Your App ID
+
+If you're unsure of your app ID, list installed Flatpak apps:
+
+```bash
+flatpak list
+```
+
+Then use the correct app ID with the override command. For example, if you have VS Code installed:
+
+```bash
+flatpak override --user --talk-name=org.freedesktop.Flatpak com.visualstudio.code
+```
+
 ---
 
 ## Project structure
 
 - `src/ssh_config_parser.py` → Parse/validate/generate SSH config safely.
-- `src/ui/` → Main App Components (`MainWindow`, `HostList`, `HostEditor`, `SearchBar`, `PreferencesDialog`, `TestConnectionDialog`, `SSH Key Manager`).
+- `src/ui/` → Main App Components (`MainWindow`, `HostList`, `HostEditor`, `SearchBar`, `PreferencesDialog`, `TestConnectionDialog`, `SSH Key Manager`, `Welcome View`).
 - `data/ui/*.ui` → GTK Builder UI blueprints.
 - `data/ssh-studio.gresource.xml` → GResource manifest.
 - `data/media/` → App icon and screenshots.
@@ -113,42 +137,3 @@ See [LICENSE](LICENSE) for details.
 
 - [Open an issue](https://github.com/BuddySirJava/SSH-Studio/issues) on GitHub.  
 - Check [Flathub page](https://flathub.org/en/apps/io.github.BuddySirJava.SSH-Studio).  
-
-## Troubleshooting Flatpak Sandbox
-
-If “Test SSH Connection” still fails, grant the sandbox the Flatpak talk permission:
-
-```bash
-flatpak override --user --talk-name=org.freedesktop.Flatpak com.buddysirjava.ssh-studio
-flatpak run com.buddysirjava.ssh-studio
-```
-
-3. Save the file.
----
-
-## 5. Verify the Fix
-
-1. **Rebuild & reinstall** with your updated manifest:  
-   ```bash
-   flatpak-builder \
-     --user \
-     --install \
-     --force-clean \
-     build-dir \
-     com.buddysirjava.ssh-studio.json
-```
-
-```
-flatpak run com.buddysirjava.ssh-studio
-```
-
-## Using flatpak app id to try and fix the issue
-
-```bash
-flatpak list
-```
-as an example you use vscode to run these
-```bash
-flatpak override --user --talk-name=org.freedesktop.Flatpak com.visualstudio.code 
-```
-now run the code.
