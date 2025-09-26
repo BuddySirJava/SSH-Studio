@@ -49,16 +49,16 @@ AppDir:
       - usr/include
       - usr/lib/pkgconfig
 
-  script:
-    - apt-get update
-    - DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git meson ninja-build python3-pip python3-setuptools python3-wheel ca-certificates
-    - rm -rf /var/lib/apt/lists/*
-    - git clone --depth=1 --branch v0.18.0 https://gitlab.gnome.org/GNOME/blueprint-compiler.git
-    - cd blueprint-compiler && meson setup build && ninja -C build && meson install -C build --destdir ../AppDir && cd ..
-    - export PATH="$PWD/AppDir/usr/bin:$PATH"
-    - meson setup --prefix=/usr builddir
-    - meson install -C builddir --destdir AppDir
-    - glib-compile-schemas AppDir/usr/share/glib-2.0/schemas || true
+script:
+  - apt-get update
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git meson ninja-build python3-pip python3-setuptools python3-wheel ca-certificates
+  - rm -rf /var/lib/apt/lists/*
+  - git clone --depth=1 --branch v0.18.0 https://gitlab.gnome.org/GNOME/blueprint-compiler.git
+  - cd blueprint-compiler && meson setup build && ninja -C build && meson install -C build --destdir ../AppDir && cd ..
+  - export PATH="$PWD/AppDir/usr/bin:$PATH"
+  - meson setup --prefix=/usr builddir
+  - meson install -C builddir --destdir AppDir
+  - glib-compile-schemas AppDir/usr/share/glib-2.0/schemas || true
 
 AppImage:
   arch: x86_64
