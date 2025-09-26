@@ -27,23 +27,31 @@
   <content_rating type="oars-1.1"/>
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.3.0/assets/screenshots/ss1.png</image>
+      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.3.1/assets/screenshots/ss1.png</image>
       <caption>Host List and some shortcuts</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.3.0/assets/screenshots/ss2.png</image>
+      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.3.1/assets/screenshots/ss2.png</image>
       <caption>Host Editor</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.3.0/assets/screenshots/ss3.png</image>
+      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.3.1/assets/screenshots/ss3.png</image>
       <caption>Synchronizing Raw/Diff Mode and syntax highlighting</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.3.0/assets/screenshots/ss4.png</image>
+      <image>https://raw.githubusercontent.com/BuddySirJava/SSH-Studio/refs/tags/1.3.1/assets/screenshots/ss4.png</image>
       <caption>SSH Key Management</caption>
     </screenshot>
   </screenshots>
   <releases>
+    <release version="1.3.1" date="2025-09-26">
+      <description>
+        <p>Fixed many major UI bugs.</p>
+        <p>Added Undo button to the header.</p>
+        <p>Added Fresh new drag and drop reordering system for hosts.</p>
+        <p>Added Keyboard Shortcuts to the host list.</p>
+      </description>
+    </release>
     <release version="1.3.0" date="2025-09-22">
       <description>
         <p>Support for GNOME 49.</p>

@@ -37,6 +37,7 @@ class MainWindow(Adw.ApplicationWindow):
         self._raw_wrap_lines = False
         self._original_width = -1
         self._original_height = -1
+        self._last_reorder_previous = None
 
         try:
             if hasattr(self, "host_editor") and self.host_editor is not None:
@@ -74,6 +75,11 @@ class MainWindow(Adw.ApplicationWindow):
             self._original_width = -1
             self._original_height = -1
         self.host_editor.set_visible(visible)
+        if not visible:
+            try:
+                self._show_welcome_view()
+            except Exception:
+                pass
 
     def _load_preferences(self):
         """Load preferences from the saved file and apply them to the window."""
@@ -161,6 +167,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.host_list.connect("host-selected", self._on_host_selected)
         self.host_list.connect("host-added", self._on_host_added)
         self.host_list.connect("host-deleted", self._on_host_deleted)
+        self.host_list.connect("hosts-reordered", self._on_hosts_reordered)
+        self.host_list.connect("undo-clicked", self._on_undo_clicked)
 
         self.host_editor.connect("host-changed", self._on_host_changed)
         self.host_editor.connect("host-save", self._on_host_save)
@@ -168,7 +176,6 @@ class MainWindow(Adw.ApplicationWindow):
             "editor-validity-changed", self._on_editor_validity_changed
         )
         self.host_editor.connect("show-toast", self._on_show_toast)
-
 
         self.host_list.search_entry.connect("search-changed", self._on_search_changed)
 
@@ -361,6 +368,43 @@ class MainWindow(Adw.ApplicationWindow):
         except Exception as e:
             self._show_error(f"Failed to trigger config reload: {e}")
 
+    def _reselect_current_host(self):
+        """Reselect and reload the previously selected host after model changes."""
+        try:
+            target_host = None
+            try:
+                target_host = self.host_list.get_selected_host()
+            except Exception:
+                target_host = None
+            if not target_host and hasattr(self.host_editor, "current_host"):
+                target_host = self.host_editor.current_host
+
+            target_alias = None
+            try:
+                if target_host and getattr(target_host, "patterns", None):
+                    if len(target_host.patterns) > 0:
+                        target_alias = target_host.patterns[0]
+            except Exception:
+                target_alias = None
+
+            selected = None
+            if self.parser and self.parser.config and self.parser.config.hosts:
+                if target_alias:
+                    for h in self.parser.config.hosts:
+                        try:
+                            if target_alias in h.patterns:
+                                selected = h
+                                break
+                        except Exception:
+                            continue
+                if selected is None:
+                    selected = self.parser.config.hosts[0]
+                self.host_list.select_host(selected)
+                self.host_editor.load_host(selected)
+                self._set_host_editor_visible(True)
+        except Exception:
+            pass
+
     def _toggle_search(self, force=None):
         try:
             make_visible = True if force is None else bool(force)
@@ -386,14 +430,18 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _on_close_request(self, window):
         """Handle window close request - check for unsaved changes."""
-        if hasattr(self.host_editor, 'is_host_dirty') and self.host_editor.is_host_dirty():
+        if (
+            hasattr(self.host_editor, "is_host_dirty")
+            and self.host_editor.is_host_dirty()
+        ):
             return self._show_unsaved_changes_dialog()
         return False
 
     def _show_unsaved_changes_dialog(self):
         """Show alert dialog asking user what to do with unsaved changes."""
-        # Load from blueprint resource
-        builder = Gtk.Builder.new_from_resource("/io/github/BuddySirJava/SSH-Studio/ui/unsaved_changes_dialog.ui")
+        builder = Gtk.Builder.new_from_resource(
+            "/io/github/BuddySirJava/SSH-Studio/ui/unsaved_changes_dialog.ui"
+        )
         dialog = builder.get_object("unsaved_changes_dialog")
         dialog.set_close_response("cancel")
         dialog.add_response("discard", _("Discard Changes"))
@@ -406,7 +454,10 @@ class MainWindow(Adw.ApplicationWindow):
         def on_response(dialog, response):
             if response == "save":
                 try:
-                    if hasattr(self.host_editor, 'unsaved_banner') and self.host_editor.unsaved_banner:
+                    if (
+                        hasattr(self.host_editor, "unsaved_banner")
+                        and self.host_editor.unsaved_banner
+                    ):
                         self.host_editor._on_save_clicked(None)
                     dialog.close()
                     GLib.timeout_add(200, self._delayed_close)
@@ -451,6 +502,10 @@ class MainWindow(Adw.ApplicationWindow):
 
             self.host_list.load_hosts(self.parser.config.hosts)
             self.is_dirty = False
+            try:
+                self.host_list.set_undo_enabled(False)
+            except Exception:
+                pass
             self._update_status(_("Configuration saved successfully"))
         except Exception as e:
             self._show_error(f"Failed to save configuration: {e}")
@@ -464,6 +519,10 @@ class MainWindow(Adw.ApplicationWindow):
             self.parser.parse()
             self.host_list.load_hosts(self.parser.config.hosts)
             self.is_dirty = False
+            try:
+                self.host_list.set_undo_enabled(False)
+            except Exception:
+                pass
             if show_status:
                 self._update_status(_("Configuration saved"))
         except Exception as e:
@@ -473,6 +532,10 @@ class MainWindow(Adw.ApplicationWindow):
         """Handle host selection from the list."""
         self.host_editor.load_host(host)
         self._set_host_editor_visible(True)
+        try:
+            self.host_editor._update_button_sensitivity()
+        except Exception:
+            pass
         if hasattr(self, "content_nav") and self.content_nav:
             try:
                 pages = self.content_nav.get_pages()
@@ -488,14 +551,35 @@ class MainWindow(Adw.ApplicationWindow):
         """Show the welcome view when no host is selected."""
         if hasattr(self, "content_nav") and self.content_nav:
             try:
-                pages = self.content_nav.get_pages()
-                for page in pages:
-                    if hasattr(page, "get_tag") and page.get_tag() == "welcome":
-                        self.content_nav.pop_to_page(page)
-                        return
+                page = None
+                if hasattr(self.content_nav, "find_page"):
+                    try:
+                        page = self.content_nav.find_page("welcome")
+                    except Exception:
+                        page = None
+                if page is None:
+                    try:
+                        pages = self.content_nav.get_pages()
+                    except Exception:
+                        pages = []
+                    for p in pages:
+                        try:
+                            tag = p.get_tag() if hasattr(p, "get_tag") else getattr(p, "tag", None)
+                        except Exception:
+                            tag = None
+                        if tag == "welcome":
+                            page = p
+                            break
+
+                if page is not None:
+                    self.content_nav.pop_to_page(page)
+                else:
+                    self.content_nav.push_by_tag("welcome")
             except Exception:
-                pass
-            self.content_nav.push_by_tag("welcome")
+                try:
+                    self.content_nav.push_by_tag("welcome")
+                except Exception:
+                    pass
 
     def _on_host_added(self, host_list, host):
         if self.parser:
@@ -531,6 +615,10 @@ class MainWindow(Adw.ApplicationWindow):
             self._show_undo_toast(_("Host added"), undo_add)
             self._set_host_editor_visible(True)
             self.host_editor.load_host(host)
+            try:
+                self.host_editor._update_button_sensitivity()
+            except Exception:
+                pass
 
     def _on_host_deleted(self, host_list, host):
         """Handle host deletion."""
@@ -565,16 +653,69 @@ class MainWindow(Adw.ApplicationWindow):
                 self.host_editor._clear_all_fields()
                 self._set_host_editor_visible(False)
                 self.is_dirty = False
+                try:
+                    self.host_editor._update_button_sensitivity()
+                except Exception:
+                    pass
+                try:
+                    self._show_welcome_view()
+                except Exception:
+                    pass
 
             else:
                 self.host_list.select_host(self.parser.config.hosts[0])
 
     def _on_host_changed(self, editor, host):
         self.is_dirty = self.parser.config.is_dirty()
+        try:
+            self.host_editor._update_button_sensitivity()
+        except Exception:
+            pass
+        try:
+            self.host_list.set_undo_enabled(True)
+        except Exception:
+            pass
 
     def _on_editor_validity_changed(self, editor, is_valid: bool):
-        # The banner handles its own sensitivity based on validity
         pass
+
+    def _on_hosts_reordered(self, host_list, previous_order):
+        """Handle drag-and-drop reordering from the host list."""
+        if not self.parser:
+            return
+        try:
+            self.is_dirty = self.parser.config.is_dirty()
+            self._last_reorder_previous = (
+                list(previous_order) if previous_order else None
+            )
+            try:
+                self.host_list.set_undo_enabled(True)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    def _on_undo_clicked(self, *_):
+        """Undo button in header clicked: revert to last saved state."""
+        try:
+            if self._last_reorder_previous is not None:
+                self.parser.config.hosts = list(self._last_reorder_previous)
+                self._last_reorder_previous = None
+                self.host_list.load_hosts(self.parser.config.hosts)
+                try:
+                    self._reselect_current_host()
+                except Exception:
+                    pass
+            elif self.parser:
+                self.parser.parse()
+                self.host_list.load_hosts(self.parser.config.hosts)
+                try:
+                    self._reselect_current_host()
+                except Exception:
+                    pass
+            self.host_list.set_undo_enabled(False)
+        except Exception:
+            pass
 
     def _on_show_toast(self, editor, message: str):
         """Handle show-toast signal from host editor."""
@@ -699,7 +840,7 @@ class MainWindow(Adw.ApplicationWindow):
             transient_for=self,
             application_name=_("SSH-Studio"),
             application_icon="io.github.BuddySirJava.SSH-Studio",
-            version="1.3.0",
+            version="1.3.1",
             developer_name=_("Made with ❤️ by Mahyar Darvishi"),
             website="https://github.com/BuddySirJava/ssh-studio",
             issue_url="https://github.com/BuddySirJava/ssh-studio/issues",

@@ -1,0 +1,67 @@
+version: 1
+
+AppDir:
+  path: AppDir
+  app_info:
+    id: io.github.BuddySirJava.SSH-Studio
+    name: SSH Studio
+    icon: io.github.BuddySirJava.SSH-Studio
+    version: 1.3.1
+    exec: usr/bin/ssh-studio
+    exec_args: "$@"
+
+  runtime:
+    env:
+      GSETTINGS_SCHEMA_DIR: usr/share/glib-2.0/schemas
+      GI_TYPELIB_PATH: usr/lib/girepository-1.0:usr/lib/x86_64-linux-gnu/girepository-1.0
+      LD_LIBRARY_PATH: usr/lib:usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}
+
+  apt:
+    arch: amd64
+    allow_unauthenticated: false
+    sources:
+      - sourceline: deb [arch=amd64] http://archive.ubuntu.com/ubuntu noble main universe
+      - sourceline: deb [arch=amd64] http://archive.ubuntu.com/ubuntu noble-updates main universe
+      - sourceline: deb [arch=amd64] http://security.ubuntu.com/ubuntu noble-security main universe
+    include:
+      - python3
+      - python3-gi
+      - gir1.2-gtk-4.0
+      - gir1.2-adw-1
+      - gir1.2-gtksource-5
+      - libgtk-4-1
+      - libadwaita-1-0
+      - libgtksourceview-5-0
+      - glib-networking
+      - ca-certificates
+      - libglib2.0-0
+      - libpango-1.0-0
+      - libgirepository-1.0-1
+    exclude:
+      - usr/share/doc
+      - usr/share/man
+      - usr/share/locale
+      - usr/share/icons/hicolor/icon-theme.cache
+
+  files:
+    include: []
+    exclude:
+      - usr/include
+      - usr/lib/pkgconfig
+
+  script:
+    - apt-get update
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git meson ninja-build python3-pip python3-setuptools python3-wheel ca-certificates
+    - rm -rf /var/lib/apt/lists/*
+    - git clone --depth=1 --branch v0.18.0 https://gitlab.gnome.org/GNOME/blueprint-compiler.git
+    - cd blueprint-compiler && meson setup build && ninja -C build && meson install -C build --destdir ../AppDir && cd ..
+    - export PATH="$PWD/AppDir/usr/bin:$PATH"
+    - meson setup --prefix=/usr builddir
+    - meson install -C builddir --destdir AppDir
+    - glib-compile-schemas AppDir/usr/share/glib-2.0/schemas || true
+
+AppImage:
+  arch: x86_64
+  update-information: None
+  sign-key: None
+

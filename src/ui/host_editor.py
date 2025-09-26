@@ -404,7 +404,9 @@ class HostEditor(Gtk.Box):
             self.test_row.connect("activated", lambda r: self._on_test_connection(None))
         try:
             if getattr(self, "unsaved_banner", None) is not None:
-                self.unsaved_banner.connect("button-clicked", lambda *_: self._on_save_clicked(None))
+                self.unsaved_banner.connect(
+                    "button-clicked", lambda *_: self._on_save_clicked(None)
+                )
         except Exception:
             pass
 
@@ -425,7 +427,6 @@ class HostEditor(Gtk.Box):
                 self.delete_button.connect("clicked", self._on_delete_clicked)
         except Exception:
             pass
-
 
     def _on_add_clicked(self, button):
         """Handle add host button click."""
@@ -601,9 +602,7 @@ class HostEditor(Gtk.Box):
 
         self.is_loading = False
         try:
-            if getattr(self, "unsaved_banner", None):
-                self.unsaved_banner.set_revealed(False)
-                self.unsaved_banner.set_sensitive(False)
+            self._update_button_sensitivity()
         except Exception:
             pass
 
@@ -1363,6 +1362,7 @@ class HostEditor(Gtk.Box):
             pass
         try:
             import subprocess as _sub
+
             for cmd in [
                 ["wl-copy"],
                 ["xclip", "-selection", "clipboard"],
@@ -1692,6 +1692,10 @@ class HostEditor(Gtk.Box):
                     except Exception:
                         pass
                 try:
+                    self._update_button_sensitivity()
+                except Exception:
+                    pass
+                try:
                     self._show_message(_(f"Configuration saved → {parser.config_path}"))
                 except Exception:
                     pass
@@ -1713,10 +1717,18 @@ class HostEditor(Gtk.Box):
             except Exception:
                 pass
 
-
     def _update_button_sensitivity(self):
-        """Updates the sensitivity of banner based on dirty state and validity."""
-        is_dirty = self.is_host_dirty()
+        """Updates the sensitivity of banner based on global dirty state and validity."""
+        is_dirty = False
+        try:
+            main = self.app or self.get_root()
+            parser = getattr(main, "parser", None)
+            if parser is not None and getattr(parser, "config", None) is not None:
+                is_dirty = bool(parser.config.is_dirty())
+            else:
+                is_dirty = self.is_host_dirty()
+        except Exception:
+            is_dirty = self.is_host_dirty()
         field_errors = self._collect_field_errors()
         is_valid = not bool(field_errors)
         try:

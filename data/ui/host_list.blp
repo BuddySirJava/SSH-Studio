@@ -1,4 +1,5 @@
 using Gtk 4.0;
+using Adw 1;
 
 template $HostList: Box {
   orientation: vertical;
@@ -13,7 +14,7 @@ template $HostList: Box {
   Box {
     orientation: vertical;
     spacing: 0;
-
+    WindowHandle{
     Box {
       orientation: horizontal;
       spacing: 12;
@@ -22,6 +23,13 @@ template $HostList: Box {
       Button search_button {
         icon-name: "system-search-symbolic";
         tooltip-text: _("Search");
+        styles [ "flat", ]
+      }
+
+      Button undo_button {
+        icon-name: "edit-undo-symbolic";
+        tooltip-text: _("Undo last change");
+        sensitive: false;
         styles [ "flat", ]
       }
 
@@ -51,6 +59,7 @@ template $HostList: Box {
         ]
       }
 
+    }
     }
 
     Box search_bar {
@@ -83,15 +92,27 @@ template $HostList: Box {
         "host-list-scroll",
       ]
 
-      ListBox list_box {
-        selection-mode: single;
+      Stack host_stack {
         hexpand: true;
         vexpand: true;
-        margin-bottom: 12;
 
-        styles [
-          "navigation-sidebar",
-        ]
+        ListBox list_box {
+          selection-mode: single;
+          hexpand: true;
+          vexpand: true;
+          margin-bottom: 12;
+
+          styles [
+            "navigation-sidebar",
+          ]
+        }
+
+        Adw.StatusPage empty_page {
+          visible: false;
+          icon-name: "computer-symbolic";
+          title: _("No hosts yet");
+          description: _("Click the + button to add your first host");
+        }
       }
     }
 

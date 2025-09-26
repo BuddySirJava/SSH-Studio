@@ -51,7 +51,7 @@ template $HostEditor: Gtk.Box {
     vexpand: true;
     hexpand: true;
 
-
+    WindowHandle {
     Adw.HeaderBar {
       show-back-button: false;
       show-title: false;
@@ -72,6 +72,7 @@ template $HostEditor: Gtk.Box {
       Gtk.WindowControls window_controls {
         margin-start: 20;
       }
+    }
     }
     Overlay banner_overlay {
       child: Adw.Banner unsaved_banner {
@@ -151,12 +152,16 @@ template $HostEditor: Gtk.Box {
 
             [suffix]
             Button identity_button {
+              margin-top: 8;
+              margin-bottom: 8;
               icon-name: "document-open-symbolic";
               tooltip-text: _("Choose Identity File");
             }
 
             [suffix]
             Button identity_pick_button {
+              margin-top: 8;
+              margin-bottom: 8;
               icon-name: "dialog-password-symbolic";
               tooltip-text: _("Pick from existing SSH keys");
             }
