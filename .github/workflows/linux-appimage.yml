@@ -25,7 +25,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             squashfs-tools zsync desktop-file-utils appstream file patchelf libglib2.0-bin fakeroot
           python -m pip install --upgrade pip
-          python -m pip install --user appimage-builder
+          python -m pip install --user "appimage-builder==0.8.2"
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Build AppImage
