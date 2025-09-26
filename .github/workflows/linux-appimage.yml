@@ -23,7 +23,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            squashfs-tools zsync desktop-file-utils appstream file patchelf libglib2.0-bin fakeroot
+            squashfs-tools zsync desktop-file-utils appstream file patchelf libglib2.0-bin fakeroot \
+            git meson ninja-build python3-pip python3-setuptools python3-wheel ca-certificates
           python -m pip install --upgrade pip
           python -m pip install --user "appimage-builder==0.8.2"
           echo "$HOME/.local/bin" >> $GITHUB_PATH
