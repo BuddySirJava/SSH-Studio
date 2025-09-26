@@ -7,8 +7,8 @@ AppDir:
     name: SSH Studio
     icon: io.github.BuddySirJava.SSH-Studio
     version: 1.3.1
-    exec: usr/bin/ssh-studio
-    exec_args: "$@"
+    exec: usr/bin/python3
+    exec_args: "-m ssh_studio.main $@"
 
   runtime:
     env:
