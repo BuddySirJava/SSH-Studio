@@ -32,11 +32,17 @@ AppDir:
       - libgtk-4-1
       - libadwaita-1-0
       - libgtksourceview-5-0
+      - libgtk-4-dev
+      - libgtksourceview-5-dev
+      - libadwaita-1-dev
+      - libglib2.0-dev
+      - libpango1.0-dev
       - glib-networking
       - ca-certificates
       - libglib2.0-0
       - libpango-1.0-0
       - libgirepository-1.0-1
+      - pkg-config
     exclude:
       - usr/share/doc
       - usr/share/man
