@@ -124,7 +124,6 @@ flatpak run com.buddysirjava.ssh-studio
 ```
 
 3. Save the file.
-
 ---
 
 ## 5. Verify the Fix
@@ -139,5 +138,15 @@ flatpak run com.buddysirjava.ssh-studio
      com.buddysirjava.ssh-studio.json
 ```
 ```
-flatpak run com.buddysirjava.ssh-studio
+flatpak run com.buddysirjava.ssh-studio```
+
+## Using flatpak app id to try and fix the issue
+
+```bash
+flatpak list
 ```
+as an example you use vscode to run these
+```bash
+flatpak override --user --talk-name=org.freedesktop.Flatpak com.visualstudio.code 
+```
+now run the code.
