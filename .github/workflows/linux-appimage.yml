@@ -29,6 +29,15 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --user "appimage-builder==0.8.2"
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Build and install blueprint-compiler (v0.18.0)
+        run: |
+          git clone --depth=1 --branch v0.18.0 https://gitlab.gnome.org/GNOME/blueprint-compiler.git
+          cd blueprint-compiler
+          meson setup build
+          ninja -C build
+          sudo meson install -C build
+          which blueprint-compiler && blueprint-compiler --version
 
       - name: Build AppImage
         run: |
