@@ -114,3 +114,39 @@ See [LICENSE](LICENSE) for details.
 - [Open an issue](https://github.com/BuddySirJava/SSH-Studio/issues) on GitHub.  
 - Check [Flathub page](https://flathub.org/en/apps/io.github.BuddySirJava.SSH-Studio).  
 
+## Troubleshooting Flatpak Sandbox
+
+If “Test SSH Connection” still fails, grant the sandbox the Flatpak talk permission:
+
+```bash
+flatpak override --user --talk-name=org.freedesktop.Flatpak com.buddysirjava.ssh-studio
+flatpak run com.buddysirjava.ssh-studio
+```
+
+3. Save the file.
+---
+
+## 5. Verify the Fix
+
+1. **Rebuild & reinstall** with your updated manifest:  
+   ```bash
+   flatpak-builder \
+     --user \
+     --install \
+     --force-clean \
+     build-dir \
+     com.buddysirjava.ssh-studio.json
+```
+```
+flatpak run com.buddysirjava.ssh-studio```
+
+## Using flatpak app id to try and fix the issue
+
+```bash
+flatpak list
+```
+as an example you use vscode to run these
+```bash
+flatpak override --user --talk-name=org.freedesktop.Flatpak com.visualstudio.code 
+```
+now run the code.
