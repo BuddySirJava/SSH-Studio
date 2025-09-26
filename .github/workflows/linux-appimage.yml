@@ -19,11 +19,14 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install AppImage Builder
+      - name: Install dependencies and appimage-builder
         run: |
-          sudo add-apt-repository -y ppa:appimagebuilder-team/stable
           sudo apt-get update
-          sudo apt-get install -y appimage-builder
+          sudo apt-get install -y --no-install-recommends \
+            squashfs-tools zsync desktop-file-utils appstream file patchelf libglib2.0-bin fakeroot
+          python -m pip install --upgrade pip
+          python -m pip install --user appimage-builder
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Build AppImage
         run: |
