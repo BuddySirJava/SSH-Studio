@@ -1,18 +1,40 @@
+[persian-gnome-badge]: https://gnome-fa.github.io/assets/badges/persian-gnome.svg
+[persian-gnome-url]: https://fa.gnome.org
+
+[license-url]: https://github.com/BuddySirJava/SSH-Studio/blob/master/LICENSE
+[license-image]: https://img.shields.io/github/license/BuddySirJava/SSH-Studio.svg?style=for-the-badge
+[issues-url]: https://github.com/BuddySirJava/SSH-Studio/issues
+[issues-image]: https://img.shields.io/github/issues/BuddySirJava/SSH-Studio?style=for-the-badge
+[flathub-url]: https://flathub.org/apps/io.github.BuddySirJava.SSH-Studio
+[flathub-image]: https://img.shields.io/flathub/v/io.github.BuddySirJava.SSH-Studio?logo=flathub&style=for-the-badge
+[installs-image]: https://img.shields.io/flathub/downloads/io.github.BuddySirJava.SSH-Studio?style=for-the-badge
+
+
 <div align="center">
 
   <img src="data/media/icon_256.png" alt="App Icon" width="128" />
-
+  
   <h1>SSH-Studio</h1>
-
-  <img src="https://img.shields.io/badge/GTK-4.0-4A90E2?style=for-the-badge&logo=gtk&logoColor=white" alt="GTK" />
-  <img src="https://img.shields.io/badge/License-GPL%20v3-00D4AA?style=for-the-badge&logo=gnu&logoColor=white" alt="License" />
-  <img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
-  <img src="https://img.shields.io/flathub/v/io.github.BuddySirJava.SSH-Studio?logo=flathub&style=for-the-badge">
+  <a href="https://fa.gnome.org">
+    <img src="https://gnome-fa.github.io/assets/badges/persian-gnome.svg" alt="Persian GNOME" />
+  </a>
 
   <p>A native <strong>GTK4 desktop app</strong> for editing and validating your <code>~/.ssh/config</code>.</p>
   <p>Search, edit, and validate SSH hosts with a clean UI — no need to touch terminal editors.</p>
 
 </div>
+
+<p align="center">
+  <a href="https://github.com/BuddySirJava/SSH-Studio/blob/master/LICENSE">
+    <img src="https://img.shields.io/github/license/BuddySirJava/SSH-Studio.svg?style=for-the-badge" alt="License" />
+  </a>
+  <a href="https://flathub.org/apps/io.github.BuddySirJava.SSH-Studio">
+    <img src="https://img.shields.io/flathub/v/io.github.BuddySirJava.SSH-Studio?logo=flathub&style=for-the-badge" alt="Flathub" />
+  </a>
+  <a href="https://flathub.org/apps/io.github.BuddySirJava.SSH-Studio">
+    <img src="https://img.shields.io/flathub/downloads/io.github.BuddySirJava.SSH-Studio?style=for-the-badge" alt="Installs" />
+  </a>
+</p>
 
 ---
 
