@@ -28,9 +28,22 @@ compiled_ui_stamp = custom_target(
   command: ['touch', '@OUTPUT@'],
 )
 
-css_copy = configure_file(input: 'ssh-studio.css', output: 'ssh-studio.css', copy: true)
-icon_256_copy = configure_file(input: 'media/icon_256.png', output: 'icon_256.png', copy: true)
-icon_128_copy = configure_file(input: 'media/icon_128.png', output: 'icon_128.png', copy: true)
+css_copy = configure_file(
+  input: 'ssh-studio.css',
+  output: 'ssh-studio.css',
+  copy: true
+)
+
+configure_file(
+  input: 'media/icon_256.png',
+  output: 'icon_256.png',
+  copy: true
+)
+configure_file(
+  input: 'media/icon_128.png',
+  output: 'icon_128.png',
+  copy: true
+)
 
 gnome.compile_resources('ssh-studio-resources',
   'ssh-studio.gresource.xml',
@@ -39,6 +52,3 @@ gnome.compile_resources('ssh-studio-resources',
   gresource_bundle: true,
   install: true,
   install_dir: join_paths(get_option('datadir'), application_id))
-
-install_data('io.github.BuddySirJava.SSH-Studio.metainfo.xml',
-  install_dir: join_paths(get_option('datadir'), 'metainfo'))

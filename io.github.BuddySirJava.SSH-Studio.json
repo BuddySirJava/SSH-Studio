@@ -10,13 +10,8 @@
         "--socket=wayland",
         "--share=network",
         "--filesystem=~/.ssh:rw",
-        "--socket=ssh-auth",
-        "--talk-name=org.freedesktop.Flatpak",
-        "--socket=session-bus",
-        "--device=dri",
-        "--share=ipc",
-        "filesystem=home"
-    ],
+        "--socket=ssh-auth"
+        ],
     "cleanup" : [
         "/include",
         "/lib/pkgconfig",
@@ -55,7 +50,7 @@
                     "type" : "git",
                     "url" : "https://github.com/BuddySirJava/SSH-Studio.git",
                     "tag" : "1.3.1",
-                    "commit" : "528e5c0e207c63b9ead2adf3f169316950ee81af",
+                    "commit" : "9e3d73ccd0bdbdb26f56e1ff114a85523305bc30",
                     "x-checker-data" : {
                         "type" : "git",
                         "tag-pattern" : "^v([\\d.]+)$"

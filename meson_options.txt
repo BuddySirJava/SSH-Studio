@@ -1,0 +1,29 @@
+option('package_for_flatpak',
+  type: 'boolean',
+  value: false,
+  description: 'Optimize build for Flatpak packaging'
+)
+
+option('package_for_appimage',
+  type: 'boolean',
+  value: false,
+  description: 'Optimize build for AppImage packaging'
+)
+
+option('install_icons',
+  type: 'boolean',
+  value: true,
+  description: 'Install application icons'
+)
+
+option('install_desktop_file',
+  type: 'boolean',
+  value: true,
+  description: 'Install desktop file'
+)
+
+option('install_metainfo',
+  type: 'boolean',
+  value: true,
+  description: 'Install metainfo file'
+)
