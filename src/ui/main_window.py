@@ -397,11 +397,12 @@ class MainWindow(Adw.ApplicationWindow):
                                 break
                         except Exception:
                             continue
-                if selected is None:
+                if selected is None and self.parser.config.hosts:
                     selected = self.parser.config.hosts[0]
-                self.host_list.select_host(selected)
-                self.host_editor.load_host(selected)
-                self._set_host_editor_visible(True)
+                if selected:
+                    self.host_editor.load_host(selected)
+                    self.host_list.select_host(selected)
+                    self._set_host_editor_visible(True)
         except Exception:
             pass
 
@@ -430,10 +431,7 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _on_close_request(self, window):
         """Handle window close request - check for unsaved changes."""
-        if (
-            hasattr(self.host_editor, "is_host_dirty")
-            and self.host_editor.is_host_dirty()
-        ):
+        if self.is_dirty:
             return self._show_unsaved_changes_dialog()
         return False
 
@@ -442,6 +440,10 @@ class MainWindow(Adw.ApplicationWindow):
         builder = Gtk.Builder.new_from_resource(
             "/io/github/BuddySirJava/SSH-Studio/ui/unsaved_changes_dialog.ui"
         )
+        try:
+            builder.set_translation_domain("ssh-studio")
+        except Exception:
+            pass
         dialog = builder.get_object("unsaved_changes_dialog")
         dialog.set_close_response("cancel")
         dialog.add_response("discard", _("Discard Changes"))
@@ -454,15 +456,11 @@ class MainWindow(Adw.ApplicationWindow):
         def on_response(dialog, response):
             if response == "save":
                 try:
-                    if (
-                        hasattr(self.host_editor, "unsaved_banner")
-                        and self.host_editor.unsaved_banner
-                    ):
-                        self.host_editor._on_save_clicked(None)
+                    self._on_save_clicked(None)
                     dialog.close()
                     GLib.timeout_add(200, self._delayed_close)
                 except Exception as e:
-                    self.show_toast(_(f"Failed to save: {e}"))
+                    self.show_toast(_("Failed to save: {}").format(e))
             elif response == "discard":
                 dialog.close()
                 self.destroy()
@@ -501,6 +499,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.parser.parse()
 
             self.host_list.load_hosts(self.parser.config.hosts)
+            self._reselect_current_host()
             self.is_dirty = False
             try:
                 self.host_list.set_undo_enabled(False)
@@ -537,6 +536,10 @@ class MainWindow(Adw.ApplicationWindow):
         except Exception:
             pass
         if hasattr(self, "content_nav") and self.content_nav:
+            visible_page = self.content_nav.get_visible_page()
+            if hasattr(visible_page, "get_tag") and visible_page.get_tag() == "host-editor":
+                return
+
             try:
                 pages = self.content_nav.get_pages()
                 for page in pages:

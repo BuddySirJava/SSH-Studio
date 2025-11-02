@@ -8,3 +8,10 @@ data/ui/host_editor.blp
 data/ui/host_list.blp
 data/ui/main_window.blp
 data/ui/preferences_dialog.blp
+data/ui/test_connection_dialog.blp
+data/ui/ssh_key_manager_dialog.blp
+data/ui/generate_key_dialog.blp
+data/ui/key_picker_dialog.blp
+data/ui/keyboard_shortcuts_dialog.blp
+data/ui/welcome_view.blp
+data/ui/unsaved_changes_dialog.blp
