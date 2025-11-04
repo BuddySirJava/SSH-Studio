@@ -32,10 +32,8 @@ class SshStudio < Formula
 
     python3 = Formula["python@3.13"]
     python_bin = python3.opt_bin/"python3"
-    
-    unless python_bin.exist?
-      odie "Python 3.13 not found at #{python_bin}"
-    end
+
+    odie "Python 3.13 not found at #{python_bin}" unless python_bin.exist?
 
     ENV["PYTHON"] = python_bin.to_s
     system "meson", "setup", "build", *std_meson_args
