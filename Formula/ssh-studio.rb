@@ -30,15 +30,19 @@ class SshStudio < Formula
     end
     ENV.prepend_path "PATH", libexec/"bin"
 
-    ENV["PYTHON"] = Formula["python@3.13"].opt_bin/"python3"
+    python3 = Formula["python@3.13"]
+    python_bin = python3.opt_bin/"python3"
+    
+    unless python_bin.exist?
+      odie "Python 3.13 not found at #{python_bin}"
+    end
 
-    inreplace "data/ssh-studio.in", "python3", "#{Formula["python@3.13"].opt_bin}/python3"
-
+    ENV["PYTHON"] = python_bin.to_s
     system "meson", "setup", "build", *std_meson_args
     system "meson", "compile", "-C", "build"
     system "meson", "install", "-C", "build"
 
-    python_version = Formula["python@3.13"].version.major_minor
+    python_version = python3.version.major_minor
     python_site_packages = lib/"python#{python_version}/site-packages"
     python_site_packages.mkpath
 
@@ -69,7 +73,7 @@ class SshStudio < Formula
     (bin/"ssh-studio").write <<~SH
       #!/bin/bash
       export PYTHONPATH="#{python_site_packages}"
-      exec "#{Formula["python@3.13"].opt_bin}/python3" "#{launcher}" "$@"
+      exec "#{python_bin}" "#{launcher}" "$@"
     SH
     chmod 0755, bin/"ssh-studio"
 
@@ -97,7 +101,7 @@ class SshStudio < Formula
     (app_root/"MacOS/ssh-studio").write <<~SH
       #!/bin/bash
       export PYTHONPATH="#{python_site_packages}"
-      exec "#{Formula["python@3.13"].opt_bin}/python3" "#{launcher}" "$@"
+      exec "#{python_bin}" "#{launcher}" "$@"
     SH
     chmod 0755, (app_root/"MacOS/ssh-studio")
   end
