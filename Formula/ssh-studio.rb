@@ -31,9 +31,16 @@ class SshStudio < Formula
     ENV.prepend_path "PATH", libexec/"bin"
 
     python3 = Formula["python@3.13"]
-    python_bin = python3.opt_bin/"python3"
+    python_bin = if (python3.opt_bin/"python3").exist?
+                   python3.opt_bin/"python3"
+                 elsif (python3.installed_prefix/"bin/python3").exist?
+                   python3.installed_prefix/"bin/python3"
+                 else
+                   prefix = `brew --prefix python@3.13`.strip
+                   Pathname.new("#{prefix}/bin/python3") if prefix && !prefix.empty?
+                 end
 
-    odie "Python 3.13 not found at #{python_bin}" unless python_bin.exist?
+    odie "Python 3.13 not found. Please ensure python@3.13 is installed: brew install python@3.13" unless python_bin&.exist?
 
     ENV["PYTHON"] = python_bin.to_s
     system "meson", "setup", "build", *std_meson_args

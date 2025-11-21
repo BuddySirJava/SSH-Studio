@@ -1,4 +1,7 @@
 import gi
+import os
+import socket
+import getpass
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, GLib
@@ -6,10 +9,6 @@ import subprocess
 
 
 def copy_text_to_clipboard(text: str) -> bool:
-    """
-    Copies the provided text to the clipboard using multiple backends.
-    Tries GDK clipboard first, then falls back to command line tools.
-    """
     try:
         display = Gdk.Display.get_default()
         if not display:
@@ -66,3 +65,20 @@ def copy_text_to_clipboard(text: str) -> bool:
     except Exception:
         pass
     return False
+
+
+def get_default_ssh_key_comment() -> str:
+    try:
+        username = getpass.getuser()
+    except Exception:
+        try:
+            username = os.getlogin()
+        except Exception:
+            username = os.environ.get("USER") or os.environ.get("USERNAME") or "user"
+
+    try:
+        hostname = socket.gethostname()
+    except Exception:
+        hostname = "localhost"
+
+    return f"{username}@{hostname}"

@@ -29,6 +29,12 @@ jobs:
           brew --version
           brew config
 
+      - name: Install Python 3.13
+        run: |
+          brew install python@3.13
+          python3 --version
+          brew --prefix python@3.13
+
       - name: Style check
         run: |
           brew style ./Formula/ssh-studio.rb

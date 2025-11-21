@@ -5,6 +5,11 @@ gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw
 from gettext import gettext as _
 
+try:
+    from ssh_studio.utils import get_default_ssh_key_comment
+except ImportError:
+    from utils import get_default_ssh_key_comment
+
 
 @Gtk.Template(
     resource_path="/io/github/BuddySirJava/SSH-Studio/ui/generate_key_dialog.ui"
@@ -28,6 +33,8 @@ class GenerateKeyDialog(Adw.Dialog):
         self._populate_sizes()
         self._sync_size_visibility()
         self.type_row.connect("notify::selected-item", self._on_type_changed)
+        default_comment = get_default_ssh_key_comment()
+        self.comment_row.set_text(default_comment)
 
     def _populate_types(self):
         store = Gtk.StringList.new(["ed25519", "rsa", "ecdsa"])
@@ -69,7 +76,7 @@ class GenerateKeyDialog(Adw.Dialog):
             else 2048
         )
         name = self.name_row.get_text() or "id_ed25519"
-        comment = self.comment_row.get_text() or "ssh-studio"
+        comment = self.comment_row.get_text() or get_default_ssh_key_comment()
         passphrase = self.pass_row.get_text() or ""
         return {
             "type": key_type,

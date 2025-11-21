@@ -16,9 +16,9 @@ from gettext import gettext as _
 import os
 
 try:
-    from ssh_studio.utils import copy_text_to_clipboard
+    from ssh_studio.utils import copy_text_to_clipboard, get_default_ssh_key_comment
 except ImportError:
-    from utils import copy_text_to_clipboard
+    from utils import copy_text_to_clipboard, get_default_ssh_key_comment
 
 
 @Gtk.Template(resource_path="/io/github/BuddySirJava/SSH-Studio/ui/host_editor.ui")
@@ -1276,7 +1276,7 @@ class HostEditor(Gtk.Box):
                         name = f"{base}_{i}"
                     key_path = ssh_dir / name
                     key_type = (opts.get("type") or "ed25519").lower()
-                    comment = opts.get("comment") or "ssh-studio"
+                    comment = opts.get("comment") or get_default_ssh_key_comment()
                     passphrase = opts.get("passphrase") or ""
                     if key_type == "rsa":
                         size = int(opts.get("size") or 2048)

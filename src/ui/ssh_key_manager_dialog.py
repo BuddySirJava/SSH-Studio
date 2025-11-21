@@ -8,9 +8,9 @@ from pathlib import Path
 import subprocess
 
 try:
-    from ssh_studio.utils import copy_text_to_clipboard
+    from ssh_studio.utils import copy_text_to_clipboard, get_default_ssh_key_comment
 except ImportError:
-    from utils import copy_text_to_clipboard
+    from utils import copy_text_to_clipboard, get_default_ssh_key_comment
 
 
 @Gtk.Template(
@@ -264,7 +264,7 @@ class SSHKeyManagerDialog(Adw.Dialog):
                 name = f"{base_name}_{j}"
             key_path = self._home_ssh / name
             key_type = (opts.get("type") or "ed25519").lower()
-            comment = opts.get("comment") or "ssh-studio"
+            comment = opts.get("comment") or get_default_ssh_key_comment()
             passphrase = opts.get("passphrase") or ""
             if key_type == "rsa":
                 size = int(opts.get("size") or 2048)
