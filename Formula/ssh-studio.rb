@@ -32,15 +32,17 @@ class SshStudio < Formula
 
     python3 = Formula["python@3.13"]
     python_bin = if (python3.opt_bin/"python3").exist?
-                   python3.opt_bin/"python3"
-                 elsif (python3.installed_prefix/"bin/python3").exist?
-                   python3.installed_prefix/"bin/python3"
-                 else
-                   prefix = `brew --prefix python@3.13`.strip
-                   Pathname.new("#{prefix}/bin/python3") if prefix && !prefix.empty?
-                 end
+      python3.opt_bin/"python3"
+    elsif (python3.installed_prefix/"bin/python3").exist?
+      python3.installed_prefix/"bin/python3"
+    else
+      prefix = `brew --prefix python@3.13`.strip
+      Pathname.new("#{prefix}/bin/python3") if prefix.present?
+    end
 
-    odie "Python 3.13 not found. Please ensure python@3.13 is installed: brew install python@3.13" unless python_bin&.exist?
+    unless python_bin&.exist?
+      odie "Python 3.13 not found. Please ensure python@3.13 is installed: brew install python@3.13"
+    end
 
     ENV["PYTHON"] = python_bin.to_s
     system "meson", "setup", "build", *std_meson_args
