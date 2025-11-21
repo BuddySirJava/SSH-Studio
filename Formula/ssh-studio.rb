@@ -61,7 +61,7 @@ class SshStudio < Formula
     system "meson", "compile", "-C", "build"
     system "meson", "install", "-C", "build"
 
-    python_version = python3.version.major_minor
+    python_version = "3.13"
     python_site_packages = lib/"python#{python_version}/site-packages"
     python_site_packages.mkpath
 
