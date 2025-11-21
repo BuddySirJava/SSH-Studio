@@ -2,12 +2,24 @@
 """SSH-Studio: Main Application Entry Point."""
 
 import sys
+import os
+
+try:
+    _file_path = __file__
+except NameError:
+    _file_path = sys.argv[0] if sys.argv else ""
+
+if _file_path:
+    _script_dir = os.path.dirname(os.path.abspath(_file_path))
+    _parent_dir = os.path.dirname(_script_dir)
+    if _parent_dir and _parent_dir not in sys.path:
+        sys.path.insert(0, _parent_dir)
+
 import gi
 import logging
 from gettext import gettext as _
 import gettext
 
-import os
 import threading
 
 gi.require_version("Gtk", "4.0")
@@ -233,73 +245,60 @@ class SSHConfigStudioApp(Adw.Application):
             self.main_window.reload_config()
 
     def _load_css_styles(self):
+        css_provider = Gtk.CssProvider()
+
         try:
-            if os.getenv("FLATPAK_ID"):
-                css_provider = Gtk.CssProvider()
-                css_provider.load_from_resource(
-                    "/io/github/BuddySirJava/SSH-Studio/ssh-studio.css"
-                )
-                Gtk.StyleContext.add_provider_for_display(
-                    Gdk.Display.get_default(),
-                    css_provider,
-                    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
-                )
-                logging.info("Loaded CSS styles from GResource bundle (Flatpak)")
-                return
-            else:
+            css_provider.load_from_resource(
+                "/io/github/BuddySirJava/SSH-Studio/ssh-studio.css"
+            )
+            Gtk.StyleContext.add_provider_for_display(
+                Gdk.Display.get_default(),
+                css_provider,
+                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+            )
+            logging.info("Loaded CSS styles from GResource bundle")
+            return
+        except Exception:
+            pass
+
+        css_candidates = [
+            os.path.join(
+                GLib.get_user_data_dir(),
+                "io.github.BuddySirJava.SSH-Studio",
+                "ssh-studio.css",
+            ),
+            os.path.join(GLib.get_user_data_dir(), "ssh-studio.css"),
+            "/app/share/io.github.BuddySirJava.SSH-Studio/ssh-studio.css",
+            "/app/share/ssh-studio.css",
+            os.path.join(
+                GLib.get_home_dir(),
+                ".local",
+                "share",
+                "io.github.BuddySirJava.SSH-Studio",
+                "ssh-studio.css",
+            ),
+            "/opt/homebrew/share/io.github.BuddySirJava.SSH-Studio/ssh-studio.css",
+            "/usr/local/share/io.github.BuddySirJava.SSH-Studio/ssh-studio.css",
+            "data/ssh-studio.css",
+        ]
+
+        for candidate in css_candidates:
+            if os.path.exists(candidate):
                 try:
                     css_provider = Gtk.CssProvider()
-                    css_provider.load_from_resource(
-                        "/io/github/BuddySirJava/SSH-Studio/ssh-studio.css"
-                    )
+                    css_provider.load_from_path(candidate)
                     Gtk.StyleContext.add_provider_for_display(
                         Gdk.Display.get_default(),
                         css_provider,
                         Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
                     )
-                    logging.info("Loaded CSS styles from GResource bundle")
+                    logging.info(f"Loaded CSS styles from: {candidate}")
                     return
                 except Exception as e:
-                    logging.warning(f"Failed to load CSS from GResource: {e}")
+                    logging.warning(f"Failed to load CSS from {candidate}: {e}")
+                    continue
 
-                css_candidates = [
-                    os.path.join(
-                        GLib.get_user_data_dir(),
-                        "io.github.BuddySirJava.SSH-Studio",
-                        "ssh-studio.css",
-                    ),
-                    os.path.join(GLib.get_user_data_dir(), "ssh-studio.css"),
-                    "/app/share/io.github.BuddySirJava.SSH-Studio/ssh-studio.css",
-                    "/app/share/ssh-studio.css",
-                    os.path.join(
-                        GLib.get_home_dir(),
-                        ".local",
-                        "share",
-                        "io.github.BuddySirJava.SSH-Studio",
-                        "ssh-studio.css",
-                    ),
-                    "/opt/homebrew/share/io.github.BuddySirJava.SSH-Studio/ssh-studio.css",
-                    "/usr/local/share/io.github.BuddySirJava.SSH-Studio/ssh-studio.css",
-                    "data/ssh-studio.css",
-                ]
-
-                for candidate in css_candidates:
-                    if os.path.exists(candidate):
-                        try:
-                            css_provider = Gtk.CssProvider()
-                            css_provider.load_from_path(candidate)
-                            Gtk.StyleContext.add_provider_for_display(
-                                Gdk.Display.get_default(),
-                                css_provider,
-                                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
-                            )
-                            logging.info(f"Loaded CSS styles from: {candidate}")
-                            break
-                        except Exception as e:
-                            logging.warning(f"Failed to load CSS from {candidate}: {e}")
-                            continue
-        except Exception as e:
-            logging.warning(f"Failed to load CSS styles: {e}")
+        logging.warning("Failed to load CSS styles from any source")
 
     def _show_error_dialog(self, title: str, message: str):
         dialog = Gtk.MessageDialog(

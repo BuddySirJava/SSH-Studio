@@ -15,6 +15,11 @@ import copy
 from gettext import gettext as _
 import os
 
+try:
+    from ssh_studio.utils import copy_text_to_clipboard
+except ImportError:
+    from utils import copy_text_to_clipboard
+
 
 @Gtk.Template(resource_path="/io/github/BuddySirJava/SSH-Studio/ui/host_editor.ui")
 class HostEditor(Gtk.Box):
@@ -25,6 +30,7 @@ class HostEditor(Gtk.Box):
     duplicate_button = Gtk.Template.Child()
     delete_button = Gtk.Template.Child()
     viewstack = Gtk.Template.Child()
+    viewswitcher = Gtk.Template.Child()
     patterns_entry = Gtk.Template.Child()
     patterns_error_label = Gtk.Template.Child()
     hostname_entry = Gtk.Template.Child()
@@ -120,6 +126,23 @@ class HostEditor(Gtk.Box):
             self.add_controller(key_ctrl)
         except Exception:
             pass
+
+    @GObject.Property(type=str, default="wide")
+    def viewswitcher_policy(self):
+        if hasattr(self, "viewswitcher") and self.viewswitcher:
+            policy = self.viewswitcher.get_policy()
+            if policy == Adw.ViewSwitcherPolicy.NARROW:
+                return "narrow"
+            return "wide"
+        return "wide"
+
+    @viewswitcher_policy.setter
+    def viewswitcher_policy(self, value):
+        if hasattr(self, "viewswitcher") and self.viewswitcher:
+            if value == "narrow":
+                self.viewswitcher.set_policy(Adw.ViewSwitcherPolicy.NARROW)
+            else:
+                self.viewswitcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
 
     def set_app(self, app):
         self.app = app
@@ -261,8 +284,12 @@ class HostEditor(Gtk.Box):
         connect_entry_row_text(self.remote_forward_entry, "RemoteForward")
 
         connect_touch(self.compression_switch, "state-set", "Compression")
-        connect_touch(self.serveralive_interval_entry, "notify::value", "ServerAliveInterval")
-        connect_touch(self.serveralive_count_entry, "notify::value", "ServerAliveCountMax")
+        connect_touch(
+            self.serveralive_interval_entry, "notify::value", "ServerAliveInterval"
+        )
+        connect_touch(
+            self.serveralive_count_entry, "notify::value", "ServerAliveCountMax"
+        )
         connect_touch(self.tcp_keepalive_switch, "state-set", "TCPKeepAlive")
         if hasattr(self, "strict_host_key_row") and self.strict_host_key_row:
             self.strict_host_key_row.connect(
@@ -525,19 +552,31 @@ class HostEditor(Gtk.Box):
         interval_value = host.get_option("ServerAliveInterval") or "0"
         try:
             interval_int = int(interval_value) if interval_value.isdigit() else 0
-            if hasattr(self, "serveralive_interval_entry") and self.serveralive_interval_entry:
+            if (
+                hasattr(self, "serveralive_interval_entry")
+                and self.serveralive_interval_entry
+            ):
                 self.serveralive_interval_entry.set_value(interval_int)
         except (ValueError, AttributeError):
-            if hasattr(self, "serveralive_interval_entry") and self.serveralive_interval_entry:
+            if (
+                hasattr(self, "serveralive_interval_entry")
+                and self.serveralive_interval_entry
+            ):
                 self.serveralive_interval_entry.set_value(0)
 
         count_value = host.get_option("ServerAliveCountMax") or "3"
         try:
             count_int = int(count_value) if count_value.isdigit() else 3
-            if hasattr(self, "serveralive_count_entry") and self.serveralive_count_entry:
+            if (
+                hasattr(self, "serveralive_count_entry")
+                and self.serveralive_count_entry
+            ):
                 self.serveralive_count_entry.set_value(count_int)
         except (ValueError, AttributeError):
-            if hasattr(self, "serveralive_count_entry") and self.serveralive_count_entry:
+            if (
+                hasattr(self, "serveralive_count_entry")
+                and self.serveralive_count_entry
+            ):
                 self.serveralive_count_entry.set_value(3)
 
         tcp_keepalive = (host.get_option("TCPKeepAlive") or "yes").lower() == "yes"
@@ -913,7 +952,11 @@ class HostEditor(Gtk.Box):
 
         update_if_touched("HostName", self.hostname_entry.get_text())
         update_if_touched("User", self.user_entry.get_text())
-        port_value = str(int(self.port_entry.get_value())) if self.port_entry.get_value() != 22 else ""
+        port_value = (
+            str(int(self.port_entry.get_value()))
+            if self.port_entry.get_value() != 22
+            else ""
+        )
         update_if_touched("Port", port_value, default_absent_values=["22"])
         update_if_touched("IdentityFile", self.identity_entry.get_text())
         if "ForwardAgent" in self._touched_options:
@@ -933,11 +976,23 @@ class HostEditor(Gtk.Box):
             )
             update_if_touched("Compression", comp, default_absent_values=["no"])
         if "ServerAliveInterval" in self._touched_options:
-            interval_value = str(int(self.serveralive_interval_entry.get_value())) if self.serveralive_interval_entry.get_value() != 0 else ""
-            update_if_touched("ServerAliveInterval", interval_value, default_absent_values=["0"])
+            interval_value = (
+                str(int(self.serveralive_interval_entry.get_value()))
+                if self.serveralive_interval_entry.get_value() != 0
+                else ""
+            )
+            update_if_touched(
+                "ServerAliveInterval", interval_value, default_absent_values=["0"]
+            )
         if "ServerAliveCountMax" in self._touched_options:
-            count_value = str(int(self.serveralive_count_entry.get_value())) if self.serveralive_count_entry.get_value() != 3 else ""
-            update_if_touched("ServerAliveCountMax", count_value, default_absent_values=["3"])
+            count_value = (
+                str(int(self.serveralive_count_entry.get_value()))
+                if self.serveralive_count_entry.get_value() != 3
+                else ""
+            )
+            update_if_touched(
+                "ServerAliveCountMax", count_value, default_absent_values=["3"]
+            )
         if "TCPKeepAlive" in self._touched_options:
             tka = (
                 "yes"
@@ -1313,72 +1368,13 @@ class HostEditor(Gtk.Box):
 
             command = f"ssh {hostname}"
 
-            if not self._copy_text_to_clipboard(command):
+            if not copy_text_to_clipboard(command):
                 raise RuntimeError("clipboard backends unavailable")
 
             self._show_message(_(f"SSH command copied: {command}"))
 
         except Exception as e:
             self._show_message(_(f"Failed to copy command: {str(e)}"))
-
-    def _copy_text_to_clipboard(self, text: str) -> bool:
-        try:
-            display = Gdk.Display.get_default()
-            if not display:
-                raise RuntimeError("no display")
-            clipboard = display.get_clipboard()
-            bytes_utf8 = GLib.Bytes.new(text.encode("utf-8"))
-            providers = [
-                Gdk.ContentProvider.new_for_bytes(
-                    "text/plain;charset=utf-8", bytes_utf8
-                ),
-                Gdk.ContentProvider.new_for_bytes("text/plain", bytes_utf8),
-            ]
-            provider = (
-                Gdk.ContentProvider.new_union(providers)
-                if hasattr(Gdk.ContentProvider, "new_union")
-                else providers[0]
-            )
-            self._last_clip_provider = provider
-            if hasattr(clipboard, "set_content"):
-                clipboard.set_content(provider)
-            elif hasattr(clipboard, "set"):
-                clipboard.set(provider)
-            elif hasattr(clipboard, "set_text"):
-                clipboard.set_text(text)
-            else:
-                raise RuntimeError("unsupported clipboard api")
-            try:
-                primary = display.get_primary_clipboard()
-                if primary:
-                    if hasattr(primary, "set_content"):
-                        primary.set_content(self._last_clip_provider)
-                    elif hasattr(primary, "set"):
-                        primary.set(self._last_clip_provider)
-                    elif hasattr(primary, "set_text"):
-                        primary.set_text(text)
-            except Exception:
-                pass
-            return True
-        except Exception:
-            pass
-        try:
-            import subprocess as _sub
-
-            for cmd in [
-                ["wl-copy"],
-                ["xclip", "-selection", "clipboard"],
-                ["xsel", "--clipboard", "--input"],
-            ]:
-                try:
-                    res = _sub.run(cmd, input=text, text=True, capture_output=True)
-                    if res.returncode == 0:
-                        return True
-                except Exception:
-                    continue
-        except Exception:
-            pass
-        return False
 
     def set_wrap_mode(self, wrap: bool):
         """Set the wrap mode for the raw text view based on preferences."""
@@ -1451,7 +1447,6 @@ class HostEditor(Gtk.Box):
         count_value = self.serveralive_count_entry.get_value()
         if count_value and count_value < 1:
             errors["sacm"] = _("ServerAliveCountMax must be >= 1.")
-
 
         try:
             if self.connect_timeout_entry:
@@ -1724,7 +1719,11 @@ class HostEditor(Gtk.Box):
         ]
 
         user_val = self.user_entry.get_text().strip()
-        port_val = str(int(self.port_entry.get_value())) if self.port_entry.get_value() != 22 else ""
+        port_val = (
+            str(int(self.port_entry.get_value()))
+            if self.port_entry.get_value() != 22
+            else ""
+        )
         ident_val = self.identity_entry.get_text().strip()
         proxy_jump_val = self.proxy_jump_entry.get_text().strip()
 

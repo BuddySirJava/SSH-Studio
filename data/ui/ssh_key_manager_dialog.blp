@@ -2,61 +2,104 @@ using Gtk 4.0;
 using Adw 1;
 
 template $SSHKeyManagerDialog: Adw.Dialog {
+  Adw.Breakpoint {
+    condition ("max-width: 900sp")
+
+    setters {
+      header_actions.hexpand: true;
+      header_actions.halign: fill;
+      generate_button.hexpand: true;
+      import_button.hexpand: true;
+    }
+  }
+
+  Adw.Breakpoint {
+    condition ("max-width: 640sp")
+
+    setters {
+      header_actions.orientation: vertical;
+
+      header_actions.spacing: 8;
+      footer_actions.orientation: vertical;
+      footer_actions.halign: fill;
+      copy_pub_button.hexpand: true;
+      reveal_button.hexpand: true;
+      delete_button.hexpand: true;
+    }
+  }
+
+
   Adw.ToastOverlay toast_overlay {
     Adw.ToolbarView {
-      width-request: 860;
-      height-request: 620;
+      width-request: 360;
+      height-request: 360;
 
       [top]
       Adw.HeaderBar {
         [title]
-        Adw.ViewSwitcher { policy: wide; stack: stack; }
+        Adw.ViewSwitcherTitle switcher_title {
+          stack: stack;
+          title: _("SSH Key Manager");
+        }
 
         [end]
-        Box {
+        Box header_actions {
           spacing: 6;
-          Button generate_button { label: _("Generate…"); css-classes: ["suggested-action"]; }
-          Button import_button { label: _("Import…"); }
+          Button generate_button { label: _("Generate…"); css-classes: ["suggested-action"]; hexpand: false; }
+          Button import_button { label: _("Import…"); hexpand: false; }
         }
       }
 
-      content: Box {
-        orientation: vertical;
-        margin-start: 12; margin-end: 12; margin-top: 12; margin-bottom: 12; spacing: 12;
+      content: Adw.Clamp {
+        maximum-size: 960;
+        tightening-threshold: 720;
+        child: Box {
+          orientation: vertical;
+          margin-start: 12;
+          margin-end: 12;
+          margin-top: 12;
+          margin-bottom: 12;
+          spacing: 12;
 
-        Adw.ViewStack stack {
-          vexpand: true;
+          Adw.ViewStack stack {
+            vexpand: true;
 
-          Adw.ViewStackPage {
-            name: "private";
-            title: _("Private Keys");
-            icon-name: "dialog-password-symbolic";
-            child: Adw.Clamp {
-              maximum-size: 900; tightening-threshold: 600;
-              child: ScrolledWindow { vexpand: true; hexpand: true; has-frame: false; 
-                ListBox private_list { selection-mode: single; vexpand: true; hexpand: true; css-classes: ["boxed-list"]; }
+            Adw.ViewStackPage {
+              name: "private";
+              title: _("Private Keys");
+              icon-name: "dialog-password-symbolic";
+              child: Adw.Clamp {
+                maximum-size: 900; tightening-threshold: 640;
+                child: ScrolledWindow { vexpand: true; hexpand: true; has-frame: false;
+                  ListBox private_list { selection-mode: single; vexpand: true; hexpand: true; css-classes: ["boxed-list"]; }
+                };
               };
-            };
+            }
+
+            Adw.ViewStackPage {
+              name: "public";
+              title: _("Public Keys");
+              icon-name: "user-info-symbolic";
+              child: Adw.Clamp {
+                maximum-size: 900; tightening-threshold: 640;
+                child: ScrolledWindow { vexpand: true; hexpand: true; has-frame: false;
+                  ListBox public_list { selection-mode: single; vexpand: true; hexpand: true; css-classes: ["boxed-list"]; }
+                };
+              };
+            }
           }
 
-          Adw.ViewStackPage {
-            name: "public";
-            title: _("Public Keys");
-            icon-name: "user-info-symbolic";
-            child: Adw.Clamp {
-              maximum-size: 900; tightening-threshold: 600;
-              child: ScrolledWindow { vexpand: true; hexpand: true; has-frame: false; 
-                ListBox public_list { selection-mode: single; vexpand: true; hexpand: true; css-classes: ["boxed-list"]; }
-              };
-            };
+          Adw.ViewSwitcherBar switcher_bar {
+            stack: stack;
+            reveal: bind switcher_title.title-visible;
           }
-        }
 
-        Box { orientation: horizontal; halign: end; spacing: 6;
-          Button copy_pub_button { label: _("Copy Public Key"); }
-          Button reveal_button { label: _("Reveal in Files"); }
-          Button delete_button { label: _("Delete"); css-classes: ["destructive-action"]; }
-        }
+          Box footer_actions { orientation: horizontal; halign: end; spacing: 6;
+            Button copy_pub_button { label: _("Copy Public Key"); }
+            Button reveal_button { label: _("Reveal in Files"); }
+            Button delete_button { label: _("Delete"); css-classes: ["destructive-action"]; }
+          }
+        };
       };
     }
   }

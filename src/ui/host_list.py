@@ -20,6 +20,7 @@ class HostList(Gtk.Box):
     host_stack = Gtk.Template.Child()
     empty_page = Gtk.Template.Child()
     add_bottom_button = Gtk.Template.Child()
+    window_controls = Gtk.Template.Child()
     search_button = Gtk.Template.Child()
     undo_button = Gtk.Template.Child()
     search_bar = Gtk.Template.Child()
@@ -53,6 +54,17 @@ class HostList(Gtk.Box):
         self._rebuild_listbox_rows()
 
         self._update_bottom_toolbar_sensitivity()
+
+    @GObject.Property(type=bool, default=False)
+    def show_window_controls(self):
+        if hasattr(self, "window_controls") and self.window_controls:
+            return self.window_controls.get_visible()
+        return False
+
+    @show_window_controls.setter
+    def show_window_controls(self, visible):
+        if hasattr(self, "window_controls") and self.window_controls:
+            self.window_controls.set_visible(visible)
 
     def _setup_columns(self):
         def add_text_column(
@@ -185,7 +197,6 @@ class HostList(Gtk.Box):
             self._rebuild_listbox_rows()
         if previously_selected_host:
             self.select_host(previously_selected_host)
-
 
     def _update_empty_state(self):
         try:
@@ -375,9 +386,7 @@ class HostList(Gtk.Box):
             user = row[2]
             action_row = Adw.ActionRow()
             action_row.set_title(patterns)
-            secondary = (
-                f"{user}@{hostname}" if (hostname or user) else ("")
-            )
+            secondary = f"{user}@{hostname}" if (hostname or user) else ("")
             action_row.set_subtitle(secondary)
 
             action_row.set_selectable(True)

@@ -10,7 +10,8 @@
         "--socket=wayland",
         "--share=network",
         "--filesystem=~/.ssh:rw",
-        "--socket=ssh-auth"
+        "--socket=ssh-auth",
+        "--talk-name=org.freedesktop.Flatpak"
         ],
     "cleanup" : [
         "/include",

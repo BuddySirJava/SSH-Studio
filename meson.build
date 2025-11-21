@@ -5,8 +5,6 @@ project('ssh-studio', 'c',
   default_options: [
     'warning_level=2',
     'buildtype=debugoptimized',
-    'python.install_env=auto',
-    'python.platlibdir='
   ])
 
 python = import('python')
@@ -17,6 +15,9 @@ gnome = import('gnome')
 gtksource_dep = dependency('gtksourceview-5', version: '>= 5.0.0')
 
 application_id = 'io.github.BuddySirJava.SSH-Studio'
+
+pkgdatadir = join_paths(get_option('prefix'), get_option('datadir'), meson.project_name())
+moduledir = join_paths(pkgdatadir, 'ssh_studio')
 
 i18n = import('i18n')
 subdir('po')
@@ -32,11 +33,17 @@ if get_option('install_desktop_file')
   )
 endif
 
-install_data(
-  join_paths(meson.current_source_dir(), 'data', 'ssh-studio.in'),
-  rename: 'ssh-studio',
-  install_mode: 'rwxr-xr-x',
-  install_dir: join_paths(get_option('bindir'))
+conf = configuration_data()
+conf.set('PYTHON', python_installation.path())
+conf.set('pkgdatadir', pkgdatadir)
+
+configure_file(
+  input: 'data/ssh-studio.in',
+  output: 'ssh-studio',
+  configuration: conf,
+  install: true,
+  install_dir: get_option('bindir'),
+  install_mode: 'rwxr-xr-x'
 )
 
 if get_option('install_icons')

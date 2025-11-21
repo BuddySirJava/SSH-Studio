@@ -35,8 +35,6 @@ class MainWindow(Adw.ApplicationWindow):
         self.parser = app.parser
         self.is_dirty = False
         self._raw_wrap_lines = False
-        self._original_width = -1
-        self._original_height = -1
         self._last_reorder_previous = None
 
         try:
@@ -64,16 +62,16 @@ class MainWindow(Adw.ApplicationWindow):
         except Exception:
             pass
 
+        if hasattr(self, "content_nav") and self.content_nav:
+            try:
+                self.content_nav.connect("popped", self._on_content_nav_popped)
+            except Exception:
+                pass
+
     def _set_host_editor_visible(self, visible):
-        if visible:
-            if self._original_width == -1:
-                self._original_width = self.get_width()
-                self._original_height = self.get_height()
-            self.set_default_size(1300, self._original_height)
-        elif self._original_width != -1:
-            self.set_default_size(self._original_width, self._original_height)
-            self._original_width = -1
-            self._original_height = -1
+        if hasattr(self, "split_view") and self.split_view:
+            self.split_view.set_show_content(visible)
+
         self.host_editor.set_visible(visible)
         if not visible:
             try:
@@ -81,8 +79,18 @@ class MainWindow(Adw.ApplicationWindow):
             except Exception:
                 pass
 
+    def _on_content_nav_popped(self, nav_view, page):
+        try:
+            visible_page = self.content_nav.get_visible_page()
+            if hasattr(visible_page, "get_tag"):
+                tag = visible_page.get_tag()
+                if tag == "welcome":
+                    if hasattr(self, "split_view") and self.split_view:
+                        self.split_view.set_show_content(False)
+        except Exception:
+            pass
+
     def _load_preferences(self):
-        """Load preferences from the saved file and apply them to the window."""
         try:
             from .preferences_dialog import PreferencesDialog
 
@@ -112,7 +120,6 @@ class MainWindow(Adw.ApplicationWindow):
             self._raw_wrap_lines = False
 
     def show_toast(self, message: str):
-        """Show a transient toast using Adw.ToastOverlay."""
         try:
             toast = Adw.Toast.new(message)
             try:
@@ -125,7 +132,6 @@ class MainWindow(Adw.ApplicationWindow):
             pass
 
     def _show_undo_toast(self, message: str, on_undo):
-        """Show a toast with an Undo action; executes on_undo when clicked."""
         try:
             toast = Adw.Toast.new(message)
             if hasattr(toast, "set_button_label"):
@@ -146,23 +152,9 @@ class MainWindow(Adw.ApplicationWindow):
             self.show_toast(message)
 
     def _setup_split_view(self):
-        """Set up the split view between host list and editor."""
-        self.host_list = HostList()
-        self.host_editor = HostEditor()
-        try:
-            self.host_editor.set_app(self.app)
-        except Exception:
-            return
-
-        paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
-        paned.set_start_child(self.host_list)
-        paned.set_end_child(self.host_editor)
-        paned.set_position(400)
-
-        self.main_box.append(paned)
+        pass
 
     def _connect_signals(self):
-        """Connect all the signal handlers."""
 
         self.host_list.connect("host-selected", self._on_host_selected)
         self.host_list.connect("host-added", self._on_host_added)
@@ -252,7 +244,6 @@ class MainWindow(Adw.ApplicationWindow):
         self.insert_action_group("app", actions)
 
     def _on_search_action(self, action, param):
-        """Handle search action."""
         self._toggle_search()
 
     def _on_key_pressed(self, controller, keyval, keycode, state):
@@ -354,14 +345,12 @@ class MainWindow(Adw.ApplicationWindow):
         return False
 
     def _on_escape_pressed(self, shortcut):
-        """Handle Escape key press - close search bar if visible."""
         if self.host_list.search_bar.get_visible():
             self.host_list.search_entry.set_text("")
             self.host_list.search_bar.set_visible(False)
             self.host_list.filter_hosts("")
 
     def _load_config(self):
-        """Trigger async config parsing via the application to keep UI responsive."""
         try:
             if hasattr(self.app, "_parse_config_async"):
                 self.app._parse_config_async()
@@ -369,7 +358,6 @@ class MainWindow(Adw.ApplicationWindow):
             self._show_error(f"Failed to trigger config reload: {e}")
 
     def _reselect_current_host(self):
-        """Reselect and reload the previously selected host after model changes."""
         try:
             target_host = None
             try:
@@ -537,7 +525,10 @@ class MainWindow(Adw.ApplicationWindow):
             pass
         if hasattr(self, "content_nav") and self.content_nav:
             visible_page = self.content_nav.get_visible_page()
-            if hasattr(visible_page, "get_tag") and visible_page.get_tag() == "host-editor":
+            if (
+                hasattr(visible_page, "get_tag")
+                and visible_page.get_tag() == "host-editor"
+            ):
                 return
 
             try:
@@ -551,7 +542,6 @@ class MainWindow(Adw.ApplicationWindow):
             self.content_nav.push_by_tag("host-editor")
 
     def _show_welcome_view(self):
-        """Show the welcome view when no host is selected."""
         if hasattr(self, "content_nav") and self.content_nav:
             try:
                 page = None
@@ -567,7 +557,11 @@ class MainWindow(Adw.ApplicationWindow):
                         pages = []
                     for p in pages:
                         try:
-                            tag = p.get_tag() if hasattr(p, "get_tag") else getattr(p, "tag", None)
+                            tag = (
+                                p.get_tag()
+                                if hasattr(p, "get_tag")
+                                else getattr(p, "tag", None)
+                            )
                         except Exception:
                             tag = None
                         if tag == "welcome":
@@ -624,7 +618,6 @@ class MainWindow(Adw.ApplicationWindow):
                 pass
 
     def _on_host_deleted(self, host_list, host):
-        """Handle host deletion."""
         if self.parser:
             try:
                 original_index = self.parser.config.hosts.index(host)
@@ -683,7 +676,6 @@ class MainWindow(Adw.ApplicationWindow):
         pass
 
     def _on_hosts_reordered(self, host_list, previous_order):
-        """Handle drag-and-drop reordering from the host list."""
         if not self.parser:
             return
         try:
@@ -699,7 +691,6 @@ class MainWindow(Adw.ApplicationWindow):
             pass
 
     def _on_undo_clicked(self, *_):
-        """Undo button in header clicked: revert to last saved state."""
         try:
             if self._last_reorder_previous is not None:
                 self.parser.config.hosts = list(self._last_reorder_previous)
@@ -721,11 +712,9 @@ class MainWindow(Adw.ApplicationWindow):
             pass
 
     def _on_show_toast(self, editor, message: str):
-        """Handle show-toast signal from host editor."""
         self.show_toast(message)
 
     def _on_search_changed(self, entry):
-        """Handle search query changes."""
         try:
             text = entry.get_text()
         except Exception:
@@ -733,7 +722,6 @@ class MainWindow(Adw.ApplicationWindow):
         self.host_list.filter_hosts(text)
 
     def _on_open_config(self, action, param):
-        """Handle open config action."""
         dialog = Gtk.FileChooserNative.new(
             title=_("Open SSH Config File"),
             parent=self,
@@ -754,7 +742,6 @@ class MainWindow(Adw.ApplicationWindow):
         dialog.show()
 
     def _on_reload(self, action, param):
-        """Handle reload action."""
         self._load_config()
 
     def _on_manage_keys(self, action, param):

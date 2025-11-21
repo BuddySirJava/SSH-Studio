@@ -4,6 +4,24 @@ using Adw 1;
 template $MainWindow: Adw.ApplicationWindow {
   default-width: 1300;
   default-height: 720;
+
+  Adw.Breakpoint {
+    condition ("max-width: 1100sp")
+
+    setters {
+      host_editor.viewswitcher-policy: narrow;
+    }
+  }
+
+  Adw.Breakpoint {
+    condition ("max-width: 800sp")
+
+    setters {
+      split_view.collapsed: true;
+      host_list.show-window-controls: true;
+    }
+  }
+
   Adw.ToastOverlay toast_overlay {
   Adw.ToolbarView main_box {
     hexpand: true;

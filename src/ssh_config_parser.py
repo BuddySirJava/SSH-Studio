@@ -103,26 +103,31 @@ class SSHConfig:
     includes_resolved: Dict[Path, List[str]] = field(default_factory=dict)
     original_lines: List[str] = field(default_factory=list)
 
-    def is_dirty(self) -> bool:
-        current_content_lines = []
+    def generate_content(self) -> str:
+        lines: List[str] = []
         for opt in self.global_options:
-            current_content_lines.append(str(opt))
-        if self.global_options and (
-            not current_content_lines or current_content_lines[-1].strip() != ""
-        ):
-            current_content_lines.append("")
+            lines.append(str(opt))
+        if self.global_options and (not lines or lines[-1] != ""):
+            lines.append("")
         for host in self.hosts:
-            current_content_lines.append(f"Host {' '.join(host.patterns)}")
+            lines.append(f"Host {' '.join(host.patterns)}")
             for opt in host.options:
-                current_content_lines.append(str(opt))
-            current_content_lines.append("")
-        while current_content_lines and current_content_lines[-1] == "":
-            current_content_lines.pop()
+                lines.append(str(opt))
+            lines.append("")
+        while lines and lines[-1] == "":
+            lines.pop()
         for inc in self.include_directives:
-            current_content_lines.append(f"Include {inc}")
+            lines.append(f"Include {inc}")
+        return "\n".join(lines) + "\n"
+
+    def is_dirty(self) -> bool:
+        current_content = self.generate_content()
+        current_content_lines = current_content.splitlines()
 
         original_clean_lines = [line.rstrip("\n") for line in self.original_lines]
 
+        while current_content_lines and current_content_lines[-1] == "":
+            current_content_lines.pop()
         while original_clean_lines and original_clean_lines[-1] == "":
             original_clean_lines.pop()
 
@@ -314,21 +319,7 @@ class SSHConfigParser:
             logger.warning("Failed to create backup: %s", e)
 
     def _generate_content(self) -> str:
-        lines: List[str] = []
-        for opt in self.config.global_options:
-            lines.append(str(opt))
-        if self.config.global_options and (not lines or lines[-1] != ""):
-            lines.append("")
-        for host in self.config.hosts:
-            lines.append(f"Host {' '.join(host.patterns)}")
-            for opt in host.options:
-                lines.append(str(opt))
-            lines.append("")
-        while lines and lines[-1] == "":
-            lines.pop()
-        for inc in self.config.include_directives:
-            lines.append(f"Include {inc}")
-        return "\n".join(lines) + "\n"
+        return self.config.generate_content()
 
     def _atomic_write(self, content: str) -> None:
         tmp = tempfile.NamedTemporaryFile(

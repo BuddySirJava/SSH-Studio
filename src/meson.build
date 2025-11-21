@@ -1,24 +1,10 @@
-python_sources = [
+python_sources = files(
+  '__init__.py',
   'main.py',
   'ssh_config_parser.py',
-  'ui/host_editor.py',
-  'ui/host_list.py',
-  'ui/main_window.py',
-  'ui/preferences_dialog.py',
-  'ui/test_connection_dialog.py',
-  'ui/ssh_key_manager_dialog.py',
-  'ui/generate_key_dialog.py',
-  'ui/key_picker_dialog.py',
-  'ui/keyboard_shortcuts_dialog.py',
-  'ui/welcome_view.py',
-]
-
-python_installation.install_sources(
-  ['ssh_config_parser.py', 'main.py', '__init__.py'],
-  subdir: 'ssh_studio'
+  'utils.py',
 )
 
-python_installation.install_sources(
-  ['ui/host_editor.py', 'ui/host_list.py', 'ui/main_window.py', 'ui/preferences_dialog.py', 'ui/test_connection_dialog.py', 'ui/ssh_key_manager_dialog.py', 'ui/generate_key_dialog.py', 'ui/key_picker_dialog.py', 'ui/keyboard_shortcuts_dialog.py', 'ui/welcome_view.py', 'ui/__init__.py'],
-  subdir: 'ssh_studio/ui'
-)
+install_data(python_sources, install_dir: moduledir)
+
+subdir('ui')
