@@ -33,7 +33,7 @@ class SshStudio < Formula
     python3 = Formula["python@3.13"]
     ohai "Checking for Python 3.13..."
     ohai "opt_bin: #{python3.opt_bin}"
-    
+
     python_bin = if (python3.opt_bin/"python3").exist?
       python3.opt_bin/"python3"
     elsif (python3.opt_bin/"python3.13").exist?
@@ -41,7 +41,7 @@ class SshStudio < Formula
     else
       prefix = `brew --prefix python@3.13 2>/dev/null`.strip
       ohai "brew --prefix: #{prefix}"
-      if !prefix.empty?
+      unless prefix.empty?
         if File.exist?("#{prefix}/bin/python3")
           Pathname.new("#{prefix}/bin/python3")
         elsif File.exist?("#{prefix}/bin/python3.13")
