@@ -31,12 +31,26 @@ class SshStudio < Formula
     ENV.prepend_path "PATH", libexec/"bin"
 
     python3 = Formula["python@3.13"]
+    ohai "Checking for Python 3.13..."
+    ohai "opt_bin: #{python3.opt_bin}"
+    
     python_bin = if (python3.opt_bin/"python3").exist?
       python3.opt_bin/"python3"
+    elsif (python3.opt_bin/"python3.13").exist?
+      python3.opt_bin/"python3.13"
     else
       prefix = `brew --prefix python@3.13 2>/dev/null`.strip
-      Pathname.new("#{prefix}/bin/python3") unless prefix.empty?
+      ohai "brew --prefix: #{prefix}"
+      if !prefix.empty?
+        if File.exist?("#{prefix}/bin/python3")
+          Pathname.new("#{prefix}/bin/python3")
+        elsif File.exist?("#{prefix}/bin/python3.13")
+          Pathname.new("#{prefix}/bin/python3.13")
+        end
+      end
     end
+
+    ohai "Selected python_bin: #{python_bin}" if python_bin
 
     unless python_bin&.exist?
       odie "Python 3.13 not found. Please ensure python@3.13 is installed: brew install python@3.13"
