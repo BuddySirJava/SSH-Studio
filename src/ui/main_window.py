@@ -355,7 +355,7 @@ class MainWindow(Adw.ApplicationWindow):
             if hasattr(self.app, "_parse_config_async"):
                 self.app._parse_config_async()
         except Exception as e:
-            self._show_error(f"Failed to trigger config reload: {e}")
+            self.show_toast(f"Failed to trigger config reload: {e}")
 
     def _reselect_current_host(self):
         try:
@@ -493,9 +493,9 @@ class MainWindow(Adw.ApplicationWindow):
                 self.host_list.set_undo_enabled(False)
             except Exception:
                 pass
-            self._update_status(_("Configuration saved successfully"))
+            self.show_toast(_("Configuration saved successfully"))
         except Exception as e:
-            self._show_error(f"Failed to save configuration: {e}")
+            self.show_toast(f"Failed to save configuration: {e}")
 
     def _write_and_reload(self, show_status: bool = False):
         """Write the config to disk and reload UI without showing validation dialogs."""
@@ -511,9 +511,9 @@ class MainWindow(Adw.ApplicationWindow):
             except Exception:
                 pass
             if show_status:
-                self._update_status(_("Configuration saved"))
+                self.show_toast(_("Configuration saved"))
         except Exception as e:
-            self._show_error(f"Failed to save configuration: {e}")
+            self.show_toast(f"Failed to save configuration: {e}")
 
     def _on_host_selected(self, host_list, host):
         """Handle host selection from the list."""
@@ -811,7 +811,7 @@ class MainWindow(Adw.ApplicationWindow):
                 pass
             if self.parser:
                 self._load_config()
-            self._update_status(_("Preferences saved"))
+            self.show_toast(_("Preferences saved"))
             return False
 
         dialog.connect("close-attempt", on_close_request)
@@ -859,18 +859,6 @@ Python {sys.version}
         )
 
         about_window.present()
-
-    def _update_status(self, message: str):
-        """Update the status bar with a message."""
-        self.show_toast(message)
-
-    def _hide_status(self):
-        """Hide the status bar."""
-        return False
-
-    def _show_error(self, message: str):
-        """Show an error message in the status bar."""
-        self.show_toast(message)
 
     def _show_warning(self, title: str, message: str):
         """Show a warning dialog."""

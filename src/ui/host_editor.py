@@ -914,13 +914,13 @@ class HostEditor(Gtk.Box):
                     line.strip() and not line.strip().startswith("#")
                     for line in current_lines
                 ):
-                    self.app._show_error(
+                    self.app.show_toast(
                         "SSH host configuration must start with 'Host' declaration"
                     )
             else:
-                self.app._show_error(f"Invalid raw host configuration: {e}")
+                self.app.show_toast(f"Invalid raw host configuration: {e}")
         except Exception as e:
-            self.app._show_error(f"Error parsing raw host config: {e}")
+            self.app.show_toast(f"Error parsing raw host config: {e}")
 
     def _update_host_from_fields(self):
         """Updates the current host object based on GUI field values.
@@ -1603,7 +1603,7 @@ class HostEditor(Gtk.Box):
                     parser.write(backup=True)
                 except Exception as e:
                     try:
-                        self.app._show_error(
+                        self.app.show_toast(
                             _(f"Failed to save {parser.config_path}: {e}")
                         )
                     except Exception:
@@ -1625,7 +1625,7 @@ class HostEditor(Gtk.Box):
                             verify = None
                         if verify != expected_content:
                             try:
-                                self.app._show_error(
+                                self.app.show_toast(
                                     _(
                                         f"Failed to persist changes to {parser.config_path}. Check permissions / sandbox."
                                     )

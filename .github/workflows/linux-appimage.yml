@@ -28,7 +28,7 @@ jobs:
             python3-gi \
             libgtksourceview-5-dev libgtk-4-dev libadwaita-1-dev libglib2.0-dev libpango1.0-dev pkg-config gobject-introspection
           python -m pip install --upgrade pip
-          python -m pip install --user "appimage-builder==0.8.2"
+          python -m pip install --user --upgrade "appimage-builder>=1.1.0"
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       
       - name: Build and install blueprint-compiler (v0.18.0)
@@ -56,8 +56,6 @@ jobs:
 
       - name: Build AppImage
         run: |
-          export PATH="/usr/bin:$PATH"
-          export PYTHON="/usr/bin/python3"
           export ARCH=x86_64
           appimage-builder --recipe AppImageBuilder.yml --skip-test
 

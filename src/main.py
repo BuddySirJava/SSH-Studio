@@ -17,8 +17,8 @@ if _file_path:
 
 import gi
 import logging
-from gettext import gettext as _
 import gettext
+from gettext import gettext as _
 
 import threading
 
@@ -182,7 +182,6 @@ class SSHConfigStudioApp(Adw.Application):
             )
         except Exception:
             pass
-        self._add_actions()
 
         self.parser = SSHConfigParser()
         GLib.idle_add(self._parse_config_async)
@@ -218,31 +217,6 @@ class SSHConfigStudioApp(Adw.Application):
         t = threading.Thread(target=worker, daemon=True)
         t.start()
         return False
-
-    def _add_actions(self):
-        search_action = Gio.SimpleAction.new("search", None)
-        search_action.connect("activate", self._on_search_action)
-        self.add_action(search_action)
-
-        add_host_action = Gio.SimpleAction.new("add-host", None)
-        add_host_action.connect("activate", self._on_add_host_action)
-        self.add_action(add_host_action)
-
-        reload_action = Gio.SimpleAction.new("reload", None)
-        reload_action.connect("activate", self._on_reload_action)
-        self.add_action(reload_action)
-
-    def _on_search_action(self, action, param):
-        if self.main_window:
-            self.main_window._toggle_search()
-
-    def _on_add_host_action(self, action, param):
-        if self.main_window and self.main_window.host_list:
-            self.main_window.host_list.add_host()
-
-    def _on_reload_action(self, action, param):
-        if self.main_window:
-            self.main_window.reload_config()
 
     def _load_css_styles(self):
         css_provider = Gtk.CssProvider()
